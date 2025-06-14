@@ -12,7 +12,6 @@ Welcome to the ACP Evals documentation. This directory contains detailed guides 
 ### Core Features
 - **[Continuous AI Integration](continuous-ai.md)** - CI/CD for AI agents
 - **[Trace Recycling](trace-recycling.md)** - Convert production telemetry to evaluation datasets
-- **[New Features Summary](new-features-summary.md)** - Latest enhancements and Azure parity features
 
 ### Key Concepts
 
@@ -44,18 +43,3 @@ Welcome to the ACP Evals documentation. This directory contains detailed guides 
 - [Trace Recycling Setup](trace-recycling.md#configuration-options)
 - [Continuous Evaluation](new-features-summary.md#7-continuous-evaluation-pipeline)
 - [Telemetry Integration](architecture.md#telemetry-layer)
-
-## Recent Updates
-
-See [New Features Summary](new-features-summary.md) for the latest enhancements including:
-- TRAIL-inspired trace-based evaluation
-- Azure AI Evaluation SDK feature parity
-- Production trace recycling
-- Enhanced adversarial testing
-
-## Support
-
-For questions and support:
-- Check the [examples](../examples/) for common patterns
-- Review the [architecture guide](architecture.md) for design decisions
-- Open an issue on GitHub for bugs or feature requests

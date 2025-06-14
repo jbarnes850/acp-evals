@@ -16,7 +16,7 @@ ACP Evals is designed with a layered architecture that balances simplicity for d
 
 ```bash
 ┌─────────────────────────────────────────────────────────────┐
-│                      Simple API Layer                       │
+│                         API Layer                           │
 │  AccuracyEval, PerformanceEval, ReliabilityEval, SafetyEval │
 └─────────────────────────────────────────────────────────────┘
                               │
