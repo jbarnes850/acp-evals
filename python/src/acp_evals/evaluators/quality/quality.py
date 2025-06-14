@@ -7,7 +7,8 @@ These evaluators focus on specific aspects of response quality.
 from collections.abc import Callable
 from typing import Any
 
-from ..api import AccuracyEval, EvalResult
+from ..accuracy import AccuracyEval
+from ..common import EvalResult
 
 
 class GroundednessEval(AccuracyEval):

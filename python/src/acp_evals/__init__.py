@@ -3,6 +3,13 @@ ACP Evals: Comprehensive Evaluation Framework for Agent Communication Protocol
 
 A framework for benchmarking, measuring, and analyzing agent performance
 in the ACP ecosystem.
+
+Quick Start:
+    For most use cases, import the main evaluation classes:
+    >>> from acp_evals import AccuracyEval, PerformanceEval, ReliabilityEval, SafetyEval
+    
+    For specialized metrics and advanced evaluators:
+    >>> from acp_evals.evaluators import BleuScoreEvaluator, RetrievalEvaluator
 """
 
 __version__ = "0.1.1"
@@ -17,7 +24,7 @@ from acp_evals.core.base import (
 )
 
 # Quality evaluators
-from acp_evals.evaluation.quality import (
+from acp_evals.evaluators.quality.quality import (
     CompletenessEval,
     GroundednessEval,
     QualityEval,
@@ -26,7 +33,7 @@ from acp_evals.evaluation.quality import (
 )
 
 # Simulator for synthetic test data
-from acp_evals.evaluation.simulator import Simulator, simulate
+from acp_evals.pipeline.simulator import Simulator, simulate
 
 # Main API for developer-friendly usage
 from acp_evals.api import (
@@ -68,7 +75,7 @@ __all__ = [
 
 # Import continuous evaluation
 try:
-    from acp_evals.evaluation.continuous import (
+    from acp_evals.pipeline.continuous import (
         ContinuousEvaluationPipeline,
         EvaluationRun,
         RegressionAlert,
@@ -84,29 +91,30 @@ except ImportError:
     # Continuous evaluation requires additional dependencies
     pass
 
-# Import new evaluators
+# Import evaluators if available
 try:
     from acp_evals.evaluators import (
-        # NLP metrics
-        BleuScoreEvaluator,
-        CodeVulnerabilityEvaluator,
-        ComprehensiveEvaluator,
-        ContentSafetyEvaluator,
-        DocumentRetrievalEvaluator,
-        F1ScoreEvaluator,
-        GleuScoreEvaluator,
+        # Core evaluators
         GroundednessEvaluator,
+        RetrievalEvaluator,
+        DocumentRetrievalEvaluator,
         # Extended evaluators
         IntentResolutionEvaluator,
-        MeteorScoreEvaluator,
+        ResponseCompletenessEvaluator,
+        CodeVulnerabilityEvaluator,
+        UngroundedAttributesEvaluator,
         ProtectedMaterialEvaluator,
+        ToolCallAccuracyEvaluator,
+        # NLP metrics
+        BleuScoreEvaluator,
+        RougeScoreEvaluator,
+        MeteorScoreEvaluator,
+        GleuScoreEvaluator,
+        F1ScoreEvaluator,
         # Composite evaluators
         QAEvaluator,
-        ResponseCompletenessEvaluator,
-        RetrievalEvaluator,
-        RougeScoreEvaluator,
-        ToolCallAccuracyEvaluator,
-        UngroundedAttributesEvaluator,
+        ContentSafetyEvaluator,
+        ComprehensiveEvaluator,
     )
     __all__.extend([
         "GroundednessEvaluator",

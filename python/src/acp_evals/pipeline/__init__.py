@@ -4,20 +4,20 @@ Evaluation orchestration for ACP-Evals.
 Quality evaluators, simulator, and continuous evaluation pipeline.
 """
 
-from acp_evals.evaluation.continuous import (
+from acp_evals.pipeline.continuous import (
     ContinuousEvaluationPipeline,
     EvaluationRun,
     RegressionAlert,
     start_continuous_evaluation,
 )
-from acp_evals.evaluation.quality import (
+from acp_evals.evaluators.quality.quality import (
     CompletenessEval,
     GroundednessEval,
     QualityEval,
     TaskAdherenceEval,
     ToolAccuracyEval,
 )
-from acp_evals.evaluation.simulator import (
+from acp_evals.pipeline.simulator import (
     Simulator,
     simulate,
 )

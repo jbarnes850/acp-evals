@@ -222,7 +222,8 @@ OLLAMA_BASE_URL=http://localhost:11434
 
 | Resource | Description |
 |----------|-------------|
-| 📚 [Architecture Guide](./python/docs/architecture.md) | Framework design and components |
+| 📚 [API Reference](./python/docs/api-reference.md) | Complete API documentation |
+| 🏗️ [Architecture Guide](./python/docs/architecture.md) | Framework design and components |
 | 🚀 [Setup Guide](./python/docs/setup.md) | Installation and configuration |
 | 🔌 [Provider Setup](./python/docs/providers.md) | LLM provider configuration |
 | 💡 [Examples](./python/examples/) | 13 comprehensive usage examples |
