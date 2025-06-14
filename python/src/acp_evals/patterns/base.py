@@ -79,4 +79,5 @@ class AgentPattern(ABC):
     async def close(self):
         """Close all client connections."""
         for client in self._clients.values():
-            await client.close()
+            # Client uses async context manager for cleanup
+            await client.__aexit__(None, None, None)

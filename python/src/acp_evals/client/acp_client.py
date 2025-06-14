@@ -186,7 +186,7 @@ class ACPEvaluationClient:
         start_time = asyncio.get_event_loop().time()
 
         while True:
-            run = await self.client.run(run_id=run_id)
+            run = await self.client.run_status(run_id=run_id)
 
             if run.status.is_terminal:
                 return run

@@ -230,18 +230,18 @@ OLLAMA_BASE_URL=http://localhost:11434
 ### **Quick Start Examples**
 
 **Essential (Start Here):**
-- **[00_minimal_example.py](./python/examples/00_minimal_example.py)**: 3-line agent evaluation
-- **[01_quickstart_accuracy.py](./python/examples/01_quickstart_accuracy.py)**: Basic accuracy assessment
-- **[02_multi_agent_evaluation.py](./python/examples/02_multi_agent_evaluation.py)**: Agent coordination testing
+- **[01_minimal_example.py](./python/examples/01_minimal_example.py)**: 3-line agent evaluation
+- **[02_basic_accuracy_evaluation.py](./python/examples/02_basic_accuracy_evaluation.py)**: Basic accuracy assessment
+- **[05_multi_agent_patterns.py](./python/examples/05_multi_agent_patterns.py)**: Agent coordination testing
 
 **Production Integration:**
-- **[04_continuous_evaluation.py](./python/examples/04_continuous_evaluation.py)**: CI/CD monitoring pipeline
+- **[08_ci_cd_integration.py](./python/examples/08_ci_cd_integration.py)**: CI/CD monitoring pipeline
 - **[12_end_to_end_trace_pipeline.py](./python/examples/12_end_to_end_trace_pipeline.py)**: Production trace recycling
 - **[09_real_acp_agents.py](./python/examples/09_real_acp_agents.py)**: Live ACP agent integration
 
 **Advanced:**
 - **[07_adversarial_testing.py](./python/examples/07_adversarial_testing.py)**: Security robustness evaluation
-- **[13_synthetic_data_generation.py](./python/examples/13_synthetic_data_generation_and_storage.py)**: Custom dataset creation
+- **[13_synthetic_data_generation_and_storage.py](./python/examples/13_synthetic_data_generation_and_storage.py)**: Custom dataset creation
 
 ## Batch Evaluation and Automation
 

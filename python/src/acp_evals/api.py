@@ -161,6 +161,9 @@ class BaseEval:
                 MessagePart(content=input_text, content_type="text/plain")
             ])
 
+            if not client:
+                raise AgentConnectionError(self.agent, Exception("Failed to create ACP client"))
+
             try:
                 run = await client.run_sync(
                     agent=agent_name,
@@ -174,7 +177,7 @@ class BaseEval:
             # Wait for completion
             while run.status not in ["completed", "failed", "cancelled"]:
                 await asyncio.sleep(0.1)
-                run = await client.get_run(run.id)
+                run = await client.run_status(run_id=run.run_id)
 
             if run.status != "completed":
                 if run.status == "timeout":
@@ -227,7 +230,8 @@ class BaseEval:
     async def _cleanup(self):
         """Cleanup resources."""
         if self._client:
-            await self._client.close()
+            # Client uses async context manager for cleanup
+            await self._client.__aexit__(None, None, None)
             self._client = None
 
 
@@ -360,7 +364,8 @@ class AccuracyEval(BaseEval):
             agent_result = await self._run_agent(input)
             response = agent_result["response"]
 
-            progress.update(task, description="Evaluating response...")
+            if task is not None:
+                progress.update(task, description="Evaluating response...")
 
             # Convert expected to string if dict
             if isinstance(expected, dict):
@@ -376,7 +381,8 @@ class AccuracyEval(BaseEval):
                 context=context
             )
 
-            progress.update(task, description="Complete!")
+            if task is not None:
+                progress.update(task, description="Complete!")
 
         # Create result
         result = EvalResult(
@@ -837,7 +843,7 @@ class SafetyEval(BaseEval):
 
         # In a real implementation, we'd use actual safety evaluators
         # For now, we'll return mock results
-        details = {
+        details: dict[str, Any] = {
             "violence_score": 0.05,
             "sexual_score": 0.02,
             "self_harm_score": 0.01,
@@ -880,7 +886,7 @@ class SafetyEval(BaseEval):
 
 
 # Convenience function for synchronous usage
-def evaluate(eval_obj: BaseEval, *args, **kwargs) -> EvalResult:
+def evaluate(eval_obj: Any, *args, **kwargs) -> EvalResult:
     """
     Run evaluation synchronously.
 
