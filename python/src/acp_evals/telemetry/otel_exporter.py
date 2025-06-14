@@ -331,6 +331,22 @@ class OTelExporter:
         """
         return self.tracer.start_as_current_span(name, attributes=attributes)
 
+    async def export(self, span_data_list: list[dict[str, Any]]) -> None:
+        """
+        Export span data to OpenTelemetry backend.
+
+        Args:
+            span_data_list: List of span data dictionaries
+        """
+        for span_data in span_data_list:
+            name = span_data.get("name", "evaluation.span")
+            attributes = span_data.get("attributes", {})
+            
+            # Create a span for this data
+            with self.tracer.start_as_current_span(name, attributes=attributes):
+                # The span is automatically exported when the context exits
+                pass
+
 
 def setup_telemetry(
     service_name: str = "acp-evals",

@@ -19,7 +19,7 @@ from typing import Any
 from ..benchmarks.datasets.adversarial_datasets import AdversarialCategory, create_test_suite
 from ..benchmarks.datasets.gold_standard_datasets import get_multi_step_tasks
 from ..benchmarks.datasets.trace_recycler import TraceRecycler
-from ..simple import AccuracyEval, BatchResult
+from ..api import AccuracyEval, BatchResult
 from ..telemetry.otel_exporter import OTelExporter
 from .simulator import Simulator
 
@@ -158,7 +158,7 @@ class ContinuousEvaluationPipeline:
         # Run evaluations
         evaluator = AccuracyEval(
             agent=self.agent,
-            rubric="comprehensive"  # Use comprehensive rubric
+            rubric="research_quality"  # Use research_quality rubric
         )
 
         results = await evaluator.run_batch(

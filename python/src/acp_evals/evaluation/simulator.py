@@ -19,7 +19,7 @@ from ..benchmarks.datasets.adversarial_datasets import (
     create_test_suite,
 )
 from ..benchmarks.datasets.trail_integration import integrate_trail_with_simulator
-from ..simple import AccuracyEval
+from ..api import AccuracyEval
 
 
 class Simulator:

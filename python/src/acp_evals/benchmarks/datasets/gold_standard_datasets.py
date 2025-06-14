@@ -287,6 +287,147 @@ def calculate_statistics(numbers):
             "incomplete_recovery"
         ]
     ),
+
+    # ========== Production Edge Cases ==========
+    AgentTask(
+        task_id="edge_case_memory_leak",
+        category="performance_debugging",
+        description="Investigate gradual memory leak in long-running service",
+        input="Production service (8GB RAM allocated) shows memory usage increasing 50MB/hour over 3 days. No obvious leaks in code review. Service restarts every 72 hours due to OOM. GC logs show increasing old generation usage. Heap dumps available. The service processes user-uploaded files and caches processed results.",
+        expected_steps=[
+            {"step": "analyze", "tool": "heap_analyzer", "action": "compare_heap_dumps"},
+            {"step": "profile", "tool": "memory_profiler", "action": "identify_growth_patterns"},
+            {"step": "investigate", "tool": "gc_analyzer", "action": "analyze_gc_patterns"},
+            {"step": "trace", "tool": "allocation_tracker", "action": "track_object_creation"},
+            {"step": "test", "tool": "load_tester", "action": "reproduce_memory_growth"},
+            {"step": "fix", "action": "implement_solution", "verify": "memory_stability"}
+        ],
+        expected_tools=["heap_analyzer", "memory_profiler", "gc_analyzer", "allocation_tracker"],
+        expected_output_criteria={
+            "identifies_leak_source": True,
+            "explains_accumulation_pattern": True,
+            "provides_fix_strategy": True,
+            "includes_prevention_measures": True,
+            "validates_solution": True
+        },
+        difficulty="expert",
+        metadata={
+            "memory_analysis": True,
+            "long_term_debugging": True,
+            "requires_profiling": True
+        },
+        failure_modes=[
+            "focusing_on_obvious_suspects",
+            "missing_subtle_accumulation",
+            "inadequate_testing_of_fix",
+            "ignoring_gc_patterns"
+        ]
+    ),
+
+    AgentTask(
+        task_id="edge_case_distributed_deadlock",
+        category="distributed_systems",
+        description="Resolve distributed deadlock in microservices architecture",
+        input="Payment processing frozen. Services A, B, C involved. Service A waits for Service B (order lock), Service B waits for Service C (inventory lock), Service C waits for Service A (payment lock). No timeouts configured. 500+ transactions stuck. Database shows multiple locked resources but no clear owner. Emergency: Black Friday traffic peak.",
+        expected_steps=[
+            {"step": "identify", "tool": "distributed_tracer", "action": "map_transaction_dependencies"},
+            {"step": "analyze", "tool": "lock_analyzer", "action": "detect_circular_dependencies"},
+            {"step": "break", "action": "strategic_rollback", "priority": "least_impact_transactions"},
+            {"step": "prevent", "action": "implement_timeouts", "add": "deadlock_detection"},
+            {"step": "test", "tool": "chaos_engineer", "action": "verify_deadlock_recovery"},
+            {"step": "monitor", "tool": "deadlock_detector", "action": "continuous_monitoring"}
+        ],
+        expected_tools=["distributed_tracer", "lock_analyzer", "transaction_manager", "chaos_engineer"],
+        expected_output_criteria={
+            "identifies_deadlock_cycle": True,
+            "breaks_deadlock_safely": True,
+            "implements_prevention": True,
+            "handles_emergency_context": True,
+            "validates_recovery": True
+        },
+        difficulty="expert",
+        metadata={
+            "distributed_systems": True,
+            "emergency_response": True,
+            "high_stakes": "black_friday"
+        },
+        failure_modes=[
+            "breaking_wrong_transactions",
+            "creating_data_inconsistency",
+            "inadequate_prevention_measures",
+            "slow_emergency_response"
+        ]
+    ),
+
+    AgentTask(
+        task_id="edge_case_gradual_data_corruption",
+        category="data_integrity",
+        description="Investigate gradual data corruption affecting ML model performance",
+        input="ML recommendation model accuracy dropped from 85% to 67% over 6 weeks. No code changes in model. Training data pipeline unchanged. Recent investigation shows 0.2% of training examples have subtle label corruption (e.g., 'electronics' → 'electronic', 'red shirt' → 'red'). Data comes from 15 upstream sources. Corruption appears random but may follow pattern.",
+        expected_steps=[
+            {"step": "audit", "tool": "data_auditor", "action": "comprehensive_data_quality_check"},
+            {"step": "trace", "tool": "lineage_tracker", "action": "map_corruption_to_sources"},
+            {"step": "pattern", "tool": "anomaly_detector", "action": "identify_corruption_patterns"},
+            {"step": "isolate", "tool": "source_analyzer", "action": "narrow_down_problematic_sources"},
+            {"step": "validate", "tool": "data_validator", "action": "implement_quality_gates"},
+            {"step": "recover", "action": "clean_and_retrain", "verify": "model_performance"}
+        ],
+        expected_tools=["data_auditor", "lineage_tracker", "anomaly_detector", "data_validator"],
+        expected_output_criteria={
+            "identifies_corruption_source": True,
+            "maps_corruption_patterns": True,
+            "implements_detection": True,
+            "provides_recovery_plan": True,
+            "prevents_future_corruption": True
+        },
+        difficulty="hard",
+        metadata={
+            "data_quality": True,
+            "ml_impact": True,
+            "subtle_corruption": True
+        },
+        failure_modes=[
+            "missing_subtle_patterns",
+            "inadequate_source_investigation",
+            "incomplete_data_cleaning",
+            "weak_prevention_measures"
+        ]
+    ),
+
+    AgentTask(
+        task_id="edge_case_cascading_failure",
+        category="reliability_engineering",
+        description="Contain cascading failure across dependent services",
+        input="User authentication service experienced 30-second outage. Now experiencing cascading effects: 1) Session validation failing (depends on auth), 2) API rate limiting broken (relies on user context), 3) Content personalization defaulting to anonymous (no user ID), 4) Analytics pipeline backing up (user tracking disabled). Services are recovering at different rates. Some users see mixed states.",
+        expected_steps=[
+            {"step": "assess", "tool": "dependency_mapper", "action": "map_service_dependencies"},
+            {"step": "prioritize", "action": "triage_service_recovery", "order": "by_business_impact"},
+            {"step": "isolate", "tool": "circuit_breaker", "action": "prevent_further_cascade"},
+            {"step": "recover", "action": "coordinated_restart", "ensure": "dependency_order"},
+            {"step": "validate", "tool": "health_checker", "action": "verify_full_recovery"},
+            {"step": "improve", "action": "implement_bulkheads", "add": "failure_isolation"}
+        ],
+        expected_tools=["dependency_mapper", "circuit_breaker", "health_checker", "recovery_orchestrator"],
+        expected_output_criteria={
+            "contains_cascade": True,
+            "prioritizes_recovery": True,
+            "coordinates_restart": True,
+            "validates_system_health": True,
+            "implements_resilience": True
+        },
+        difficulty="expert",
+        metadata={
+            "cascading_failure": True,
+            "system_architecture": True,
+            "service_dependencies": True
+        },
+        failure_modes=[
+            "restarting_in_wrong_order",
+            "missing_hidden_dependencies",
+            "incomplete_recovery_validation",
+            "inadequate_future_protection"
+        ]
+    ),
 ]
 
 

@@ -28,8 +28,8 @@ from acp_evals.evaluation.quality import (
 # Simulator for synthetic test data
 from acp_evals.evaluation.simulator import Simulator, simulate
 
-# Simple API for developer-friendly usage
-from acp_evals.simple import (
+# Main API for developer-friendly usage
+from acp_evals.api import (
     AccuracyEval,
     BatchResult,
     EvalResult,
@@ -42,7 +42,7 @@ from acp_evals.simple import (
 from .core import config
 
 __all__ = [
-    # Simple API (primary interface)
+    # Main API (primary interface)
     "AccuracyEval",
     "PerformanceEval",
     "ReliabilityEval",

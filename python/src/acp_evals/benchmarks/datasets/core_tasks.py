@@ -1,47 +1,132 @@
 """
 Core task dataset for ACP evaluation benchmarks.
 
-20-30 carefully selected tasks across multiple categories that reveal
-agent capabilities and limitations.
+Production-realistic multi-step tasks that test real agent capabilities
+using LLM-based semantic evaluation instead of keyword matching.
 """
 
-# Core evaluation tasks spanning different categories
+# Core evaluation tasks spanning different categories with semantic evaluation
 CORE_TASKS = [
-    # Information Retrieval (5 tasks)
+    # Multi-step Information Synthesis (5 tasks)
     {
-        "id": "ir_return_policy",
-        "category": "information_retrieval",
-        "prompt": "What is the return policy for electronics at most retail stores?",
-        "expected": ["30 days", "receipt", "original packaging"],
-        "difficulty": "easy",
+        "id": "info_synthesis_climate",
+        "category": "information_synthesis",
+        "prompt": "Research the latest climate change mitigation technologies developed in 2024-2025. Identify the top 3 most promising approaches, compare their effectiveness, and provide implementation timelines. Include specific companies or research institutions leading each approach.",
+        "expected_evaluation": {
+            "type": "semantic_llm",
+            "criteria": {
+                "identifies_recent_technologies": {"weight": 0.3, "description": "Lists current climate tech from 2024-2025"},
+                "compares_effectiveness": {"weight": 0.25, "description": "Provides quantitative or qualitative comparison"},
+                "includes_implementation_details": {"weight": 0.25, "description": "Realistic timelines and implementation steps"},
+                "cites_specific_entities": {"weight": 0.2, "description": "Names companies, institutions, or research groups"}
+            },
+            "pass_threshold": 0.7
+        },
+        "expected_tools": ["web_search", "document_parser", "synthesizer"],
+        "expected_steps": [
+            {"action": "search", "target": "recent climate technologies"},
+            {"action": "filter", "target": "2024-2025 developments"},
+            {"action": "analyze", "target": "effectiveness comparison"},
+            {"action": "synthesize", "target": "comprehensive report"}
+        ],
+        "difficulty": "hard",
+        "production_context": "Climate research agent for policy makers"
     },
     {
-        "id": "ir_capital_facts",
-        "category": "information_retrieval",
-        "prompt": "What is the capital of France and when was it established as the capital?",
-        "expected": ["Paris", "987", "Capet"],
-        "difficulty": "medium",
+        "id": "code_debug_production",
+        "category": "code_debugging",
+        "prompt": "Debug this Python microservice that's causing 500 errors in production:\n\n```python\ndef process_payment(amount, user_id, payment_method):\n    if amount <= 0:\n        return {'error': 'Invalid amount'}\n    \n    user = get_user(user_id)\n    if user['balance'] < amount:\n        return {'error': 'Insufficient funds'}\n    \n    result = charge_payment(payment_method, amount)\n    if result['success']:\n        user['balance'] -= amount\n        update_user(user)\n        log_transaction(user_id, amount, 'success')\n    return result\n```\n\nThe service handles 1000+ requests/minute. Recent error logs show race conditions and data inconsistency issues.",
+        "expected_evaluation": {
+            "type": "semantic_llm",
+            "criteria": {
+                "identifies_race_condition": {"weight": 0.4, "description": "Recognizes concurrent access issues with balance updates"},
+                "proposes_locking_mechanism": {"weight": 0.3, "description": "Suggests database locks, transactions, or atomic operations"},
+                "addresses_error_handling": {"weight": 0.2, "description": "Improves exception handling and rollback mechanisms"},
+                "considers_scalability": {"weight": 0.1, "description": "Mentions performance impact of solutions"}
+            },
+            "pass_threshold": 0.75
+        },
+        "expected_tools": ["code_analyzer", "database_profiler", "transaction_manager"],
+        "expected_steps": [
+            {"action": "analyze", "target": "identify concurrency issues"},
+            {"action": "design", "target": "atomic transaction pattern"},
+            {"action": "implement", "target": "database locking"},
+            {"action": "test", "target": "concurrent request simulation"}
+        ],
+        "difficulty": "expert",
+        "production_context": "High-traffic payment processing service"
     },
     {
-        "id": "ir_tech_definition",
-        "category": "information_retrieval",
-        "prompt": "What is machine learning in simple terms?",
-        "expected": ["learn", "data", "patterns", "without explicit programming"],
-        "difficulty": "easy",
+        "id": "data_pipeline_analysis",
+        "category": "data_engineering",
+        "prompt": "Our data pipeline processes 50GB of user behavior data daily. Recent reports show missing data for 2-3 hour windows, and downstream ML models are showing degraded performance. The pipeline: S3 → Spark → Feature Store → ML Training. Debug and propose a solution that includes monitoring and alerting.",
+        "expected_evaluation": {
+            "type": "semantic_llm",
+            "criteria": {
+                "identifies_failure_points": {"weight": 0.3, "description": "Pinpoints likely causes: network issues, Spark failures, resource constraints"},
+                "proposes_monitoring_solution": {"weight": 0.25, "description": "Suggests specific metrics, alerts, and SLAs"},
+                "addresses_data_recovery": {"weight": 0.25, "description": "Backfill strategy and data validation"},
+                "includes_preventive_measures": {"weight": 0.2, "description": "Circuit breakers, retries, graceful degradation"}
+            },
+            "pass_threshold": 0.7
+        },
+        "expected_tools": ["spark_profiler", "s3_analyzer", "monitoring_dashboard", "alerting_system"],
+        "expected_steps": [
+            {"action": "investigate", "target": "missing data time windows"},
+            {"action": "profile", "target": "Spark job performance"},
+            {"action": "design", "target": "monitoring and alerting"},
+            {"action": "implement", "target": "recovery mechanisms"}
+        ],
+        "difficulty": "hard",
+        "production_context": "ML data pipeline for recommendation system"
     },
     {
-        "id": "ir_historical_event",
-        "category": "information_retrieval",
-        "prompt": "What year did World War II end and which countries signed the surrender?",
-        "expected": ["1945", "Japan", "Germany"],
-        "difficulty": "medium",
+        "id": "security_incident_response",
+        "category": "security_operations",
+        "prompt": "SECURITY ALERT: Unusual API access patterns detected. 10,000+ failed authentication attempts from 200+ IP addresses in the last hour, targeting /api/admin endpoints. Some attempts succeeded with valid user credentials. Current system: JWT tokens, rate limiting (100 req/min), basic IP blocking. Investigate and respond immediately.",
+        "expected_evaluation": {
+            "type": "semantic_llm",
+            "criteria": {
+                "recognizes_credential_stuffing": {"weight": 0.3, "description": "Identifies distributed credential stuffing attack"},
+                "immediate_response_steps": {"weight": 0.25, "description": "Block suspicious IPs, force password resets, revoke tokens"},
+                "investigation_methodology": {"weight": 0.25, "description": "Log analysis, user notification, breach assessment"},
+                "long_term_hardening": {"weight": 0.2, "description": "MFA, advanced rate limiting, anomaly detection"}
+            },
+            "pass_threshold": 0.8
+        },
+        "expected_tools": ["security_dashboard", "ip_blocker", "token_manager", "log_analyzer"],
+        "expected_steps": [
+            {"action": "contain", "target": "block malicious IPs immediately"},
+            {"action": "investigate", "target": "analyze attack patterns"},
+            {"action": "remediate", "target": "force credential resets"},
+            {"action": "harden", "target": "implement additional controls"}
+        ],
+        "difficulty": "expert",
+        "production_context": "SOC analyst responding to live security incident"
     },
     {
-        "id": "ir_scientific_fact",
-        "category": "information_retrieval",
-        "prompt": "What is the speed of light in a vacuum?",
-        "expected": ["299,792,458", "meters per second", "3×10^8"],
-        "difficulty": "easy",
+        "id": "customer_escalation_complex",
+        "category": "customer_operations",
+        "prompt": "URGENT: Enterprise customer (500+ seats, $2M/year contract) reporting that their integration broke after our API update yesterday. Their CEO is involved. Issues: 1) Authentication tokens failing intermittently, 2) Webhook delivery delays (2+ hours), 3) Data sync showing 'corrupted data' errors. They're threatening to switch providers. Last 3 support tickets were 'resolved' but issues persist. Handle this escalation.",
+        "expected_evaluation": {
+            "type": "semantic_llm",
+            "criteria": {
+                "acknowledges_urgency": {"weight": 0.2, "description": "Recognizes enterprise impact and CEO involvement"},
+                "technical_diagnosis": {"weight": 0.3, "description": "Systematically addresses each technical issue"},
+                "escalation_management": {"weight": 0.25, "description": "Involves engineering, provides executive updates"},
+                "retention_strategy": {"weight": 0.25, "description": "Compensation, prevention plan, relationship repair"}
+            },
+            "pass_threshold": 0.75
+        },
+        "expected_tools": ["api_monitor", "webhook_debugger", "customer_database", "escalation_system"],
+        "expected_steps": [
+            {"action": "acknowledge", "target": "immediate response to customer"},
+            {"action": "diagnose", "target": "technical root cause analysis"},
+            {"action": "coordinate", "target": "cross-team incident response"},
+            {"action": "resolve", "target": "fix and relationship management"}
+        ],
+        "difficulty": "hard",
+        "production_context": "Customer success managing enterprise crisis"
     },
 
     # Coding Tasks (5 tasks)

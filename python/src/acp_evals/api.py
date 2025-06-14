@@ -195,7 +195,7 @@ class BaseEval:
 
             return {
                 "response": response_text.strip(),
-                "run_id": run.id,
+                "run_id": str(run.run_id),
                 "latency_ms": (time.time() - start_time) * 1000,
                 "status": run.status,
             }

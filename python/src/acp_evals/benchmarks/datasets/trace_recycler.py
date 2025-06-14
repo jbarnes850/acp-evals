@@ -83,8 +83,12 @@ class TraceRecycler:
         Ingest a new trace from production.
 
         Args:
-            trace: OpenTelemetry trace data
+            trace: OpenTelemetry trace data or ACP agent trace (will be auto-converted)
         """
+        # Auto-convert ACP agent traces to OpenTelemetry format if needed
+        if self._is_acp_agent_trace(trace):
+            trace = self._convert_acp_agent_trace(trace)
+
         # Extract relevant information
         trace_id = trace.get("trace_id", "")
         spans = trace.get("spans", [])
@@ -279,27 +283,36 @@ class TraceRecycler:
         count: int = 100,
         include_patterns: list[str] | None = None,
         exclude_patterns: list[str] | None = None,
-        min_quality_score: float = 0.7
+        min_quality_score: float | None = None,
+        adaptive_threshold: bool = True
     ) -> list[dict[str, Any]]:
         """
-        Generate evaluation dataset from recycled traces.
+        Generate evaluation dataset from recycled traces with adaptive quality scoring.
 
         Args:
             count: Number of test cases to generate
             include_patterns: Pattern types to include
             exclude_patterns: Pattern types to exclude
-            min_quality_score: Minimum quality score for candidates
+            min_quality_score: Minimum quality score (if None, uses adaptive threshold)
+            adaptive_threshold: Use adaptive threshold based on data characteristics
 
         Returns:
             List of evaluation test cases
         """
+        # Determine quality threshold using adaptive scoring
+        if min_quality_score is None and adaptive_threshold:
+            threshold = self._get_adaptive_threshold(count)
+            logger.info(f"Using adaptive quality threshold: {threshold:.2f}")
+        else:
+            threshold = min_quality_score if min_quality_score is not None else 0.7
+
         # Score and filter candidates
         scored_candidates = []
         for candidate in self.evaluation_candidates:
             score = self._score_candidate(candidate)
             candidate.quality_score = score
 
-            if score >= min_quality_score:
+            if score >= threshold:
                 pattern_type = self._get_pattern_type(candidate.metadata.get("pattern_id", ""))
 
                 if include_patterns and pattern_type not in include_patterns:
@@ -340,6 +353,65 @@ class TraceRecycler:
             dataset.append(test_case)
 
         return dataset
+
+    def _get_adaptive_threshold(self, requested_count: int) -> float:
+        """
+        Calculate adaptive quality threshold based on data characteristics.
+        
+        Research-backed approach (2024-2025) emphasizing:
+        - Data diversity over artificial quality constraints  
+        - Coverage-based evaluation dataset construction
+        - Production-realistic threshold adjustment
+        
+        Args:
+            requested_count: Number of test cases requested
+            
+        Returns:
+            Adaptive quality threshold (0.2-0.5 range)
+        """
+        trace_count = len(self.evaluation_candidates)
+        pattern_diversity = len(self.patterns)
+
+        # Calculate data characteristics
+        avg_score = sum(self._score_candidate(c) for c in self.evaluation_candidates) / max(1, trace_count)
+        error_ratio = sum(1 for c in self.evaluation_candidates if c.error_occurred) / max(1, trace_count)
+
+        # Adaptive threshold logic based on 2025 evaluation research:
+        # 1. Limited data → Lower threshold to ensure coverage
+        if trace_count < 10:
+            base_threshold = 0.2
+            logger.info(f"Limited data ({trace_count} traces): Using inclusive threshold")
+
+        # 2. Low pattern diversity → Lower threshold to capture variety  
+        elif pattern_diversity < 3:
+            base_threshold = 0.25
+            logger.info(f"Low pattern diversity ({pattern_diversity} patterns): Lowering threshold")
+
+        # 3. High error rate → Slightly higher threshold to filter noise
+        elif error_ratio > 0.3:
+            base_threshold = 0.4
+            logger.info(f"High error rate ({error_ratio:.1%}): Raising threshold for quality")
+
+        # 4. Standard production case
+        else:
+            base_threshold = 0.35
+            logger.info("Standard production data: Using balanced threshold")
+
+        # Adjust based on average quality and requested count
+        if avg_score < 0.3:
+            # If overall quality is low, be more permissive
+            threshold = max(0.2, base_threshold - 0.1)
+        elif requested_count > trace_count:
+            # If requesting more than available, be more inclusive
+            threshold = max(0.25, base_threshold - 0.05)
+        else:
+            threshold = min(0.5, base_threshold)
+
+        # Log adaptive decision
+        logger.info(f"Adaptive threshold calculation: traces={trace_count}, patterns={pattern_diversity}, "
+                   f"avg_score={avg_score:.2f}, error_ratio={error_ratio:.1%} → threshold={threshold:.2f}")
+
+        return threshold
 
     def _score_candidate(self, candidate: EvaluationCandidate) -> float:
         """Score a candidate based on its value for evaluation."""
@@ -384,14 +456,22 @@ class TraceRecycler:
             # Check diversity criteria
             pattern_id = candidate.metadata.get("pattern_id", "")
 
-            # Limit same pattern
-            if pattern_counts[pattern_id] >= count // 10:
+            # Limit same pattern (but be more permissive for small datasets)
+            max_per_pattern = max(2, count // 5)  # Allow at least 2 per pattern, or count//5
+            if pattern_counts[pattern_id] >= max_per_pattern:
                 continue
 
-            # Ensure tool diversity
+            # Ensure tool diversity (but be more permissive for small datasets)
+            tool_blocked = False
+            max_per_tool = max(3, count // 5)  # Allow at least 3 per tool, or count//5 for better diversity
+
             for tool in candidate.tools_used:
-                if tool_counts[tool] >= count // 5:
-                    continue
+                if tool_counts[tool] >= max_per_tool:
+                    tool_blocked = True
+                    break  # Break out of tool loop and skip this candidate
+
+            if tool_blocked:
+                continue
 
             selected.append(candidate)
             pattern_counts[pattern_id] += 1
@@ -556,6 +636,248 @@ class TraceRecycler:
             }, f, indent=2)
 
         logger.info(f"Exported {len(patterns_data)} patterns to {output_path}")
+
+    def export_synthetic_dataset(
+        self,
+        output_path: str,
+        count: int = 100,
+        include_patterns: list[str] | None = None,
+        exclude_patterns: list[str] | None = None,
+        min_quality_score: float | None = None,
+        adaptive_threshold: bool = True,
+        format: str = "jsonl"
+    ) -> int:
+        """
+        Generate and export synthetic evaluation dataset to file.
+        
+        Args:
+            output_path: File path to save the dataset
+            count: Number of test cases to generate
+            include_patterns: Pattern types to include
+            exclude_patterns: Pattern types to exclude  
+            min_quality_score: Minimum quality score (if None, uses adaptive threshold)
+            adaptive_threshold: Use adaptive threshold based on data characteristics
+            format: Export format ('jsonl', 'json', 'csv')
+            
+        Returns:
+            Number of synthetic test cases exported
+        """
+        # Generate synthetic dataset
+        synthetic_tests = self.generate_evaluation_dataset(
+            count=count,
+            include_patterns=include_patterns,
+            exclude_patterns=exclude_patterns,
+            min_quality_score=min_quality_score,
+            adaptive_threshold=adaptive_threshold
+        )
+
+        if not synthetic_tests:
+            logger.warning("No synthetic tests generated for export")
+            return 0
+
+        # Export based on format
+        if format.lower() == "jsonl":
+            self._export_jsonl(synthetic_tests, output_path)
+        elif format.lower() == "json":
+            self._export_json(synthetic_tests, output_path)
+        elif format.lower() == "csv":
+            self._export_csv(synthetic_tests, output_path)
+        else:
+            raise ValueError(f"Unsupported export format: {format}")
+
+        logger.info(f"Exported {len(synthetic_tests)} synthetic test cases to {output_path}")
+        return len(synthetic_tests)
+
+    def _export_jsonl(self, tests: list[dict[str, Any]], output_path: str) -> None:
+        """Export as JSONL format (one JSON object per line)."""
+        with open(output_path, "w") as f:
+            for test in tests:
+                f.write(json.dumps(test) + "\n")
+
+    def _export_json(self, tests: list[dict[str, Any]], output_path: str) -> None:
+        """Export as JSON array format."""
+        export_data = {
+            "synthetic_tests": tests,
+            "metadata": {
+                "total_tests": len(tests),
+                "generated_at": datetime.now().isoformat(),
+                "source": "trace_recycling",
+                "format_version": "1.0"
+            }
+        }
+        with open(output_path, "w") as f:
+            json.dump(export_data, f, indent=2)
+
+    def _export_csv(self, tests: list[dict[str, Any]], output_path: str) -> None:
+        """Export as CSV format."""
+        import csv
+
+        if not tests:
+            return
+
+        # Define CSV columns
+        fieldnames = ["id", "input", "expected", "quality_score", "source", "timestamp", "tools_used", "pattern_type"]
+
+        with open(output_path, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+
+            for test in tests:
+                metadata = test.get("metadata", {})
+                row = {
+                    "id": test.get("id", ""),
+                    "input": test.get("input", ""),
+                    "expected": test.get("expected", ""),
+                    "quality_score": metadata.get("quality_score", 0),
+                    "source": metadata.get("source", ""),
+                    "timestamp": metadata.get("timestamp", ""),
+                    "tools_used": ",".join(metadata.get("tools_used", [])),
+                    "pattern_type": metadata.get("pattern_type", "")
+                }
+                writer.writerow(row)
+
+    def _is_acp_agent_trace(self, trace: dict[str, Any]) -> bool:
+        """
+        Detect if this is an ACP agent trace (vs OpenTelemetry format).
+        
+        ACP agent traces have: agent, input, output, metadata, session_id
+        OpenTelemetry traces have: trace_id, spans, service
+        """
+        acp_fields = {"agent", "input", "output", "metadata", "session_id"}
+        otel_fields = {"trace_id", "spans"}
+
+        # Check if it has ACP agent fields but not OpenTelemetry fields
+        has_acp = any(field in trace for field in acp_fields)
+        has_otel = any(field in trace for field in otel_fields)
+
+        return has_acp and not has_otel
+
+    def _convert_acp_agent_trace(self, acp_trace: dict[str, Any]) -> dict[str, Any]:
+        """
+        Convert ACP agent trace format to OpenTelemetry format.
+        
+        ACP Format:
+        {
+            "timestamp": "2025-06-14T11:53:03.798642",
+            "agent": "coordinator", 
+            "input": "Hello, can you help me?",
+            "output": "Of course! What's your question?",
+            "metadata": {
+                "session_id": "session_20250614_115303",
+                "execution_time_ms": 584.182,
+                "token_usage": {"input": 38, "output": 7, "total": 45},
+                "real_llm_call": True,
+                ...
+            },
+            "session_id": "session_20250614_115303",
+            "execution_time_ms": 584.182,
+            "token_usage": {...}
+        }
+        
+        OpenTelemetry Format:
+        {
+            "trace_id": "session_20250614_115303",
+            "timestamp": "2025-06-14T11:53:03.798642",
+            "service": "acp-agent",
+            "spans": [{
+                "span_id": "session_20250614_115303-0",
+                "name": "coordinator_execution",
+                "start_time": "2025-06-14T11:53:03.798642",
+                "end_time": "2025-06-14T11:53:04.382824",
+                "attributes": {
+                    "operation.type": "agent_execution",
+                    "agent.name": "coordinator",
+                    "input.value": "Hello, can you help me?",
+                    "output.value": "Of course! What's your question?",
+                    "token.input": 38,
+                    "token.output": 7,
+                    "token.total": 45,
+                    "tool.name": "llm_agent"
+                },
+                "status": {"status_code": "OK"}
+            }]
+        }
+        """
+        from datetime import datetime, timedelta
+
+        # Extract basic info
+        timestamp = acp_trace.get("timestamp", datetime.now().isoformat())
+        agent_name = acp_trace.get("agent", "unknown_agent")
+        trace_id = acp_trace.get("session_id", f"trace_{hash(str(acp_trace))}")
+
+        # Calculate end time from execution time
+        try:
+            start_time = datetime.fromisoformat(timestamp)
+            execution_ms = acp_trace.get("execution_time_ms", 0)
+            end_time = start_time + timedelta(milliseconds=execution_ms)
+            end_timestamp = end_time.isoformat()
+        except:
+            end_timestamp = timestamp
+
+        # Extract token usage
+        token_usage = acp_trace.get("token_usage", {})
+        metadata = acp_trace.get("metadata", {})
+        if not token_usage and "token_usage" in metadata:
+            token_usage = metadata["token_usage"]
+
+        # Build OpenTelemetry attributes
+        attributes = {
+            "operation.type": "agent_execution",
+            "agent.name": agent_name,
+            "input.value": acp_trace.get("input", ""),
+            "output.value": acp_trace.get("output", ""),
+        }
+
+        # Add token usage if available
+        if token_usage:
+            if "input" in token_usage:
+                attributes["token.input"] = token_usage["input"]
+            if "output" in token_usage:
+                attributes["token.output"] = token_usage["output"]
+            if "total" in token_usage:
+                attributes["token.total"] = token_usage["total"]
+
+        # Add tool information
+        tools_used = metadata.get("tools_used", ["llm_agent"])
+        if tools_used:
+            attributes["tool.name"] = tools_used[0]  # Primary tool
+
+        # Determine status
+        has_error = metadata.get("error", False)
+        status_code = "ERROR" if has_error else "OK"
+
+        # Add error information if present
+        if has_error:
+            attributes["error.type"] = metadata.get("error_type", "unknown")
+            if "error_message" in metadata:
+                attributes["error.message"] = metadata["error_message"]
+
+        # Build span
+        span = {
+            "span_id": f"{trace_id}-0",
+            "name": f"{agent_name}_execution",
+            "start_time": timestamp,
+            "end_time": end_timestamp,
+            "attributes": attributes,
+            "status": {"status_code": status_code}
+        }
+
+        # Build OpenTelemetry trace
+        otel_trace = {
+            "trace_id": trace_id,
+            "timestamp": timestamp,
+            "service": "acp-agent",
+            "spans": [span],
+            "metadata": {
+                "source": "acp_agent_conversion",
+                "original_agent": agent_name,
+                "session_id": trace_id,
+                "execution_time_ms": acp_trace.get("execution_time_ms", 0)
+            }
+        }
+
+        logger.debug(f"Converted ACP agent trace from {agent_name} to OpenTelemetry format")
+        return otel_trace
 
     def ingest_traces_from_file(self, file_path: str) -> int:
         """

@@ -178,7 +178,7 @@ class ContentSafetyEvaluator(Evaluator):
             thresholds: Custom thresholds for each safety category
         """
         # Import here to avoid circular imports
-        from ..simple import SafetyEval
+        from ..api import SafetyEval
         from .extended_evaluators import ProtectedMaterialEvaluator
 
         self.safety_eval = SafetyEval(agent=lambda x: x)  # Dummy agent

@@ -489,7 +489,7 @@ def init(template, name, output, interactive):
 @cli.command()
 def list_rubrics():
     """List available evaluation rubrics."""
-    from acp_evals.simple import AccuracyEval
+    from acp_evals.api import AccuracyEval
 
     console.print("[bold cyan]Available Evaluation Rubrics[/bold cyan]\n")
 

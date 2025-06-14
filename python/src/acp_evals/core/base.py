@@ -98,6 +98,25 @@ class MetricResult:
         return attributes
 
 
+@dataclass
+class EvaluatorResult:
+    """Result from an individual evaluator run."""
+    
+    score: float
+    passed: bool
+    details: dict[str, Any]
+    metadata: dict[str, Any] = field(default_factory=dict)
+    
+    def to_dict(self) -> dict[str, Any]:
+        """Convert to dictionary for serialization."""
+        return {
+            "score": self.score,
+            "passed": self.passed,
+            "details": self.details,
+            "metadata": self.metadata
+        }
+
+
 class Metric(ABC):
     """Abstract base class for all metrics."""
 
