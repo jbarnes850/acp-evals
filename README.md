@@ -77,13 +77,13 @@ graph TB
     B --> E[Provider Layer]
     B --> F[Infrastructure]
     
-    C --> C1[evaluate() - 3 lines]
+    C --> C1[evaluate function]
     C --> C2[AccuracyEval]
     C --> C3[PerformanceEval]
     
     D --> D1[Multi-Agent Patterns]
     D --> D2[Built-in Evaluators]
-    D --> D3[Benchmarks & Datasets]
+    D --> D3[Benchmarks and Datasets]
     
     D1 --> D1a[LinearPattern]
     D1 --> D1b[SupervisorPattern] 
@@ -106,7 +106,7 @@ graph TB
     F --> F2[OpenTelemetry Export]
     F --> F3[CLI Tools]
     
-    B --> G[Results & Analytics]
+    B --> G[Results and Analytics]
     G --> G1[Pass/Fail Metrics]
     G --> G2[Token Cost Analysis]
     G --> G3[Regression Detection]
