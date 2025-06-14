@@ -1,0 +1,7 @@
+# Requirements for running ACP Evals examples
+
+# Install the main package
+-e ../../python
+
+# Additional dependencies for examples
+rich>=13.0.0
