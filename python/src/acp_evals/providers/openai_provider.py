@@ -1,16 +1,33 @@
 """OpenAI provider implementation."""
 
 import os
-from typing import Dict, Optional
+from typing import Dict, Optional, List
+import logging
 
 from .base import LLMProvider, LLMResponse
+from ..exceptions import (
+    ProviderNotConfiguredError, 
+    ProviderConnectionError,
+    ProviderRateLimitError,
+    ProviderAPIError,
+    format_provider_setup_help
+)
+
+logger = logging.getLogger(__name__)
 
 
 class OpenAIProvider(LLMProvider):
     """OpenAI API provider."""
     
-    # Pricing per 1K tokens (as of 2024)
+    # Pricing per 1K tokens (as of June 2025)
     PRICING = {
+        # June 2025 Models
+        "gpt-4.1": {"input": 0.01, "output": 0.03},  # Latest GPT-4.1 with improved coding
+        "gpt-4.1-nano": {"input": 0.005, "output": 0.015},  # Nano variant
+        "o3": {"input": 0.015, "output": 0.075},  # Reasoning model (200K context)
+        "o3-mini": {"input": 0.003, "output": 0.015},  # Fast reasoning (200K context)
+        "o4-mini": {"input": 0.002, "output": 0.010},  # Cost-efficient reasoning
+        # Legacy models (being deprecated July 2025)
         "gpt-4": {"input": 0.03, "output": 0.06},
         "gpt-4-turbo": {"input": 0.01, "output": 0.03},
         "gpt-3.5-turbo": {"input": 0.0005, "output": 0.0015},
@@ -18,7 +35,7 @@ class OpenAIProvider(LLMProvider):
     
     def __init__(
         self,
-        model: str = "gpt-4",
+        model: str = "gpt-4.1",
         api_key: Optional[str] = None,
         api_base: Optional[str] = None,
         **kwargs
@@ -27,29 +44,19 @@ class OpenAIProvider(LLMProvider):
         Initialize OpenAI provider.
         
         Args:
-            model: Model to use (default: gpt-4)
+            model: Model to use (default: gpt-4.1)
             api_key: API key (uses OPENAI_API_KEY env var if not provided)
             api_base: API base URL (uses OPENAI_API_BASE env var if not provided)
         """
+        # Get API key from parameter or environment
         api_key = api_key or os.getenv("OPENAI_API_KEY")
-        if not api_key:
-            raise ValueError(
-                "OpenAI API key not provided. Set OPENAI_API_KEY environment variable "
-                "or pass api_key parameter."
-            )
         
+        # Initialize parent class (will call validate_config)
         super().__init__(model, api_key, **kwargs)
         self.api_base = api_base or os.getenv("OPENAI_API_BASE", "https://api.openai.com/v1")
         
-        # Import here to avoid dependency if not using OpenAI
-        try:
-            import openai
-            self.openai = openai
-        except ImportError:
-            raise ImportError(
-                "OpenAI provider requires 'openai' package. "
-                "Install with: pip install openai"
-            )
+        # Import OpenAI library
+        self._import_openai()
     
     @property
     def name(self) -> str:
@@ -101,9 +108,25 @@ class OpenAIProvider(LLMProvider):
                 raw_response=response
             )
             
+        except self.openai.RateLimitError as e:
+            logger.warning(f"OpenAI rate limit hit: {str(e)}")
+            # Extract retry after if available
+            retry_after = getattr(e, 'retry_after', None)
+            raise ProviderRateLimitError("openai", retry_after) from e
+            
+        except self.openai.APIError as e:
+            logger.error(f"OpenAI API error: {str(e)}")
+            status_code = getattr(e, 'status_code', None)
+            raise ProviderAPIError("openai", status_code, str(e)) from e
+            
+        except self.openai.APIConnectionError as e:
+            logger.error(f"OpenAI connection error: {str(e)}")
+            raise ProviderConnectionError("openai", e) from e
+            
         except Exception as e:
+            logger.error(f"Unexpected OpenAI error: {str(e)}")
             # Re-raise with more context
-            raise RuntimeError(f"OpenAI API error: {str(e)}") from e
+            raise ProviderAPIError("openai", error_message=str(e)) from e
     
     def calculate_cost(self, usage: Dict[str, int]) -> float:
         """Calculate cost based on OpenAI pricing."""
@@ -121,3 +144,42 @@ class OpenAIProvider(LLMProvider):
         output_cost = (usage.get("completion_tokens", 0) / 1000) * pricing["output"]
         
         return input_cost + output_cost
+    
+    def validate_config(self) -> None:
+        """Validate OpenAI configuration."""
+        if not self.api_key:
+            missing = []
+            if not os.getenv("OPENAI_API_KEY"):
+                missing.append("OPENAI_API_KEY")
+            
+            raise ProviderNotConfiguredError(
+                "openai", 
+                missing_config=missing
+            )
+            
+        # Validate model name
+        valid_models = ["gpt-4.1", "gpt-4.1-nano", "o3", "o3-mini", "o4-mini", "gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"]
+        if not any(model in self.model for model in valid_models):
+            logger.warning(
+                f"Model '{self.model}' may not be valid. Expected one of: {', '.join(valid_models)}"
+            )
+    
+    def _import_openai(self) -> None:
+        """Import OpenAI library with helpful error message."""
+        try:
+            import openai
+            self.openai = openai
+        except ImportError:
+            raise ImportError(
+                "OpenAI provider requires 'openai' package.\n"
+                "Install with: pip install 'acp-evals[openai]' or pip install openai"
+            )
+    
+    @classmethod
+    def get_required_env_vars(cls) -> List[str]:
+        """Get required environment variables."""
+        return ["OPENAI_API_KEY"]
+    
+    def get_setup_instructions(self) -> str:
+        """Get setup instructions for this provider."""
+        return format_provider_setup_help("openai")

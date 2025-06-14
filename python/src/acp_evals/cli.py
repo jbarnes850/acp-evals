@@ -4,6 +4,7 @@ CLI tool for ACP evaluations.
 
 Commands:
     acp-evals init [template] - Generate starter evaluation template
+    acp-evals check - Check provider configuration
 """
 
 import click
@@ -366,6 +367,11 @@ def cli():
     pass
 
 
+# Import check command
+from .cli_check import check_providers
+cli.add_command(check_providers, name='check')
+
+
 @cli.command()
 @click.argument('template', type=click.Choice(['simple', 'comprehensive', 'research', 'tool']), default='simple')
 @click.option('--name', '-n', help='Name for your agent/evaluation')
@@ -563,5 +569,10 @@ def report(results_file, format):
         console.print(Markdown(md_content))
 
 
-if __name__ == '__main__':
+def main():
+    """Main entry point for CLI."""
     cli()
+
+
+if __name__ == '__main__':
+    main()

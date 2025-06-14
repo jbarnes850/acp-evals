@@ -2,10 +2,18 @@
 
 import os
 import json
-from typing import Dict, Optional
+from typing import Dict, Optional, List
+import logging
 import httpx
 
 from .base import LLMProvider, LLMResponse
+from ..exceptions import (
+    ProviderConnectionError,
+    ProviderAPIError,
+    format_provider_setup_help
+)
+
+logger = logging.getLogger(__name__)
 
 
 class OllamaProvider(LLMProvider):
@@ -13,7 +21,7 @@ class OllamaProvider(LLMProvider):
     
     def __init__(
         self,
-        model: str = "llama2",
+        model: str = "qwen3:30b-a3b",
         base_url: Optional[str] = None,
         **kwargs
     ):
@@ -21,7 +29,7 @@ class OllamaProvider(LLMProvider):
         Initialize Ollama provider.
         
         Args:
-            model: Model to use (default: llama2)
+            model: Model to use (default: qwen3:30b-a3b)
             base_url: Ollama API URL (uses OLLAMA_BASE_URL env var if not provided)
         """
         super().__init__(model, api_key=None, **kwargs)
@@ -86,10 +94,48 @@ class OllamaProvider(LLMProvider):
                     raw_response=data
                 )
                 
-        except httpx.ConnectError:
-            raise RuntimeError(
-                f"Cannot connect to Ollama at {self.base_url}. "
-                "Make sure Ollama is running (ollama serve)."
-            )
+        except httpx.ConnectError as e:
+            logger.error(f"Cannot connect to Ollama at {self.base_url}")
+            raise ProviderConnectionError(
+                "ollama",
+                Exception(f"Cannot connect to {self.base_url}. Make sure Ollama is running (ollama serve).")
+            ) from e
+            
+        except httpx.TimeoutException as e:
+            logger.error(f"Ollama request timed out")
+            raise ProviderAPIError(
+                "ollama",
+                error_message="Request timed out. The model may be loading or the response is taking too long."
+            ) from e
+            
         except Exception as e:
-            raise RuntimeError(f"Ollama API error: {str(e)}") from e
+            logger.error(f"Unexpected Ollama error: {str(e)}")
+            raise ProviderAPIError("ollama", error_message=str(e)) from e
+    
+    def validate_config(self) -> None:
+        """Validate Ollama configuration."""
+        # Ollama doesn't require API keys, just check URL format
+        if not self.base_url:
+            logger.warning("No Ollama base URL configured, using default: http://localhost:11434")
+    
+    @classmethod
+    def get_required_env_vars(cls) -> List[str]:
+        """Get required environment variables."""
+        # Ollama doesn't require any env vars, but can use OLLAMA_BASE_URL
+        return []
+    
+    def get_setup_instructions(self) -> str:
+        """Get setup instructions for this provider."""
+        return format_provider_setup_help("ollama")
+    
+    async def check_connection(self) -> bool:
+        """Check if Ollama server is reachable."""
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    f"{self.base_url}/api/tags",
+                    timeout=5.0
+                )
+                return response.status_code == 200
+        except:
+            return False

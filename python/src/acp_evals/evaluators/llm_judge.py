@@ -8,9 +8,19 @@ Supports both real LLM providers and mock mode for testing.
 import json
 import re
 import os
+import logging
 from typing import Any, Dict, Optional
 
 from acp_evals.evaluators.base import Evaluator, EvaluationResult
+from acp_evals.validation import InputValidator
+from acp_evals.exceptions import (
+    ProviderError,
+    ConfigurationError,
+    EvaluationTimeoutError,
+    InvalidEvaluationInputError
+)
+
+logger = logging.getLogger(__name__)
 
 
 class LLMJudge(Evaluator):
@@ -241,7 +251,22 @@ Important: Return ONLY the JSON object, no other text."""
             
         Returns:
             EvaluationResult with score and breakdown
+            
+        Raises:
+            InvalidEvaluationInputError: If inputs are invalid
+            ProviderError: If LLM provider fails
+            EvaluationTimeoutError: If evaluation times out
         """
+        # Validate inputs
+        try:
+            InputValidator.validate_test_input(task)
+            InputValidator.validate_test_input(response)
+            if reference:
+                InputValidator.validate_expected_output(reference)
+        except InvalidEvaluationInputError as e:
+            logger.error(f"Invalid evaluation input: {e}")
+            raise
+        
         # Use mock evaluation if in mock mode
         if self.mock_mode:
             return self._mock_evaluate(task, response, reference)
@@ -296,11 +321,32 @@ Important: Return ONLY the JSON object, no other text."""
                     }
                 )
                 
+            except ProviderError as e:
+                # Re-raise provider errors with context
+                logger.error(f"Provider error during evaluation: {e}")
+                raise
+                
+            except json.JSONDecodeError as e:
+                # Log error and provide helpful message
+                logger.error(f"Failed to parse LLM response as JSON: {e}")
+                logger.debug(f"Raw response: {llm_response.content[:500]}...")
+                
+                # Try to provide a meaningful error
+                raise ConfigurationError(
+                    f"LLM did not return valid JSON evaluation. This may indicate the model "
+                    f"is not suitable for evaluation tasks. Try using a different model.",
+                    suggestion=f"Consider using GPT-4 or Claude-3 for better results"
+                )
+                
             except Exception as e:
-                # Log error and fall back to mock
-                print(f"Error during LLM evaluation: {str(e)}")
-                print("Falling back to mock evaluation")
-                return self._mock_evaluate(task, response, reference)
+                # Log unexpected errors
+                logger.error(f"Unexpected error during LLM evaluation: {str(e)}", exc_info=True)
+                
+                # Provide context about the error
+                raise ConfigurationError(
+                    f"Evaluation failed: {str(e)}",
+                    suggestion="Check logs for details. You may want to try mock mode for testing."
+                )
                 
         else:
             # Legacy ACP mode

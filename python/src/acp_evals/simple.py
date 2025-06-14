@@ -24,6 +24,9 @@ from .base import EvaluatorResult
 from .evaluators.llm_judge import LLMJudge
 from .metrics.token_usage import TokenUsageMetric
 from .metrics.handoff_quality import HandoffQualityMetric
+from .validation import InputValidator
+from .exceptions import InvalidEvaluationInputError, AgentConnectionError, AgentTimeoutError
+from .logging_config import setup_logging, get_cost_tracker
 
 
 console = Console()
@@ -135,6 +138,9 @@ class BaseEval:
             agent: Agent URL, callable function, or agent instance
             name: Name of the evaluation
         """
+        # Validate agent input
+        InputValidator.validate_agent_input(agent)
+        
         self.agent = agent
         self.name = name
         self._client = None
@@ -172,7 +178,13 @@ class BaseEval:
                 run = await client.get_run(run.id)
             
             if run.status != "completed":
-                raise RuntimeError(f"Agent run failed with status: {run.status}")
+                if run.status == "timeout":
+                    raise AgentTimeoutError(self.agent, timeout_seconds=30)
+                else:
+                    raise AgentConnectionError(
+                        self.agent,
+                        Exception(f"Agent run failed with status: {run.status}")
+                    )
             
             # Extract response text
             response_text = ""

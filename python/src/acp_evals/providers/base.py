@@ -2,7 +2,8 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
+import os
 
 
 @dataclass
@@ -30,6 +31,9 @@ class LLMProvider(ABC):
         self.model = model
         self.api_key = api_key
         self.config = kwargs
+        
+        # Validate configuration on initialization
+        self.validate_config()
     
     @property
     @abstractmethod
@@ -66,3 +70,44 @@ class LLMProvider(ABC):
         Override in subclasses for provider-specific pricing.
         """
         return 0.0
+    
+    def validate_config(self) -> None:
+        """
+        Validate provider configuration.
+        
+        Override in subclasses to add provider-specific validation.
+        """
+        pass
+    
+    @classmethod
+    @abstractmethod
+    def get_required_env_vars(cls) -> List[str]:
+        """
+        Get list of required environment variables.
+        
+        Returns:
+            List of environment variable names
+        """
+        pass
+    
+    @classmethod
+    def check_env_vars(cls) -> Dict[str, bool]:
+        """
+        Check if required environment variables are set.
+        
+        Returns:
+            Dict mapping env var names to whether they're set
+        """
+        required = cls.get_required_env_vars()
+        return {var: bool(os.getenv(var)) for var in required}
+    
+    @classmethod
+    def is_configured(cls) -> bool:
+        """
+        Check if provider is properly configured.
+        
+        Returns:
+            True if all required env vars are set
+        """
+        check = cls.check_env_vars()
+        return all(check.values())

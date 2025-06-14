@@ -166,3 +166,10 @@ logs/
 # Local configuration
 config.local.yaml
 .acp-evals.yaml
+
+# Internal documentation
+internal-docs/
+
+# Example data files (but keep the ones in examples/data)
+*.jsonl
+!python/examples/data/*.jsonl
