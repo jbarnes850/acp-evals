@@ -136,6 +136,30 @@ cd acp-evals/python
 pip install -e .
 ```
 
+## 🧪 Testing & Validation
+
+### Running Tests
+
+```bash
+cd python
+pip install -r requirements-test.txt
+./run_tests.py
+```
+
+### Validate Implementation
+
+```bash
+cd python
+./validate.py
+```
+
+This will verify:
+- All required modules are present
+- Base classes properly implemented
+- Metrics follow the correct interface
+- Benchmarks include required features
+- Research insights are incorporated
+
 ## 📚 Documentation
 
 - [Getting Started](docs/getting-started.md)

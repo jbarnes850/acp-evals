@@ -6,9 +6,10 @@ across different dimensions.
 """
 
 from acp_evals.benchmarks.context_scaling import ContextScalingBenchmark
-from acp_evals.benchmarks.handoff_quality import HandoffQualityBenchmark
+from acp_evals.benchmarks.multi_agent import HandoffQualityBenchmark, PatternComparisonBenchmark
 
 __all__ = [
     "ContextScalingBenchmark",
     "HandoffQualityBenchmark",
+    "PatternComparisonBenchmark",
 ]

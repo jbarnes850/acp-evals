@@ -6,7 +6,8 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass
 
-from acp_sdk import Client, Message, MessagePart
+from acp_sdk.client import Client
+from acp_sdk import Message, MessagePart
 
 
 @dataclass

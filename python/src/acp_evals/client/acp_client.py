@@ -8,9 +8,9 @@ during agent evaluation.
 import asyncio
 from typing import Any, Dict, List, Optional, Union
 
-from acp_sdk import Client
+from acp_sdk.client import Client
 from acp_sdk.models import (
-    AgentManifest,
+    Agent as AgentManifest,
     Event,
     Message,
     MessagePart,

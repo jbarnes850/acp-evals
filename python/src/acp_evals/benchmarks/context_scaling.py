@@ -30,6 +30,8 @@ class ContextScalingBenchmark(Benchmark):
         distractor_levels: Optional[List[int]] = None,
         task_categories: Optional[List[str]] = None,
         randomize_distractors: bool = True,
+        distractor_domains: Optional[List[str]] = None,
+        tasks: Optional[List[BenchmarkTask]] = None,
     ):
         """
         Initialize context scaling benchmark.
@@ -38,11 +40,16 @@ class ContextScalingBenchmark(Benchmark):
             distractor_levels: Number of distractors to test (default: [0, 1, 3, 5, 10])
             task_categories: Categories to include (default: all)
             randomize_distractors: Whether to randomize distractor selection
+            distractor_domains: Domains for distractor generation
+            tasks: Custom tasks to use
         """
         self.distractor_levels = distractor_levels or [0, 1, 3, 5, 10]
+        self.context_levels = self.distractor_levels  # Alias for compatibility
         self.task_categories = task_categories
         self.randomize_distractors = randomize_distractors
-        self._tasks = self._load_tasks()
+        self.distractor_domains = distractor_domains or ["general", "technical", "business"]
+        self.tasks = tasks or self._load_tasks()
+        self._tasks = self.tasks  # Internal reference
     
     @property
     def name(self) -> str:
@@ -190,6 +197,23 @@ Task: {task.prompt}"""
             score = 1.0 if str(task.expected_output).lower() in response_lower else 0.0
         
         return score
+    
+    def _generate_distractors(self, num_distractors: int) -> List[str]:
+        """Generate distractor content based on domains."""
+        distractors = []
+        
+        for _ in range(num_distractors):
+            domain = random.choice(self.distractor_domains)
+            
+            if domain in DISTRACTOR_CONTEXTS:
+                distractor = random.choice(DISTRACTOR_CONTEXTS[domain])
+            else:
+                # Fallback to generic distractors
+                distractor = f"In the field of {domain}, recent developments have shown significant progress."
+            
+            distractors.append(distractor)
+        
+        return distractors
     
     def _calculate_degradation(self, results_by_level: Dict[int, List[Dict]]) -> Dict[str, float]:
         """Calculate performance degradation metrics."""

@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 
-from acp_sdk.models import Event, Run
+from acp_sdk import Event, Run
 from pydantic import BaseModel
 
 
@@ -305,3 +305,7 @@ class EvaluationRun(BaseModel):
             ])
         
         return "\n".join(lines)
+
+
+# Import alias for compatibility
+from acp_evals.evaluators.base import EvaluationResult as EvaluatorResult
