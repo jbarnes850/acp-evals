@@ -5,15 +5,23 @@ This directory contains example scripts demonstrating how to use the ACP Evals f
 ## Examples Overview
 
 ### Getting Started
-- **00_minimal_example.py** - Absolute minimal example (3 lines of code!)
-- **01_quickstart_accuracy.py** - Basic accuracy evaluation with beautiful output
+- **01_minimal_example.py** - Absolute minimal example (3 lines of code!)
+- **02_basic_accuracy_evaluation.py** - Basic accuracy evaluation with beautiful output
 
-### Real-World Use Cases
-- **02_research_agent.py** - Evaluating a research assistant with comprehensive metrics
-- **03_tool_usage.py** - Testing tool-using agents (calculator, search, etc.)
-- **04_multi_agent.py** - Evaluating multi-agent collaboration and handoffs
-- **05_quality_evaluation.py** - Advanced quality metrics (groundedness, completeness)
-- **06_simulator.py** - Generating synthetic test data for evaluation
+### Core Evaluation Types  
+- **03_research_agent_evaluation.py** - Evaluating research assistants with comprehensive metrics
+- **04_tool_using_agents.py** - Testing agents that use external tools (calculator, search, etc.)
+- **05_multi_agent_patterns.py** - Evaluating multi-agent collaboration and handoffs
+- **06_comprehensive_evaluation.py** - Advanced quality metrics (groundedness, completeness)
+
+### Advanced Features
+- **07_adversarial_testing.py** - Generating synthetic test data for robust evaluation
+- **08_ci_cd_integration.py** - Automated evaluation in CI/CD pipelines
+
+### Production Integration
+- **09_real_acp_agents.py** - Testing against real ACP agents from BeeAI ecosystem
+- **10_acp_agent_discovery.py** - Discovering and testing available ACP agents
+- **11_trace_recycling_example.py** - Converting production traces to evaluation datasets
 
 ## Running Examples
 
@@ -35,26 +43,26 @@ cp ../.env.example ../.env
 
 ```bash
 # Minimal example
-python 00_minimal_example.py
+python 01_minimal_example.py
 
 # Basic accuracy evaluation
-python 01_quickstart_accuracy.py
+python 02_basic_accuracy_evaluation.py
 
 # Research agent evaluation
-python 02_research_agent.py
-
-# With custom agent URL
-python 01_quickstart_accuracy.py --agent-url http://localhost:8000/agents/my-agent
+python 03_research_agent_evaluation.py
 
 # Test against real ACP agents
-python 08_real_acp_agents.py
+python 09_real_acp_agents.py
+
+# Advanced: Trace recycling
+python 11_trace_recycling_example.py
 ```
 
 ### Batch Running
 
 ```bash
-# Run all examples in order
-for example in 0*.py; do
+# Run all examples in order  
+for example in 0*.py 1*.py; do
     echo "Running $example..."
     python "$example"
 done
@@ -95,14 +103,14 @@ eval = AccuracyEval(agent=my_agent_function)
 
 ### Pattern 1: Quick Evaluation
 ```python
-# From 00_minimal_example.py
+# From 01_minimal_example.py
 from acp_evals import evaluate, AccuracyEval
 result = evaluate(AccuracyEval(agent=agent), "What is 2+2?", "4")
 ```
 
 ### Pattern 2: Detailed Evaluation
 ```python
-# From 01_quickstart_accuracy.py
+# From 02_basic_accuracy_evaluation.py
 eval = AccuracyEval(agent=agent, rubric="factual")
 result = await eval.run(
     input="Complex question",
@@ -113,7 +121,7 @@ result = await eval.run(
 
 ### Pattern 3: Batch Evaluation
 ```python
-# From 02_research_agent.py
+# From 03_research_agent_evaluation.py
 results = await eval.run_batch(
     test_data="test_cases.jsonl",
     parallel=True,
@@ -123,7 +131,7 @@ results = await eval.run_batch(
 
 ### Pattern 4: Multi-Agent Coordination
 ```python
-# From 04_multi_agent.py
+# From 05_multi_agent_patterns.py
 handoff_eval = HandoffEval(agents={"researcher": url1, "writer": url2})
 result = await handoff_eval.run(
     task="Create report",
@@ -166,7 +174,7 @@ eval = AccuracyEval(
 
 ## Tips
 
-1. **Start Simple**: Begin with `00_minimal_example.py`
+1. **Start Simple**: Begin with `01_minimal_example.py`
 2. **Use Real Agents**: Test with actual ACP agents or callable functions
 3. **Monitor Costs**: Examples show token usage and costs
 4. **Check Results**: Look for `results/` directory for detailed output
