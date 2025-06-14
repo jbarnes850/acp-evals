@@ -33,6 +33,7 @@ dependencies = [
     "opentelemetry-api>=1.20.0",
     "opentelemetry-sdk>=1.20.0",
     "opentelemetry-exporter-otlp-proto-http>=1.20.0",
+    "click>=8.0.0",
 ]
 
 [project.optional-dependencies]
@@ -51,7 +52,7 @@ Repository = "https://github.com/i-am-bee/acp-evals"
 Issues = "https://github.com/i-am-bee/acp-evals/issues"
 
 [project.scripts]
-acp-evals = "acp_evals.cli:main"
+acp-evals = "acp_evals.cli:cli"
 
 [build-system]
 requires = ["hatchling"]

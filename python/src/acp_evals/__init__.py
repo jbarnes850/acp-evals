@@ -18,6 +18,18 @@ from acp_evals.simple import (
     evaluate,
 )
 
+# Simulator for synthetic test data
+from acp_evals.simulator import Simulator, simulate
+
+# Quality evaluators
+from acp_evals.quality import (
+    GroundednessEval,
+    CompletenessEval,
+    TaskAdherenceEval,
+    ToolAccuracyEval,
+    QualityEval,
+)
+
 # Core framework classes
 from acp_evals.base import (
     BenchmarkResult,
@@ -35,6 +47,15 @@ __all__ = [
     "EvalResult",
     "BatchResult",
     "evaluate",
+    # Simulator
+    "Simulator",
+    "simulate",
+    # Quality evaluators
+    "GroundednessEval",
+    "CompletenessEval", 
+    "TaskAdherenceEval",
+    "ToolAccuracyEval",
+    "QualityEval",
     # Core classes
     "MetricResult",
     "TokenUsage",

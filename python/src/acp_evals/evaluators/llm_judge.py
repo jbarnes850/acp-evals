@@ -49,6 +49,7 @@ class LLMJudge(Evaluator):
         judge_agent: str = "default",
         rubric: Optional[Dict[str, Dict[str, Any]]] = None,
         pass_threshold: float = 0.7,
+        mock_mode: bool = False,
     ):
         """
         Initialize LLM Judge.
@@ -63,7 +64,9 @@ class LLMJudge(Evaluator):
         self.judge_agent = judge_agent
         self.rubric = rubric or self.DEFAULT_RUBRIC
         self.pass_threshold = pass_threshold
-        self.client = Client(base_url=judge_url)
+        self.mock_mode = mock_mode
+        if not mock_mode:
+            self.client = Client(base_url=judge_url)
     
     @property
     def name(self) -> str:
@@ -111,6 +114,35 @@ Important: Return ONLY the JSON object, no other text."""
         
         return prompt
     
+    def _mock_evaluate(self, task: str, response: str, reference: Optional[str] = None) -> EvaluationResult:
+        """Simple mock evaluation for testing."""
+        scores = {}
+        for criterion, details in self.rubric.items():
+            # Simple scoring logic for testing
+            if reference and response:
+                if str(reference).lower() in str(response).lower():
+                    scores[criterion] = 1.0
+                elif response.lower() != "i don't know":
+                    scores[criterion] = 0.5
+                else:
+                    scores[criterion] = 0.2
+            else:
+                scores[criterion] = 0.5
+        
+        # Calculate weighted score
+        total_weight = sum(d["weight"] for d in self.rubric.values())
+        overall_score = sum(
+            scores[c] * self.rubric[c]["weight"] / total_weight 
+            for c in scores
+        )
+        
+        return EvaluationResult(
+            score=overall_score,
+            passed=overall_score >= self.pass_threshold,
+            breakdown=scores,
+            feedback="Mock evaluation (no LLM server required)"
+        )
+    
     async def evaluate(
         self,
         task: str,
@@ -130,6 +162,10 @@ Important: Return ONLY the JSON object, no other text."""
         Returns:
             EvaluationResult with score and breakdown
         """
+        # Use mock evaluation if in mock mode
+        if self.mock_mode:
+            return self._mock_evaluate(task, response, reference)
+        
         # Build evaluation prompt
         eval_prompt = self._build_evaluation_prompt(task, response, reference)
         

@@ -160,7 +160,7 @@ class BaseEval:
                 MessagePart(content=input_text, content_type="text/plain")
             ])
             
-            run = await client.run(
+            run = await client.run_sync(
                 agent=agent_name,
                 input=[message],
                 **kwargs
@@ -285,11 +285,17 @@ class AccuracyEval(BaseEval):
             rubric_dict = rubric
         
         # Initialize LLM judge
+        judge_url = judge_config.get("azure_endpoint", "http://localhost:8000") if judge_config else "http://localhost:8000"
+        
+        # Use mock mode for function/instance agents when no server is configured
+        mock_mode = (not isinstance(agent, str)) and judge_url == "http://localhost:8000"
+        
         self.judge = LLMJudge(
-            judge_url=judge_config.get("azure_endpoint", "http://localhost:8000") if judge_config else "http://localhost:8000",
+            judge_url=judge_url,
             judge_agent=judge_config.get("azure_deployment", "default") if judge_config else "default",
             rubric=rubric_dict,
             pass_threshold=pass_threshold,
+            mock_mode=mock_mode,
         )
         self.judge_config = judge_config
     
@@ -299,6 +305,7 @@ class AccuracyEval(BaseEval):
         expected: Union[str, Dict[str, Any]],
         context: Optional[Dict[str, Any]] = None,
         print_results: bool = False,
+        _disable_progress: bool = False,
     ) -> EvalResult:
         """
         Run a single evaluation.
@@ -312,11 +319,26 @@ class AccuracyEval(BaseEval):
         Returns:
             EvalResult with score and details
         """
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            console=console,
-        ) as progress:
+        # Create progress context (or null context if disabled)
+        if not _disable_progress:
+            progress_ctx = Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                console=console,
+            )
+        else:
+            class NullProgress:
+                def __enter__(self):
+                    return self
+                def __exit__(self, *args):
+                    pass
+                def add_task(self, *args, **kwargs):
+                    return None
+                def update(self, *args, **kwargs):
+                    pass
+            progress_ctx = NullProgress()
+        
+        with progress_ctx as progress:
             task = progress.add_task("Running agent...", total=None)
             
             # Run agent
@@ -404,6 +426,7 @@ class AccuracyEval(BaseEval):
                             expected=test.get("expected", test.get("expected_output", "")),
                             context=test.get("context"),
                             print_results=False,
+                            _disable_progress=True,
                         )
                         tasks.append(coro)
                     
@@ -419,6 +442,7 @@ class AccuracyEval(BaseEval):
                             expected=test.get("expected", test.get("expected_output", "")),
                             context=test.get("context"),
                             print_results=False,
+                            _disable_progress=True,
                         )
                         results.append(result)
                         prog.advance(task)
@@ -431,6 +455,7 @@ class AccuracyEval(BaseEval):
                         expected=test.get("expected", test.get("expected_output", "")),
                         context=test.get("context"),
                         print_results=False,
+                        _disable_progress=True,
                     )
                     for test in test_cases
                 ]
@@ -442,6 +467,7 @@ class AccuracyEval(BaseEval):
                         expected=test.get("expected", test.get("expected_output", "")),
                         context=test.get("context"),
                         print_results=False,
+                        _disable_progress=True,
                     )
                     results.append(result)
         
