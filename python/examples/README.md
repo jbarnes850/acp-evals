@@ -1,74 +1,132 @@
 # ACP Evals Examples
 
-This directory contains practical examples showing how to evaluate different types of ACP agents.
+This directory contains example scripts demonstrating how to use the ACP Evals framework, ordered from simple to complex.
 
-## Quick Start
+## Examples Overview
 
-The fastest way to get started is with `quickstart.py`:
+### Getting Started
+- **00_minimal_example.py** - Absolute minimal example (3 lines of code!)
+- **01_quickstart_accuracy.py** - Basic accuracy evaluation with beautiful output
+
+### Real-World Use Cases
+- **02_research_agent.py** - Evaluating a research assistant with comprehensive metrics
+- **03_tool_usage.py** - Testing tool-using agents (calculator, search, etc.)
+- **04_multi_agent.py** - Evaluating multi-agent collaboration and handoffs
+- **05_quality_evaluation.py** - Advanced quality metrics (groundedness, completeness)
+- **06_simulator.py** - Generating synthetic test data for evaluation
+
+## Running Examples
+
+### Prerequisites
+
+```bash
+# Install the package (from the python directory)
+pip install -e ..
+
+# Or install with all providers
+pip install -e "..[all-providers]"
+
+# Copy and configure environment
+cp ../.env.example ../.env
+# Edit .env with your API keys
+```
+
+### Running Individual Examples
+
+```bash
+# Minimal example (uses mock mode by default)
+python 00_minimal_example.py
+
+# Basic accuracy evaluation
+python 01_quickstart_accuracy.py
+
+# Research agent evaluation
+python 02_research_agent.py
+
+# With custom agent URL
+python 01_quickstart_accuracy.py --agent-url http://localhost:8000/agents/my-agent
+```
+
+### Batch Running
+
+```bash
+# Run all examples in order
+for example in 0*.py; do
+    echo "Running $example..."
+    python "$example"
+done
+```
+
+## Configuration Options
+
+### Environment Variables
+
+The examples use these key environment variables:
+
+```bash
+# LLM Provider (openai, anthropic, ollama, mock)
+EVALUATION_PROVIDER=openai
+
+# API Keys
+OPENAI_API_KEY=your-key
+ANTHROPIC_API_KEY=your-key
+
+# Ollama (for local LLMs)
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=qwen3:30b-a3b
+```
+
+### Mock Mode
+
+For testing without API calls:
 
 ```python
-from acp_evals import AccuracyEval, evaluate
+# In code
+eval = AccuracyEval(agent=my_agent, mock_mode=True)
 
-# Evaluate any function
-async def my_agent(input: str) -> str:
-    return "response"
+# Or via environment
+MOCK_MODE=true python 01_quickstart_accuracy.py
+```
 
-result = evaluate(
-    AccuracyEval(agent=my_agent),
-    input="test question",
-    expected="expected answer",
-    print_results=True
+## Example Patterns
+
+### Pattern 1: Quick Evaluation
+```python
+# From 00_minimal_example.py
+from acp_evals import evaluate, AccuracyEval
+result = evaluate(AccuracyEval(agent=agent), "What is 2+2?", "4")
+```
+
+### Pattern 2: Detailed Evaluation
+```python
+# From 01_quickstart_accuracy.py
+eval = AccuracyEval(agent=agent, rubric="factual")
+result = await eval.run(
+    input="Complex question",
+    expected="Detailed answer",
+    print_results=True  # Beautiful console output
 )
 ```
 
-## Examples by Agent Type
-
-### 1. Simple Accuracy Evaluation (`simple_accuracy_eval.py`)
-- Basic accuracy testing with built-in rubrics
-- Batch evaluation with test cases
-- Custom rubrics for specific domains
-
-### 2. Research Agent (`research_agent_eval.py`)
-- Evaluating deep research agents
-- Testing information depth and source quality
-- Performance benchmarks for long-form generation
-- Multi-aspect evaluation (accuracy + performance + reliability)
-
-### 3. Multi-Agent Systems (`multi_agent_eval.py`)
-- Testing agent collaboration and handoffs
-- Information preservation across agents
-- System-wide performance evaluation
-- Error handling in multi-agent workflows
-
-### 4. Tool-Using Agents (`tool_agent_eval.py`)
-- Verifying correct tool selection
-- Testing tool chaining and composition
-- Error handling with external tools
-- Performance with tool overhead
-
-## Running the Examples
-
-1. Install ACP Evals:
-```bash
-pip install -e .
+### Pattern 3: Batch Evaluation
+```python
+# From 02_research_agent.py
+results = await eval.run_batch(
+    test_data="test_cases.jsonl",
+    parallel=True,
+    progress=True
+)
 ```
 
-2. Run any example:
-```bash
-python examples/quickstart.py
-python examples/research_agent_eval.py
-python examples/multi_agent_eval.py
-python examples/tool_agent_eval.py
+### Pattern 4: Multi-Agent Coordination
+```python
+# From 04_multi_agent.py
+handoff_eval = HandoffEval(agents={"researcher": url1, "writer": url2})
+result = await handoff_eval.run(
+    task="Create report",
+    expected_handoffs=["researcher->writer"]
+)
 ```
-
-## Key Features Demonstrated
-
-- **Zero-setup evaluation**: Evaluate agents with minimal code
-- **Multiple agent types**: Functions, URLs, or agent instances
-- **Rich output**: Beautiful console output with progress tracking
-- **Batch testing**: Run multiple test cases efficiently
-- **Export results**: Save to JSON for further analysis
-- **Flexible rubrics**: Use built-in or custom evaluation criteria
 
 ## Built-in Rubrics
 
@@ -105,8 +163,15 @@ eval = AccuracyEval(
 
 ## Tips
 
-1. **Start simple**: Use the quickstart example as a template
-2. **Use built-in rubrics**: They cover most common use cases
-3. **Batch evaluation**: Test multiple cases for statistical significance
-4. **Export results**: Use JSON export for tracking progress over time
-5. **Combine evaluators**: Use AccuracyEval + PerformanceEval + ReliabilityEval for comprehensive testing
+1. **Start Simple**: Begin with `00_minimal_example.py`
+2. **Use Mock Mode**: Test without API calls during development
+3. **Monitor Costs**: Examples show token usage and costs
+4. **Check Results**: Look for `results/` directory for detailed output
+5. **Customize Rubrics**: Examples show how to create custom evaluation criteria
+
+## Next Steps
+
+- Read the [main documentation](../README.md)
+- Explore [architecture guide](../docs/architecture.md)
+- Create your own evaluations based on these patterns
+- Join our [Discord](https://discord.gg/NradeA6ZNF) for help
