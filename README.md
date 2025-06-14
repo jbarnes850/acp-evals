@@ -72,13 +72,13 @@ This pattern extends to all evaluation types. Replace `AccuracyEval` with `Perfo
 graph TB
     A[ACP Agent] --> B[ACP Evals Framework]
     
-    B --> C[Developer API<br/>evaluate AccuracyEval PerformanceEval]
-    B --> D[Multi-Agent Evaluators<br/>HandoffEval LinearPattern SwarmPattern]
-    B --> E[Production Features<br/>Trace Recycling Continuous Evaluation]
+    B --> C[Developer API<br/>evaluate Accuracy and Performance]
+    B --> D[Multi-Agent Evaluators<br/> Communication Patterns and Framework Integrity]
+    B --> E[Production Features<br/>Trace Recycling and Continuous Evaluation]
     
     F[LLM Providers<br/>OpenAI Anthropic Ollama] --> B
     
-    B --> G[Results<br/>Scores Costs Analytics]
+    B --> G[Results<br/>Eval Performance and Costs Analytics]
     
     style A fill:#e1f5fe
     style B fill:#f3e5f5
