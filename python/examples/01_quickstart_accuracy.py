@@ -91,6 +91,6 @@ async def main():
 
 
 if __name__ == "__main__":
-    # Note: In a real scenario, you would set up proper OpenAI/Azure credentials
-    # For this example, we're using a mock agent
+    # Note: Set up proper OpenAI/Anthropic/Ollama credentials in your .env file
+    # This example uses a callable agent function
     asyncio.run(main())

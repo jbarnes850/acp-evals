@@ -7,7 +7,7 @@ from unittest.mock import Mock
 from datetime import datetime
 
 from acp_evals.metrics.token_usage import TokenUsageMetric
-from acp_evals.base import MetricResult
+from acp_evals.core.base import MetricResult
 
 
 class TestTokenUsageMetric:

@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, Mock, MagicMock
 import pytest
 from acp_sdk import Run, Event, Message, MessagePart, RunStatus
 
-from acp_evals.base import (
+from acp_evals.core.base import (
     Metric,
     MetricResult,
     Benchmark,

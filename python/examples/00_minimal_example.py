@@ -1,5 +1,5 @@
 """
-ACP Evals Quickstart - Zero to Evaluation in 5 Lines
+ACP Evals Quickstart - Zero to Eval in 5 Lines
 
 This demonstrates the simplest way to evaluate an ACP agent.
 """

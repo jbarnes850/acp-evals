@@ -41,7 +41,7 @@ class ACPAgentDiscovery:
             data = response.json()
             return data.get("agents", [])
         except Exception as e:
-            print(f"❌ Failed to discover agents at {self.base_url}: {e}")
+            print(f"FAILED: Failed to discover agents at {self.base_url}: {e}")
             return []
     
     async def get_agent_manifest(self, agent_name: str) -> Optional[Dict[str, Any]]:
@@ -100,7 +100,7 @@ async def evaluate_acp_ecosystem_agents():
     - Community contributed agents
     """
     
-    print("🐝 ACP-Evals Real Agent Testing")
+    print("ACP-Evals Real Agent Testing")
     print("=" * 50)
     
     # Known ACP agent endpoints to test
@@ -125,7 +125,7 @@ async def evaluate_acp_ecosystem_agents():
     results = {}
     
     for endpoint in test_endpoints:
-        print(f"\n🔍 Testing endpoint: {endpoint['name']}")
+        print(f"\nTesting endpoint: {endpoint['name']}")
         print(f"   URL: {endpoint['url']}")
         print(f"   Description: {endpoint['description']}")
         
@@ -136,11 +136,11 @@ async def evaluate_acp_ecosystem_agents():
             agents = await discovery.discover_agents()
             
             if not agents:
-                print(f"   ❌ No agents found at {endpoint['url']}")
+                print(f"   FAILED: No agents found at {endpoint['url']}")
                 results[endpoint["name"]] = {"status": "no_agents", "agents": []}
                 continue
             
-            print(f"   ✅ Found {len(agents)} agent(s): {[a['name'] for a in agents]}")
+            print(f"   PASSED: Found {len(agents)} agent(s): {[a['name'] for a in agents]}")
             
             endpoint_results = {"status": "found", "agents": []}
             
@@ -149,12 +149,12 @@ async def evaluate_acp_ecosystem_agents():
                 agent_name = agent["name"]
                 agent_url = f"{endpoint['url']}/agents/{agent_name}"
                 
-                print(f"\n   🤖 Evaluating agent: {agent_name}")
+                print(f"\n    Evaluating agent: {agent_name}")
                 
                 # Health check first
                 is_healthy = await discovery.test_agent_health(agent_name)
                 if not is_healthy:
-                    print(f"      ❌ Agent {agent_name} failed health check")
+                    print(f"      FAILED: Agent {agent_name} failed health check")
                     endpoint_results["agents"].append({
                         "name": agent_name,
                         "status": "unhealthy",
@@ -162,7 +162,7 @@ async def evaluate_acp_ecosystem_agents():
                     })
                     continue
                 
-                print(f"      ✅ Agent {agent_name} is healthy")
+                print(f"      PASSED: Agent {agent_name} is healthy")
                 
                 # Get detailed manifest
                 manifest = await discovery.get_agent_manifest(agent_name)
@@ -178,7 +178,7 @@ async def evaluate_acp_ecosystem_agents():
                 try:
                     await evaluate_single_agent(agent_url, agent_name, agent_result)
                 except Exception as e:
-                    print(f"      ❌ Evaluation failed for {agent_name}: {e}")
+                    print(f"      FAILED: Evaluation failed for {agent_name}: {e}")
                     agent_result["evaluations"]["error"] = str(e)
                 
                 endpoint_results["agents"].append(agent_result)
@@ -186,7 +186,7 @@ async def evaluate_acp_ecosystem_agents():
             results[endpoint["name"]] = endpoint_results
             
         except Exception as e:
-            print(f"   ❌ Failed to test endpoint {endpoint['name']}: {e}")
+            print(f"   FAILED: Failed to test endpoint {endpoint['name']}: {e}")
             results[endpoint["name"]] = {"status": "error", "error": str(e)}
         
         finally:
@@ -226,7 +226,7 @@ async def evaluate_single_agent(agent_url: str, agent_name: str, result_containe
     evaluations = result_container["evaluations"]
     
     # 1. Accuracy Evaluation
-    print(f"      📊 Running accuracy evaluation...")
+    print(f"       Running accuracy evaluation...")
     try:
         accuracy_eval = AccuracyEval(
             agent=agent_url,
@@ -248,9 +248,9 @@ async def evaluate_single_agent(agent_url: str, agent_name: str, result_containe
                     "score": result.score,
                     "category": test_case["category"]
                 })
-                print(f"         ✓ {test_case['name']}: {result.score:.2f}")
+                print(f"         PASSED {test_case['name']}: {result.score:.2f}")
             except Exception as e:
-                print(f"         ✗ {test_case['name']}: {e}")
+                print(f"         FAILED {test_case['name']}: {e}")
                 accuracy_results.append({
                     "test": test_case["name"],
                     "passed": False,
@@ -269,14 +269,14 @@ async def evaluate_single_agent(agent_url: str, agent_name: str, result_containe
             "results": accuracy_results
         }
         
-        print(f"      ✅ Accuracy: {pass_rate:.1f}% pass rate, {avg_score:.2f} avg score")
+        print(f"      PASSED: Accuracy: {pass_rate:.1f}% pass rate, {avg_score:.2f} avg score")
         
     except Exception as e:
-        print(f"      ❌ Accuracy evaluation failed: {e}")
+        print(f"      FAILED: Accuracy evaluation failed: {e}")
         evaluations["accuracy"] = {"error": str(e)}
     
     # 2. Performance Evaluation
-    print(f"      ⚡ Running performance evaluation...")
+    print(f"       Running performance evaluation...")
     try:
         perf_eval = PerformanceEval(
             agent=agent_url,
@@ -300,14 +300,14 @@ async def evaluate_single_agent(agent_url: str, agent_name: str, result_containe
         
         latency = perf_result.details.get("latency_ms", 0)
         tokens = perf_result.details.get("tokens", {}).get("total", 0)
-        print(f"      ✅ Performance: {latency:.0f}ms, {tokens} tokens")
+        print(f"      PASSED: Performance: {latency:.0f}ms, {tokens} tokens")
         
     except Exception as e:
-        print(f"      ❌ Performance evaluation failed: {e}")
+        print(f"      FAILED: Performance evaluation failed: {e}")
         evaluations["performance"] = {"error": str(e)}
     
     # 3. Safety Evaluation (brief)
-    print(f"      🛡️ Running safety evaluation...")
+    print(f"       Running safety evaluation...")
     try:
         safety_eval = SafetyEval(
             agent=agent_url,
@@ -325,10 +325,10 @@ async def evaluate_single_agent(agent_url: str, agent_name: str, result_containe
             "violations": safety_result.details.get("violations", [])
         }
         
-        print(f"      ✅ Safety: {safety_result.score:.2f} safety score")
+        print(f"      PASSED: Safety: {safety_result.score:.2f} safety score")
         
     except Exception as e:
-        print(f"      ❌ Safety evaluation failed: {e}")
+        print(f"      FAILED: Safety evaluation failed: {e}")
         evaluations["safety"] = {"error": str(e)}
 
 
@@ -336,7 +336,7 @@ def generate_evaluation_report(results: Dict[str, Any]):
     """Generate a comprehensive evaluation report."""
     
     print("\n" + "=" * 60)
-    print("🐝 ACP ECOSYSTEM EVALUATION REPORT")
+    print(" ACP ECOSYSTEM EVALUATION REPORT")
     print("=" * 60)
     
     total_endpoints = len(results)
@@ -347,31 +347,31 @@ def generate_evaluation_report(results: Dict[str, Any]):
         for r in results.values() if isinstance(r.get("agents"), list)
     )
     
-    print(f"\n📊 SUMMARY")
+    print(f"\n SUMMARY")
     print(f"   Total endpoints tested: {total_endpoints}")
     print(f"   Active endpoints: {active_endpoints}")
     print(f"   Total agents found: {total_agents}")
     print(f"   Healthy agents: {healthy_agents}")
     
     if healthy_agents == 0:
-        print(f"\n❌ No healthy agents found!")
+        print(f"\nFAILED: No healthy agents found!")
         print(f"   To test with real agents:")
         print(f"   1. Start an ACP server: python examples/basic/echo.py")
         print(f"   2. Run this test again")
         return
     
-    print(f"\n🤖 AGENT DETAILS")
+    print(f"\n AGENT DETAILS")
     
     for endpoint_name, endpoint_data in results.items():
         if endpoint_data.get("status") == "found":
-            print(f"\n📡 {endpoint_name}:")
+            print(f"\n {endpoint_name}:")
             
             for agent in endpoint_data.get("agents", []):
                 agent_name = agent["name"]
                 status = agent["status"]
                 
                 if status == "healthy":
-                    print(f"   ✅ {agent_name}")
+                    print(f"   PASSED: {agent_name}")
                     
                     evals = agent.get("evaluations", {})
                     
@@ -379,45 +379,45 @@ def generate_evaluation_report(results: Dict[str, Any]):
                     if "accuracy" in evals and "pass_rate" in evals["accuracy"]:
                         pass_rate = evals["accuracy"]["pass_rate"]
                         avg_score = evals["accuracy"]["avg_score"]
-                        print(f"      📊 Accuracy: {pass_rate:.1f}% ({avg_score:.2f} avg)")
+                        print(f"       Accuracy: {pass_rate:.1f}% ({avg_score:.2f} avg)")
                     
                     # Performance  
                     if "performance" in evals and "latency_ms" in evals["performance"]:
                         latency = evals["performance"]["latency_ms"]
                         tokens = evals["performance"].get("tokens", {}).get("total", 0)
                         cost = evals["performance"].get("cost_usd", 0)
-                        print(f"      ⚡ Performance: {latency:.0f}ms, {tokens} tokens, ${cost:.4f}")
+                        print(f"       Performance: {latency:.0f}ms, {tokens} tokens, ${cost:.4f}")
                     
                     # Safety
                     if "safety" in evals and "score" in evals["safety"]:
                         safety_score = evals["safety"]["score"]
                         violations = len(evals["safety"].get("violations", []))
-                        print(f"      🛡️ Safety: {safety_score:.2f} ({violations} violations)")
+                        print(f"       Safety: {safety_score:.2f} ({violations} violations)")
                 
                 else:
-                    print(f"   ❌ {agent_name} ({status})")
+                    print(f"   FAILED: {agent_name} ({status})")
     
     # Save detailed results
     results_file = Path("acp_ecosystem_evaluation_results.json")
     with open(results_file, "w") as f:
         json.dump(results, f, indent=2, default=str)
     
-    print(f"\n💾 Detailed results saved to: {results_file}")
+    print(f"\n Detailed results saved to: {results_file}")
     
-    print(f"\n🎯 RECOMMENDATIONS")
+    print(f"\n RECOMMENDATIONS")
     if healthy_agents > 0:
-        print(f"   ✅ ACP-Evals successfully integrated with {healthy_agents} agent(s)")
-        print(f"   ✅ Framework validated against real ACP implementations")
-        print(f"   🚀 Ready for production use with ACP/BeeAI ecosystem")
+        print(f"   PASSED: ACP-Evals successfully integrated with {healthy_agents} agent(s)")
+        print(f"   PASSED: Framework validated against real ACP implementations")
+        print(f"    Ready for production use with ACP/BeeAI ecosystem")
     else:
-        print(f"   ⚠️  No agents available for testing")
-        print(f"   💡 Start local ACP examples to validate integration")
+        print(f"   WARNING: No agents available for testing")
+        print(f"    Start local ACP examples to validate integration")
 
 
 def print_setup_instructions():
     """Print instructions for setting up test agents."""
     
-    print("🚀 SETUP INSTRUCTIONS FOR TESTING")
+    print(" SETUP INSTRUCTIONS FOR TESTING")
     print("-" * 40)
     
     print("\nTo test with real ACP agents, start some agents:")
@@ -436,7 +436,7 @@ def print_setup_instructions():
     print("\n3. Run this test:")
     print("   python examples/08_real_acp_agents.py")
     
-    print("\n🔧 Environment variables needed:")
+    print("\n Environment variables needed:")
     print("   OPENAI_API_KEY=sk-...")
     print("   ANTHROPIC_API_KEY=sk-ant-...")
 
@@ -450,7 +450,7 @@ async def main():
     
     # Check if we should run in demo mode (no real agents)
     if os.getenv("DEMO_MODE", "").lower() in ["true", "1", "yes"]:
-        print("🎭 Running in demo mode (no real agent connections)")
+        print(" Running in demo mode (no real agent connections)")
         print_setup_instructions()
         return
     
@@ -464,18 +464,18 @@ async def main():
         )
         
         if healthy_agents > 0:
-            print(f"\n✅ SUCCESS: Validated ACP-Evals with {healthy_agents} real agent(s)")
+            print(f"\nPASSED: SUCCESS: Validated ACP-Evals with {healthy_agents} real agent(s)")
             sys.exit(0)
         else:
-            print(f"\n⚠️  No agents available for testing")
+            print(f"\nWARNING: No agents available for testing")
             print(f"   Run with --setup for instructions")
             sys.exit(0)  # Not a failure, just no agents to test
             
     except KeyboardInterrupt:
-        print(f"\n⏹️  Testing interrupted by user")
+        print(f"\n  Testing interrupted by user")
         sys.exit(0)
     except Exception as e:
-        print(f"\n❌ Testing failed: {e}")
+        print(f"\nFAILED: Testing failed: {e}")
         sys.exit(1)
 
 

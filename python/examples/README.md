@@ -34,7 +34,7 @@ cp ../.env.example ../.env
 ### Running Individual Examples
 
 ```bash
-# Minimal example (uses mock mode by default)
+# Minimal example
 python 00_minimal_example.py
 
 # Basic accuracy evaluation
@@ -45,6 +45,9 @@ python 02_research_agent.py
 
 # With custom agent URL
 python 01_quickstart_accuracy.py --agent-url http://localhost:8000/agents/my-agent
+
+# Test against real ACP agents
+python 08_real_acp_agents.py
 ```
 
 ### Batch Running
@@ -64,7 +67,7 @@ done
 The examples use these key environment variables:
 
 ```bash
-# LLM Provider (openai, anthropic, ollama, mock)
+# LLM Provider (openai, anthropic, ollama)
 EVALUATION_PROVIDER=openai
 
 # API Keys
@@ -76,16 +79,16 @@ OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=qwen3:30b-a3b
 ```
 
-### Mock Mode
+### Testing with Real Agents
 
-For testing without API calls:
+The framework works with real ACP agents:
 
 ```python
-# In code
-eval = AccuracyEval(agent=my_agent, mock_mode=True)
+# Connect to a running ACP agent
+eval = AccuracyEval(agent="http://localhost:8000/agents/my-agent")
 
-# Or via environment
-MOCK_MODE=true python 01_quickstart_accuracy.py
+# Or use a callable agent
+eval = AccuracyEval(agent=my_agent_function)
 ```
 
 ## Example Patterns
@@ -164,7 +167,7 @@ eval = AccuracyEval(
 ## Tips
 
 1. **Start Simple**: Begin with `00_minimal_example.py`
-2. **Use Mock Mode**: Test without API calls during development
+2. **Use Real Agents**: Test with actual ACP agents or callable functions
 3. **Monitor Costs**: Examples show token usage and costs
 4. **Check Results**: Look for `results/` directory for detailed output
 5. **Customize Rubrics**: Examples show how to create custom evaluation criteria

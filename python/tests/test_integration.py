@@ -96,7 +96,7 @@ class TestACPIntegration:
         eval_client.client = mock_acp_client
         
         # Import the task type
-        from acp_evals.base import BenchmarkTask
+        from acp_evals.core.base import BenchmarkTask
         
         # Minimal benchmark with proper task
         benchmark = ContextScalingBenchmark(

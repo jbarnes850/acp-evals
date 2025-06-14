@@ -86,7 +86,7 @@ class ImplementationValidator:
         print("\n🏗️  Checking base classes...")
         
         try:
-            from acp_evals.base import (
+            from acp_evals.core.base import (
                 Metric, MetricResult,
                 Benchmark, BenchmarkResult, BenchmarkTask,
                 Evaluator, EvaluatorResult
@@ -132,7 +132,7 @@ class ImplementationValidator:
                 cls = getattr(module, class_name)
                 
                 # Check it inherits from Metric
-                from acp_evals.base import Metric
+                from acp_evals.core.base import Metric
                 if not issubclass(cls, Metric):
                     self.errors.append(f"✗ {class_name} doesn't inherit from Metric")
                 else:

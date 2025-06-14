@@ -173,3 +173,4 @@ internal-docs/
 # Example data files (but keep the ones in examples/data)
 *.jsonl
 !python/examples/data/*.jsonl
+/internal-docs/

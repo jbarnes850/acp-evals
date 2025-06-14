@@ -8,7 +8,7 @@ import json
 
 from acp_evals.evaluators.llm_judge import LLMJudge
 from acp_evals.evaluators.base import EvaluationResult
-from acp_evals.exceptions import InvalidEvaluationInputError
+from acp_evals.core.exceptions import InvalidEvaluationInputError
 
 
 class TestLLMJudge:

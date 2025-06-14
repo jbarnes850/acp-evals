@@ -6,50 +6,49 @@ optimal architectures for different scenarios.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
-import asyncio
+from typing import Any
 
-from acp_evals.base import Benchmark, BenchmarkResult, BenchmarkTask
-from acp_evals.patterns import LinearPattern, SupervisorPattern, SwarmPattern, AgentInfo
-from acp_evals.metrics import TokenUsageMetric, HandoffQualityMetric
+from acp_evals.core.base import Benchmark, BenchmarkResult, BenchmarkTask
+from acp_evals.metrics import HandoffQualityMetric, TokenUsageMetric
+from acp_evals.patterns import AgentInfo, LinearPattern, SupervisorPattern, SwarmPattern
 
 
 class PatternComparisonBenchmark(Benchmark):
     """
     Compares different multi-agent patterns on identical tasks.
-    
+
     Based on LangChain's research showing significant performance
     differences between supervisor and swarm patterns.
     """
-    
+
     def __init__(
         self,
-        patterns_to_test: Optional[List[str]] = None,
-        test_tasks: Optional[List[BenchmarkTask]] = None,
+        patterns_to_test: list[str] | None = None,
+        test_tasks: list[BenchmarkTask] | None = None,
     ):
         """
         Initialize pattern comparison benchmark.
-        
+
         Args:
             patterns_to_test: Which patterns to compare (default: all)
             test_tasks: Custom tasks (default: built-in suite)
         """
         self.patterns_to_test = patterns_to_test or ["linear", "supervisor", "swarm"]
         self.test_tasks = test_tasks or self._create_default_tasks()
-    
+
     @property
     def name(self) -> str:
         return "pattern_comparison"
-    
+
     @property
     def description(self) -> str:
         return "Compares multi-agent patterns to identify optimal architectures"
-    
+
     @property
-    def categories(self) -> List[str]:
+    def categories(self) -> list[str]:
         return ["architecture", "multi_agent", "performance"]
-    
-    def _create_default_tasks(self) -> List[BenchmarkTask]:
+
+    def _create_default_tasks(self) -> list[BenchmarkTask]:
         """Create default task suite for pattern comparison."""
         return [
             # Task 1: Sequential processing (favors linear)
@@ -63,7 +62,7 @@ class PatternComparisonBenchmark(Benchmark):
                 category="sequential",
                 metadata={"expected_best_pattern": "linear"},
             ),
-            
+
             # Task 2: Parallel research (favors swarm)
             BenchmarkTask(
                 id="market_research",
@@ -75,7 +74,7 @@ class PatternComparisonBenchmark(Benchmark):
                 category="parallel",
                 metadata={"expected_best_pattern": "swarm"},
             ),
-            
+
             # Task 3: Coordinated analysis (favors supervisor)
             BenchmarkTask(
                 id="complex_analysis",
@@ -87,7 +86,7 @@ class PatternComparisonBenchmark(Benchmark):
                 category="coordination",
                 metadata={"expected_best_pattern": "supervisor"},
             ),
-            
+
             # Task 4: Creative synthesis (pattern-agnostic)
             BenchmarkTask(
                 id="creative_task",
@@ -99,7 +98,7 @@ class PatternComparisonBenchmark(Benchmark):
                 category="creative",
                 metadata={"expected_best_pattern": "any"},
             ),
-            
+
             # Task 5: Error-prone task (tests robustness)
             BenchmarkTask(
                 id="calculation_heavy",
@@ -112,15 +111,15 @@ class PatternComparisonBenchmark(Benchmark):
                 metadata={"expected_best_pattern": "supervisor"},  # Supervisor can verify
             ),
         ]
-    
+
     async def evaluate(self, agent: Any, **kwargs) -> BenchmarkResult:
         """
         Run pattern comparison benchmark.
-        
+
         Args:
             agent: Agent configuration or list of AgentInfo objects
             **kwargs: Additional parameters
-            
+
         Returns:
             BenchmarkResult with pattern comparison analysis
         """
@@ -140,27 +139,27 @@ class PatternComparisonBenchmark(Benchmark):
             agents = agent
         else:
             raise ValueError("Pattern comparison requires a list of AgentInfo objects")
-        
+
         if len(agents) < 2:
             raise ValueError("Pattern comparison requires at least 2 agents")
-        
+
         # Initialize metrics
         token_metric = TokenUsageMetric()
         handoff_metric = HandoffQualityMetric()
-        
+
         # Results storage
         pattern_results = {}
         all_task_results = []
-        
+
         # Test each pattern
         for pattern_type in self.patterns_to_test:
             pattern = self._create_pattern(pattern_type, agents)
             if not pattern:
                 continue
-            
+
             pattern_start = datetime.now()
             pattern_task_results = []
-            
+
             # Run all tasks with this pattern
             for task in self.test_tasks:
                 task_result = await self._evaluate_pattern_on_task(
@@ -174,9 +173,9 @@ class PatternComparisonBenchmark(Benchmark):
                     **task_result,
                     "pattern": pattern_type,
                 })
-            
+
             pattern_end = datetime.now()
-            
+
             # Aggregate pattern results
             pattern_results[pattern_type] = {
                 "tasks_completed": sum(1 for r in pattern_task_results if r["success"]),
@@ -187,16 +186,16 @@ class PatternComparisonBenchmark(Benchmark):
                 "pattern_latency": (pattern_end - pattern_start).total_seconds(),
                 "task_results": pattern_task_results,
             }
-        
+
         # Analyze results
         analysis = self._analyze_pattern_performance(pattern_results, self.test_tasks)
-        
+
         # Determine overall winner
         best_pattern = max(
             pattern_results.items(),
             key=lambda x: x[1]["average_score"]
         )[0]
-        
+
         return BenchmarkResult(
             benchmark_name=self.name,
             agent_name=f"multi_agent_ensemble_{len(agents)}",
@@ -213,12 +212,12 @@ class PatternComparisonBenchmark(Benchmark):
                 "agent_count": len(agents),
             },
         )
-    
+
     def _create_pattern(
         self,
         pattern_type: str,
-        agents: List[AgentInfo]
-    ) -> Optional[Any]:
+        agents: list[AgentInfo]
+    ) -> Any | None:
         """Create a pattern instance."""
         if pattern_type == "linear":
             return LinearPattern(agents)
@@ -228,32 +227,32 @@ class PatternComparisonBenchmark(Benchmark):
         elif pattern_type == "swarm":
             return SwarmPattern(agents)
         return None
-    
+
     async def _evaluate_pattern_on_task(
         self,
         pattern: Any,
         task: BenchmarkTask,
         token_metric: TokenUsageMetric,
         handoff_metric: HandoffQualityMetric,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Evaluate a single pattern on a single task."""
         start_time = datetime.now()
-        
+
         try:
             # Execute pattern
             result = await pattern.execute(
                 task.prompt,
                 context={"task_id": task.id, "expected": task.expected_output}
             )
-            
+
             # Evaluate output quality
             score = self._evaluate_output(
                 result.get("final_output", ""),
                 task.expected_output,
             )
-            
+
             end_time = datetime.now()
-            
+
             return {
                 "task_id": task.id,
                 "success": result.get("success", False),
@@ -268,7 +267,7 @@ class PatternComparisonBenchmark(Benchmark):
                     if k not in ["final_output", "success"]
                 },
             }
-            
+
         except Exception as e:
             return {
                 "task_id": task.id,
@@ -277,20 +276,20 @@ class PatternComparisonBenchmark(Benchmark):
                 "latency": (datetime.now() - start_time).total_seconds(),
                 "error": str(e),
             }
-    
+
     def _evaluate_output(
         self,
         output: str,
-        expected: Optional[Any]
+        expected: Any | None
     ) -> float:
         """Evaluate output quality against expected."""
         if not expected:
             return 0.5 if output else 0.0
-        
+
         output_lower = output.lower()
         score = 0.0
         total_weight = 0.0
-        
+
         if isinstance(expected, dict):
             # Check required elements (higher weight)
             required = expected.get("required", [])
@@ -298,48 +297,48 @@ class PatternComparisonBenchmark(Benchmark):
                 total_weight += 2.0
                 if str(item).lower() in output_lower:
                     score += 2.0
-            
+
             # Check optional elements (lower weight)
             optional = expected.get("optional", [])
             for item in optional:
                 total_weight += 1.0
                 if str(item).lower() in output_lower:
                     score += 1.0
-        
+
         elif isinstance(expected, list):
             # Check all items equally
             for item in expected:
                 total_weight += 1.0
                 if str(item).lower() in output_lower:
                     score += 1.0
-        
+
         else:
             # Simple string check
             total_weight = 1.0
             if str(expected).lower() in output_lower:
                 score = 1.0
-        
+
         return score / total_weight if total_weight > 0 else 0.0
-    
+
     def _analyze_pattern_performance(
         self,
-        pattern_results: Dict[str, Dict[str, Any]],
-        tasks: List[BenchmarkTask],
-    ) -> Dict[str, Any]:
+        pattern_results: dict[str, dict[str, Any]],
+        tasks: list[BenchmarkTask],
+    ) -> dict[str, Any]:
         """Analyze pattern performance across task categories."""
         analysis = {
             "by_category": {},
             "recommendations": [],
             "trade_offs": {},
         }
-        
+
         # Analyze by task category
         categories = set(task.category for task in tasks if task.category)
-        
+
         for category in categories:
             category_tasks = [t for t in tasks if t.category == category]
             category_analysis = {}
-            
+
             for pattern, results in pattern_results.items():
                 # Get results for tasks in this category
                 task_scores = []
@@ -350,17 +349,17 @@ class PatternComparisonBenchmark(Benchmark):
                     )
                     if task_result:
                         task_scores.append(task_result["score"])
-                
+
                 if task_scores:
                     category_analysis[pattern] = sum(task_scores) / len(task_scores)
-            
+
             if category_analysis:
                 best_for_category = max(category_analysis.items(), key=lambda x: x[1])[0]
                 analysis["by_category"][category] = {
                     "scores": category_analysis,
                     "best_pattern": best_for_category,
                 }
-        
+
         # Generate recommendations
         for pattern, results in pattern_results.items():
             if pattern == "linear":
@@ -378,16 +377,16 @@ class PatternComparisonBenchmark(Benchmark):
                     f"Use {pattern} for parallel, independent subtasks "
                     f"(avg score: {results['average_score']:.2f})"
                 )
-        
+
         # Identify trade-offs
         if "linear" in pattern_results and "swarm" in pattern_results:
             linear_latency = pattern_results["linear"]["average_latency"]
             swarm_latency = pattern_results["swarm"]["average_latency"]
-            
+
             analysis["trade_offs"]["speed_vs_coordination"] = {
                 "linear_latency": linear_latency,
                 "swarm_latency": swarm_latency,
                 "speedup": linear_latency / swarm_latency if swarm_latency > 0 else 0,
             }
-        
+
         return analysis

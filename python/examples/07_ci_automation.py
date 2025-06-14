@@ -89,7 +89,7 @@ async def run_ci_evaluation(
         Dict with results and CI annotations
     """
     
-    print("🤖 ACP-Evals CI Automation")
+    print("ACP-Evals CI Automation")
     print(f"Agent: {agent_url}")
     print(f"Fail threshold: {fail_threshold * 100}%")
     print("-" * 50)
@@ -101,7 +101,7 @@ async def run_ci_evaluation(
     results = {}
     
     # 1. Accuracy Tests
-    print("\n📊 Running accuracy evaluation...")
+    print("\nRunning accuracy evaluation...")
     accuracy_eval = AccuracyEval(
         agent=agent_url,
         judge_model=os.getenv("CI_JUDGE_MODEL", "gpt-4"),
@@ -123,15 +123,15 @@ async def run_ci_evaluation(
             "failed": accuracy_result.failed
         }
         
-        print(f"✓ Accuracy: {accuracy_result.pass_rate:.1f}% pass rate")
+        print(f"PASSED: Accuracy: {accuracy_result.pass_rate:.1f}% pass rate")
         
     except Exception as e:
-        print(f"✗ Accuracy evaluation failed: {e}")
+        print(f"FAILED: Accuracy evaluation failed: {e}")
         results["accuracy"] = {"error": str(e)}
     
     # 2. Performance Tests (if enabled)
     if enable_performance:
-        print("\n⚡ Running performance evaluation...")
+        print("\nRunning performance evaluation...")
         perf_eval = PerformanceEval(agent=agent_url)
         
         try:
@@ -150,15 +150,15 @@ async def run_ci_evaluation(
                 "cost_usd": perf_result.details.get("cost_usd", 0)
             }
             
-            print(f"✓ Performance: {perf_result.details['latency_ms']:.0f}ms latency")
+            print(f"PASSED: Performance: {perf_result.details['latency_ms']:.0f}ms latency")
             
         except Exception as e:
-            print(f"✗ Performance evaluation failed: {e}")
+            print(f"FAILED: Performance evaluation failed: {e}")
             results["performance"] = {"error": str(e)}
     
     # 3. Safety Tests (if enabled)
     if enable_safety:
-        print("\n🛡️ Running safety evaluation...")
+        print("\nRunning safety evaluation...")
         safety_eval = SafetyEval(agent=agent_url)
         
         try:
@@ -173,10 +173,10 @@ async def run_ci_evaluation(
                 "violations": safety_result.details.get("violations", [])
             }
             
-            print(f"✓ Safety: {safety_result.score:.2f} safety score")
+            print(f"PASSED: Safety: {safety_result.score:.2f} safety score")
             
         except Exception as e:
-            print(f"✗ Safety evaluation failed: {e}")
+            print(f"FAILED: Safety evaluation failed: {e}")
             results["safety"] = {"error": str(e)}
     
     # 4. Calculate overall result
@@ -208,10 +208,10 @@ async def run_ci_evaluation(
     
     # 6. Exit with appropriate code
     if overall_passed:
-        print(f"\n✅ All evaluations passed! (Pass rate: {overall_pass_rate:.1%})")
+        print(f"\nPASSED: All evaluations passed! (Pass rate: {overall_pass_rate:.1%})")
         return results
     else:
-        print(f"\n❌ Evaluations failed! (Pass rate: {overall_pass_rate:.1%} < {fail_threshold:.1%})")
+        print(f"\nFAILED: Evaluations failed! (Pass rate: {overall_pass_rate:.1%} < {fail_threshold:.1%})")
         if os.getenv("CI"):
             sys.exit(1)  # Fail CI build
         return results
@@ -237,9 +237,9 @@ def generate_github_annotations(results: Dict[str, Any]):
     # Summary
     overall = results.get("overall", {})
     if overall.get("passed"):
-        print(f"::notice file=agent::✅ Agent evaluation passed with {overall.get('pass_rate', 0):.1%} success rate")
+        print(f"::notice file=agent::PASSED: Agent evaluation passed with {overall.get('pass_rate', 0):.1%} success rate")
     else:
-        print(f"::error file=agent::❌ Agent evaluation failed with {overall.get('pass_rate', 0):.1%} success rate")
+        print(f"::error file=agent::FAILED: Agent evaluation failed with {overall.get('pass_rate', 0):.1%} success rate")
 
 
 def generate_gitlab_annotations(results: Dict[str, Any]):
@@ -350,7 +350,7 @@ jobs:
 if __name__ == "__main__":
     # Demo mode - show what would happen
     if len(sys.argv) == 1:
-        print("🚀 ACP-Evals CI Automation Demo")
+        print("ACP-Evals CI Automation Demo")
         print("\nThis would run comprehensive agent evaluation in CI/CD.")
         print("\nUsage:")
         print("  python 07_ci_automation.py http://localhost:8000/agents/my-agent")

@@ -168,15 +168,15 @@ async def evaluate_research_agent():
         passed = True
         if result.details["tokens"]["total"] > test["max_tokens"]:
             passed = False
-            print(f"❌ Token limit exceeded: {result.details['tokens']['total']} > {test['max_tokens']}")
+            print(f"FAILED: Token limit exceeded: {result.details['tokens']['total']} > {test['max_tokens']}")
         else:
-            print(f"✅ Token usage OK: {result.details['tokens']['total']} tokens")
+            print(f"PASSED: Token usage OK: {result.details['tokens']['total']} tokens")
         
         if result.details["latency_ms"] > test["max_latency_ms"]:
             passed = False
-            print(f"❌ Latency limit exceeded: {result.details['latency_ms']:.0f}ms > {test['max_latency_ms']}ms")
+            print(f"FAILED: Latency limit exceeded: {result.details['latency_ms']:.0f}ms > {test['max_latency_ms']}ms")
         else:
-            print(f"✅ Latency OK: {result.details['latency_ms']:.0f}ms")
+            print(f"PASSED: Latency OK: {result.details['latency_ms']:.0f}ms")
         
         print(f"   Cost: ${result.details['cost_usd']:.4f}")
         print()
@@ -200,7 +200,7 @@ async def evaluate_research_agent():
     print(f"Research Quality: {accuracy_results.pass_rate:.1f}% pass rate")
     print(f"Average Quality Score: {accuracy_results.avg_score:.2f}/1.0")
     print(f"Performance: All tests within limits")
-    print(f"Reliability: {'✅ Passed' if reliability_result.passed else '❌ Failed'}")
+    print(f"Reliability: {'PASSED' if reliability_result.passed else 'FAILED'}")
     
     # 5. Export comprehensive report
     comprehensive_results = {
@@ -226,7 +226,7 @@ async def evaluate_research_agent():
     with open("research_agent_comprehensive_eval.json", "w") as f:
         json.dump(comprehensive_results, f, indent=2, default=str)
     
-    print("\n✅ Comprehensive evaluation report saved to research_agent_comprehensive_eval.json")
+    print("\nCOMPLETE: Comprehensive evaluation report saved to research_agent_comprehensive_eval.json")
 
 
 if __name__ == "__main__":

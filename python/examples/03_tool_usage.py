@@ -186,10 +186,10 @@ async def evaluate_tool_agent():
         tools_used = list(set(call[0] for call in agent.tool_calls))
         call_count = len(agent.tool_calls)
         
-        status = "✅" if set(tools_used) == set(test["expected_tools"]) else "❌"
+        status = "PASSED" if set(tools_used) == set(test["expected_tools"]) else "FAILED"
         print(f"\n   {test['name']}:")
         print(f"   {status} Expected tools: {test['expected_tools']}")
-        print(f"   {'✅' if call_count == test['expected_calls'] else '⚠️'} Tool calls: {call_count} (expected {test['expected_calls']})")
+        print(f"   {'PASSED' if call_count == test['expected_calls'] else 'WARNING'} Tool calls: {call_count} (expected {test['expected_calls']})")
         print(f"   Actual calls: {[f'{tool}({arg})' for tool, arg in agent.tool_calls]}")
     
     # 2. Accuracy Evaluation - Test Correct Results
@@ -216,7 +216,7 @@ async def evaluate_tool_agent():
     accuracy_test_cases = [
         {
             "input": "What is 25 * 4 + sqrt(16)?",
-            "expected": "104",  # 100 + 4
+            "expected": "104",  
             "context": {"test_type": "calculation_accuracy"}
         },
         {
@@ -294,11 +294,11 @@ async def evaluate_tool_agent():
         try:
             response = await agent.run(test["input"])
             if "error" in response.lower() or "not found" in response.lower():
-                print(f"   ✅ {test['name']}: Handled gracefully")
+                print(f"   PASSED {test['name']}: Handled gracefully")
             else:
-                print(f"   ⚠️ {test['name']}: May not have proper error handling")
+                print(f"   WARNING {test['name']}: May not have proper error handling")
         except Exception as e:
-            print(f"   ❌ {test['name']}: Exception raised - {type(e).__name__}")
+            print(f"   FAILED {test['name']}: Exception raised - {type(e).__name__}")
     
     # 5. Tool Chain Evaluation
     print("\n\n5. Testing Tool Chaining:")
@@ -355,7 +355,7 @@ async def evaluate_tool_agent():
             ]
         }, f, indent=2)
     
-    print("\n✅ Detailed evaluation report saved to tool_agent_evaluation_report.json")
+    print("\nCOMPLETE: Detailed evaluation report saved to tool_agent_evaluation_report.json")
 
 
 if __name__ == "__main__":

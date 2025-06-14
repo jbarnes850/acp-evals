@@ -116,13 +116,13 @@ class MockAgent:
                 return """
                 [REVIEWER FEEDBACK]
                 
-                ✅ **Strengths**:
+                **Strengths**:
                 - Clear structure with logical flow
                 - Good balance of technical detail and accessibility
                 - Practical examples and code snippets
                 - Covers key modern techniques (LoRA, RLHF)
                 
-                📝 **Suggestions**:
+                **Suggestions**:
                 - Add specific benchmarks/performance numbers
                 - Include cost estimates for fine-tuning
                 - Add links to example repositories
@@ -266,7 +266,7 @@ async def evaluate_multi_agent_system():
         
         print(f"   - Latency: {result.details['latency_ms']:.2f}ms")
         print(f"   - Tokens: {result.details['tokens']['total']}")
-        print(f"   - Status: {'✅ Passed' if result.passed else '❌ Failed'}")
+        print(f"   - Status: {'PASSED' if result.passed else 'FAILED'}")
     
     # 3. Test Error Handling and Recovery
     print("\n3. Testing Error Handling in Multi-Agent Flow:")
@@ -285,9 +285,9 @@ async def evaluate_multi_agent_system():
     ]
     
     # In a real implementation, we would test these scenarios
-    print("   - Researcher failure handling: ✅ (simulated)")
-    print("   - Writer timeout handling: ✅ (simulated)")
-    print("   - Handoff retry logic: ✅ (simulated)")
+    print("   - Researcher failure handling: PASSED (simulated)")
+    print("   - Writer timeout handling: PASSED (simulated)")
+    print("   - Handoff retry logic: PASSED (simulated)")
     
     # 4. Comprehensive System Evaluation
     print("\n4. System-Wide Evaluation:")
@@ -306,8 +306,8 @@ async def evaluate_multi_agent_system():
     
     print(f"   - Total handoffs: {handoff_quality['total_handoffs']}")
     print(f"   - Successful handoffs: {handoff_quality['successful_handoffs']}")
-    print(f"   - Information preserved: {'✅' if handoff_quality['information_preserved'] else '❌'}")
-    print(f"   - Task completed: {'✅' if handoff_quality['final_task_completed'] else '❌'}")
+    print(f"   - Information preserved: {'PASSED' if handoff_quality['information_preserved'] else 'FAILED'}")
+    print(f"   - Task completed: {'PASSED' if handoff_quality['final_task_completed'] else 'FAILED'}")
     
     # 5. Generate Evaluation Report
     print("\n=== Multi-Agent System Evaluation Summary ===")
@@ -337,7 +337,7 @@ async def evaluate_multi_agent_system():
     with open("multi_agent_evaluation_report.json", "w") as f:
         json.dump(report, f, indent=2)
     
-    print("\n✅ Detailed evaluation report saved to multi_agent_evaluation_report.json")
+    print("\nCOMPLETE: Detailed evaluation report saved to multi_agent_evaluation_report.json")
 
 
 if __name__ == "__main__":

@@ -13,8 +13,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from acp_evals import AccuracyEval, evaluate
 from acp_evals.providers import ProviderFactory
-from acp_evals.config import check_provider_setup
-from acp_evals.exceptions import (
+from acp_evals.core.config import check_provider_setup
+from acp_evals.core.exceptions import (
     ProviderNotConfiguredError,
     InvalidEvaluationInputError,
     format_provider_setup_help
@@ -91,7 +91,7 @@ async def test_helpful_errors():
     print("✓ Provides detailed setup instructions")
     
     # Test validation error formatting
-    from acp_evals.exceptions import format_validation_error
+    from acp_evals.core.exceptions import format_validation_error
     
     errors = {
         "input": "Cannot be empty",
@@ -136,7 +136,7 @@ async def test_cli_check():
     print("\n=== CLI Check Command ===")
     
     # We can't run the actual CLI here, but we can test the components
-    from acp_evals.cli_check import check_env_file
+    from acp_evals.cli.check import check_env_file
     
     env_path = check_env_file()
     if env_path:

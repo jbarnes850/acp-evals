@@ -12,13 +12,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from acp_evals import AccuracyEval, evaluate
-from acp_evals.exceptions import (
+from acp_evals.core.exceptions import (
     ProviderNotConfiguredError,
     AgentConnectionError,
     InvalidEvaluationInputError,
     ConfigurationError
 )
-from acp_evals.logging_config import setup_logging
+from acp_evals.utils.logging import setup_logging
 
 
 # Enable debug logging
@@ -129,7 +129,7 @@ async def test_helpful_setup_instructions():
     """Test that setup instructions are helpful."""
     print("\n=== Test: Setup Instructions ===")
     
-    from acp_evals.exceptions import format_provider_setup_help
+    from acp_evals.core.exceptions import format_provider_setup_help
     
     # Get setup help for each provider
     for provider in ["openai", "anthropic", "ollama"]:
@@ -146,7 +146,7 @@ async def test_cost_tracking():
     """Test cost tracking and warnings."""
     print("\n=== Test: Cost Tracking ===")
     
-    from acp_evals.logging_config import get_cost_tracker
+    from acp_evals.utils.logging import get_cost_tracker
     
     # Reset cost tracker
     tracker = get_cost_tracker()

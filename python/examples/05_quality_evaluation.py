@@ -241,7 +241,7 @@ async def test_comprehensive_quality():
     )
     
     print(f"\nOverall quality score: {summary['overall_score']:.2f}")
-    print(f"Quality passed: {'✅' if summary['overall_passed'] else '❌'}")
+    print(f"Quality passed: {'PASSED' if summary['overall_passed'] else 'FAILED'}")
 
 
 async def main():
@@ -256,7 +256,7 @@ async def main():
     await test_tool_accuracy()
     await test_comprehensive_quality()
     
-    print("\n\n✅ All quality evaluations completed!")
+    print("\n\nCOMPLETE: All quality evaluations completed!")
     print("\nKey Takeaways:")
     print("- Use GroundednessEval when agents work with specific documents/context")
     print("- Use CompletenessEval for multi-part or complex questions")

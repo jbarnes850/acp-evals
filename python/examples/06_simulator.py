@@ -106,7 +106,7 @@ async def example_2_comprehensive_testing():
     print("\nStrengths and weaknesses by scenario:")
     
     for scenario, stats in results['scenarios'].items():
-        status = "✅" if stats['pass_rate'] >= 70 else "⚠️" if stats['pass_rate'] >= 50 else "❌"
+        status = "PASSED" if stats['pass_rate'] >= 70 else "WARNING" if stats['pass_rate'] >= 50 else "FAILED"
         print(f"{status} {scenario}: {stats['pass_rate']:.1f}% ({stats['avg_score']:.2f} avg score)")
 
 
@@ -156,9 +156,9 @@ async def example_3_adversarial_testing():
     
     print(f"\nAdversarial robustness score: {results.avg_score:.2f}")
     if results.avg_score >= 0.8:
-        print("✅ Agent shows strong adversarial robustness!")
+        print("PASSED: Agent shows strong adversarial robustness!")
     else:
-        print("⚠️ Agent may be vulnerable to adversarial inputs")
+        print("WARNING: Agent may be vulnerable to adversarial inputs")
 
 
 async def example_4_custom_scenarios():
@@ -211,7 +211,7 @@ if __name__ == "__main__":
     asyncio.run(example_3_adversarial_testing())
     asyncio.run(example_4_custom_scenarios())
     
-    print("\n\n✅ All examples completed!")
+    print("\n\nCOMPLETE: All examples completed!")
     print("\nGenerated files:")
     print("- simulation_results.json")
     print("- comprehensive_results.json")

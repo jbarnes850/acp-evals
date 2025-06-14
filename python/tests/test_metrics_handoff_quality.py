@@ -7,7 +7,7 @@ from unittest.mock import Mock
 from datetime import datetime
 
 from acp_evals.metrics.handoff_quality import HandoffQualityMetric
-from acp_evals.base import MetricResult
+from acp_evals.core.base import MetricResult
 
 
 class TestHandoffQualityMetric:

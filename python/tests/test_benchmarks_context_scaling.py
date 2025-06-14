@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock
 from datetime import datetime
 
 from acp_evals.benchmarks.context_scaling import ContextScalingBenchmark
-from acp_evals.base import BenchmarkResult, BenchmarkTask
+from acp_evals.core.base import BenchmarkResult, BenchmarkTask
 
 
 class TestContextScalingBenchmark:
