@@ -21,15 +21,11 @@ class OpenAIProvider(LLMProvider):
     # Pricing per 1K tokens (as of June 2025)
     PRICING = {
         # June 2025 Models
-        "gpt-4.1": {"input": 0.01, "output": 0.03},  # Latest GPT-4.1 with improved coding
-        "gpt-4.1-nano": {"input": 0.005, "output": 0.015},  # Nano variant
-        "o3": {"input": 0.015, "output": 0.075},  # Reasoning model (200K context)
-        "o3-mini": {"input": 0.003, "output": 0.015},  # Fast reasoning (200K context)
-        "o4-mini": {"input": 0.002, "output": 0.010},  # Cost-efficient reasoning
-        # Legacy models (being deprecated July 2025)
-        "gpt-4": {"input": 0.03, "output": 0.06},
-        "gpt-4-turbo": {"input": 0.01, "output": 0.03},
-        "gpt-3.5-turbo": {"input": 0.0005, "output": 0.0015},
+        "gpt-4.1": {"input": 0.01, "output": 0.03}, 
+        "gpt-4.1-nano": {"input": 0.005, "output": 0.015},  
+        "o3": {"input": 0.015, "output": 0.075},  
+        "o3-mini": {"input": 0.003, "output": 0.015},  
+        "o4-mini": {"input": 0.002, "output": 0.010},  
     }
 
     def __init__(
