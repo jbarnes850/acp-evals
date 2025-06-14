@@ -70,47 +70,23 @@ This pattern extends to all evaluation types. Replace `AccuracyEval` with `Perfo
 
 ```mermaid
 graph TB
-    A[Agent Under Test] --> B[ACP Evals Framework]
+    A[ACP Agent] --> B[ACP Evals Framework]
     
-    B --> C[API Layer]
-    B --> D[Evaluation Core]
-    B --> E[Provider Layer]
-    B --> F[Infrastructure]
+    B --> C[Developer API<br/>evaluate AccuracyEval PerformanceEval]
+    B --> D[Multi-Agent Evaluators<br/>HandoffEval LinearPattern SwarmPattern]
+    B --> E[Production Features<br/>Trace Recycling Continuous Evaluation]
     
-    C --> C1[evaluate function]
-    C --> C2[AccuracyEval]
-    C --> C3[PerformanceEval]
+    F[LLM Providers<br/>OpenAI Anthropic Ollama] --> B
     
-    D --> D1[Multi-Agent Patterns]
-    D --> D2[Built-in Evaluators]
-    D --> D3[Benchmarks and Datasets]
+    B --> G[Results<br/>Scores Costs Analytics]
     
-    D1 --> D1a[LinearPattern]
-    D1 --> D1b[SupervisorPattern] 
-    D1 --> D1c[SwarmPattern]
-    
-    D2 --> D2a[Quality Evaluators]
-    D2 --> D2b[Safety Evaluators]
-    D2 --> D2c[Performance Metrics]
-    
-    D3 --> D3a[Gold Standard]
-    D3 --> D3b[Adversarial Tests]
-    D3 --> D3c[Trace Recycling]
-    
-    E --> E1[OpenAI]
-    E --> E2[Anthropic]
-    E --> E3[Ollama]
-    E --> E4[Mock Mode]
-    
-    F --> F1[Continuous Evaluation]
-    F --> F2[OpenTelemetry Export]
-    F --> F3[CLI Tools]
-    
-    B --> G[Results and Analytics]
-    G --> G1[Pass/Fail Metrics]
-    G --> G2[Token Cost Analysis]
-    G --> G3[Regression Detection]
-    G --> G4[Trend Analysis]
+    style A fill:#e1f5fe
+    style B fill:#f3e5f5
+    style C fill:#e8f5e8
+    style D fill:#fff3e0
+    style E fill:#fce4ec
+    style F fill:#f1f8e9
+    style G fill:#e0f2f1
 ```
 
 ## Core Evaluation Capabilities
