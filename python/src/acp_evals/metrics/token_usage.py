@@ -30,31 +30,27 @@ class TokenUsageMetric(Metric):
     # Model pricing per 1K tokens (update as needed)
     MODEL_COSTS = {
         # OpenAI models
-        "gpt-4": {"input": 0.03, "output": 0.06},
-        "gpt-4-turbo": {"input": 0.01, "output": 0.03},
+        "gpt-4.1": {"input": 0.03, "output": 0.06},
         "gpt-4o": {"input": 0.005, "output": 0.015},
-        "gpt-3.5-turbo": {"input": 0.0005, "output": 0.0015},
         # Anthropic models
-        "claude-3-opus": {"input": 0.015, "output": 0.075},
-        "claude-3-sonnet": {"input": 0.003, "output": 0.015},
-        "claude-3-haiku": {"input": 0.00025, "output": 0.00125},
+        "claude-4-opus": {"input": 0.015, "output": 0.075},
+        "claude-4-sonnet": {"input": 0.003, "output": 0.015},
+        "claude-4-haiku": {"input": 0.00025, "output": 0.00125},
         # Default for unknown models
         "default": {"input": 0.01, "output": 0.03},
     }
     
     # Context window sizes (in tokens)
     CONTEXT_WINDOWS = {
-        "gpt-4": 8192,
-        "gpt-4-turbo": 128000,
+        "gpt-4.1": 1000000,
         "gpt-4o": 128000,
-        "gpt-3.5-turbo": 16385,
-        "claude-3-opus": 200000,
-        "claude-3-sonnet": 200000,
-        "claude-3-haiku": 200000,
+        "claude-4-opus": 200000,
+        "claude-4-sonnet": 200000,
+        "claude-3.5-haiku": 200000,
         "default": 8192,
     }
     
-    def __init__(self, model: str = "gpt-4", encoding: Optional[str] = None):
+    def __init__(self, model: str = "gpt-4.1", encoding: Optional[str] = None):
         """
         Initialize the token usage metric.
         
@@ -149,7 +145,7 @@ class TokenUsageMetric(Metric):
         if model in self.MODEL_COSTS:
             return self.MODEL_COSTS[model]
         
-        # Try partial match (e.g., "gpt-4-0613" matches "gpt-4")
+        # Try partial match (e.g., "gpt-4.1" matches "gpt-4.1")
         for model_key in self.MODEL_COSTS:
             if model.startswith(model_key):
                 return self.MODEL_COSTS[model_key]

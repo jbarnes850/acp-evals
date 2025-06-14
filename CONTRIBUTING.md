@@ -169,7 +169,7 @@ from acp_evals.metrics import TokenUsageMetric
 
 @pytest.mark.asyncio
 async def test_token_usage_calculation():
-    metric = TokenUsageMetric(model="gpt-4")
+    metric = TokenUsageMetric(model="gpt-4.1")
     
     # Create mock run and events
     mock_run = ...

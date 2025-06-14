@@ -59,7 +59,7 @@ acp-evals compare agent1:8000 agent2:8001 --output comparison.json
 - Custom pattern support
 
 ### 4. Rich Insights
-```
+```bash
 🔍 ACP Agent Evaluation Results
 
 Context Scaling Benchmark
@@ -84,7 +84,7 @@ Key Insights:
 from acp_evals.metrics import TokenUsageMetric, QualityMetric
 
 # Track comprehensive token usage
-token_metric = TokenUsageMetric(model="gpt-4")
+token_metric = TokenUsageMetric(model="gpt-4.1")
 result = await token_metric.calculate(run, events)
 print(f"Total cost: ${result.breakdown['cost_usd']:.4f}")
 ```

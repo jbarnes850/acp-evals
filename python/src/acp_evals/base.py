@@ -74,6 +74,28 @@ class MetricResult:
             "metadata": self.metadata,
             "timestamp": self.timestamp.isoformat(),
         }
+    
+    def to_otel_attributes(self) -> Dict[str, Any]:
+        """Convert metric result to OpenTelemetry attributes."""
+        attributes = {
+            "metric.name": self.name,
+            "metric.value": self.value,
+            "metric.unit": self.unit,
+            "metric.timestamp": self.timestamp.isoformat() if self.timestamp else None,
+        }
+        
+        # Add breakdown values as attributes
+        if self.breakdown:
+            for key, value in self.breakdown.items():
+                if isinstance(value, (int, float, str, bool)):
+                    attributes[f"metric.breakdown.{key}"] = value
+                elif isinstance(value, dict):
+                    # Flatten nested dicts one level
+                    for sub_key, sub_value in value.items():
+                        if isinstance(sub_value, (int, float, str, bool)):
+                            attributes[f"metric.breakdown.{key}.{sub_key}"] = sub_value
+        
+        return attributes
 
 
 class Metric(ABC):

@@ -49,7 +49,7 @@ async def main():
     # Connect to your agent
     client = ACPEvaluationClient(
         base_url="http://localhost:8000",
-        metrics=[TokenUsageMetric(model="gpt-4")]
+        metrics=[TokenUsageMetric(model="gpt-4.1")]
     )
     
     # Run with tracking

@@ -51,7 +51,7 @@ async def main():
     
     # Initialize metrics
     metrics = [
-        TokenUsageMetric(model="gpt-4"),
+        TokenUsageMetric(model="gpt-4.1"),
         LatencyMetric(),
         ContextEfficiencyMetric(),
     ]

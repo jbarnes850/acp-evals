@@ -118,12 +118,12 @@ class TokenUsageMetric(Metric):
     
     # Approximate costs per 1K tokens (update as needed)
     COSTS = {
-        "gpt-4": {"input": 0.03, "output": 0.06},
-        "claude-3-opus": {"input": 0.015, "output": 0.075},
-        "claude-3-sonnet": {"input": 0.003, "output": 0.015},
+        "gpt-4.1": {"input": 0.03, "output": 0.06},
+        "claude-4-opus": {"input": 0.015, "output": 0.075},
+        "claude-4-sonnet": {"input": 0.003, "output": 0.015},
     }
     
-    def __init__(self, model: str = "gpt-4"):
+    def __init__(self, model: str = "gpt-4.1"):
         self.model = model
         self.encoder = tiktoken.get_encoding("cl100k_base")
         
