@@ -22,13 +22,7 @@ from acp_evals.base import (
 from acp_evals.patterns import AgentInfo
 
 
-# Event loop fixture for async tests
-@pytest.fixture
-def event_loop():
-    """Create an instance of the default event loop for the test session."""
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
+# Event loop is now handled by pytest-asyncio's default configuration
 
 
 # Mock ACP SDK objects
@@ -37,6 +31,7 @@ def mock_run():
     """Create a mock Run object."""
     run = Mock(spec=Run)
     run.id = "test-run-123"
+    run.run_id = "test-run-123"  # Some code expects run_id instead of id
     run.status = "completed"
     run.created_at = datetime.now()
     run.updated_at = datetime.now()
@@ -50,6 +45,10 @@ def mock_message_part():
     part = Mock(spec=MessagePart)
     part.content = "Test message content"
     part.type = "text"
+    part.name = None  # MessagePart can have optional name
+    part.content_type = "text/plain"  # Content type for the part
+    part.content_encoding = "plain"  # Default encoding
+    part.content_url = None  # No URL for this part
     return part
 
 

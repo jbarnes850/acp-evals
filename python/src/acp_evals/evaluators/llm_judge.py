@@ -5,7 +5,7 @@ Uses a single LLM call with structured rubric for consistent evaluation.
 """
 
 import json
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 from acp_sdk.client import Client
 from acp_sdk import Message, MessagePart
 

@@ -9,10 +9,12 @@ from acp_evals.metrics.token_usage import TokenUsageMetric
 from acp_evals.metrics.latency import LatencyMetric
 from acp_evals.metrics.context import ContextEfficiencyMetric
 from acp_evals.metrics.cost import CostMetric
+from acp_evals.metrics.handoff_quality import HandoffQualityMetric
 
 __all__ = [
     "TokenUsageMetric",
     "LatencyMetric", 
     "ContextEfficiencyMetric",
     "CostMetric",
+    "HandoffQualityMetric",
 ]

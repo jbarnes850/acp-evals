@@ -208,30 +208,65 @@ class TokenUsageMetric(Metric):
         for event in events:
             if event.type == "message.created" and hasattr(event, "message"):
                 message = event.message
-                tokens = self._count_message_tokens(message)
+                
                 agent_id, subagent_id = self._extract_agent_info(event)
                 
-                # Categorize tokens by message role
-                if message.role == "user":
-                    usage.input_tokens += tokens
-                    usage.agent_breakdown[agent_id]["input"] += tokens
+                # Check if pre-calculated tokens are available
+                if hasattr(event, "data") and "tokens" in event.data:
+                    token_data = event.data["tokens"]
+                    input_tokens = token_data.get("input", 0)
+                    output_tokens = token_data.get("output", 0)
+                    
+                    usage.input_tokens += input_tokens
+                    usage.output_tokens += output_tokens
+                    usage.agent_breakdown[agent_id]["input"] += input_tokens
+                    usage.agent_breakdown[agent_id]["output"] += output_tokens
                     if subagent_id:
-                        usage.agent_breakdown[f"{agent_id}/{subagent_id}"]["input"] += tokens
-                        
-                elif message.role.startswith("agent") or message.role == "assistant":
-                    usage.output_tokens += tokens
-                    usage.agent_breakdown[agent_id]["output"] += tokens
-                    if subagent_id:
-                        usage.agent_breakdown[f"{agent_id}/{subagent_id}"]["output"] += tokens
-                        
-                elif message.role == "tool" or message.role == "function":
-                    usage.tool_tokens += tokens
-                    usage.agent_breakdown[agent_id]["tool"] += tokens
-                    if subagent_id:
-                        usage.agent_breakdown[f"{agent_id}/{subagent_id}"]["tool"] += tokens
+                        usage.agent_breakdown[f"{agent_id}/{subagent_id}"]["input"] += input_tokens
+                        usage.agent_breakdown[f"{agent_id}/{subagent_id}"]["output"] += output_tokens
+                    
+                    tokens = input_tokens + output_tokens
+                else:
+                    # Count tokens from message content
+                    tokens = self._count_message_tokens(message)
+                    
+                    # Categorize tokens by message role
+                    if message.role == "user":
+                        usage.input_tokens += tokens
+                        usage.agent_breakdown[agent_id]["input"] += tokens
+                        if subagent_id:
+                            usage.agent_breakdown[f"{agent_id}/{subagent_id}"]["input"] += tokens
+                            
+                    elif message.role.startswith("agent") or message.role == "assistant":
+                        usage.output_tokens += tokens
+                        usage.agent_breakdown[agent_id]["output"] += tokens
+                        if subagent_id:
+                            usage.agent_breakdown[f"{agent_id}/{subagent_id}"]["output"] += tokens
+                            
+                    elif message.role == "tool" or message.role == "function":
+                        usage.tool_tokens += tokens
+                        usage.agent_breakdown[agent_id]["tool"] += tokens
+                        if subagent_id:
+                            usage.agent_breakdown[f"{agent_id}/{subagent_id}"]["tool"] += tokens
                 
                 # Track cumulative context
                 cumulative_tokens += tokens
+                max_context_used = max(max_context_used, cumulative_tokens)
+            
+            # Handle tool events
+            elif event.type == "tool.called" and hasattr(event, "data") and "tokens" in event.data:
+                token_data = event.data["tokens"]
+                input_tokens = token_data.get("input", 0)
+                output_tokens = token_data.get("output", 0)
+                
+                usage.tool_tokens += input_tokens + output_tokens
+                
+                agent_id, subagent_id = self._extract_agent_info(event)
+                usage.agent_breakdown[agent_id]["tool"] += input_tokens + output_tokens
+                if subagent_id:
+                    usage.agent_breakdown[f"{agent_id}/{subagent_id}"]["tool"] += input_tokens + output_tokens
+                
+                cumulative_tokens += input_tokens + output_tokens
                 max_context_used = max(max_context_used, cumulative_tokens)
             
             # Handle message parts separately if needed
@@ -280,7 +315,7 @@ class TokenUsageMetric(Metric):
             metadata={
                 "model": self.model,
                 "run_id": run.run_id,
-                "run_status": run.status.value,
+                "run_status": run.status.value if hasattr(run.status, 'value') else run.status,
                 "encoding": self.encoding_name,
             },
         )
