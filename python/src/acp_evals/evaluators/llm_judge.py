@@ -2,12 +2,13 @@
 LLM-as-Judge evaluator based on Anthropic research.
 
 Uses a single LLM call with structured rubric for consistent evaluation.
+Supports both real LLM providers and mock mode for testing.
 """
 
 import json
-from typing import Any, Dict, Optional, List
-from acp_sdk.client import Client
-from acp_sdk import Message, MessagePart
+import re
+import os
+from typing import Any, Dict, Optional
 
 from acp_evals.evaluators.base import Evaluator, EvaluationResult
 
@@ -18,6 +19,9 @@ class LLMJudge(Evaluator):
     
     Based on Anthropic's findings that single LLM calls with
     comprehensive rubrics are more consistent than multiple calls.
+    
+    Supports multiple LLM providers (OpenAI, Anthropic, Azure, Ollama)
+    with automatic fallback to mock mode for testing.
     """
     
     DEFAULT_RUBRIC = {
@@ -45,31 +49,107 @@ class LLMJudge(Evaluator):
     
     def __init__(
         self,
-        judge_url: str = "http://localhost:8000",
-        judge_agent: str = "default",
+        # Legacy parameters for backward compatibility
+        judge_url: Optional[str] = None,
+        judge_agent: Optional[str] = None,
+        
+        # New provider-based parameters
+        provider: Optional[str] = None,
+        model: Optional[str] = None,
+        
+        # Common parameters
         rubric: Optional[Dict[str, Dict[str, Any]]] = None,
         pass_threshold: float = 0.7,
-        mock_mode: bool = False,
+        mock_mode: Optional[bool] = None,
+        
+        # LLM parameters
+        temperature: float = 0.0,
+        max_tokens: int = 1000,
+        
+        **provider_kwargs
     ):
         """
         Initialize LLM Judge.
         
         Args:
-            judge_url: URL of the ACP server running the judge agent
-            judge_agent: Name of the agent to use as judge
+            judge_url: (Legacy) URL of ACP server - triggers provider mode if None
+            judge_agent: (Legacy) Agent name - ignored in provider mode
+            provider: LLM provider to use (auto-detects if not specified)
+            model: Model to use (uses provider default if not specified)
             rubric: Custom evaluation rubric (uses default if None)
             pass_threshold: Minimum score to pass (0.0 to 1.0)
+            mock_mode: Force mock mode (auto-detected if None)
+            temperature: LLM temperature (0.0 for consistent evaluation)
+            max_tokens: Maximum tokens for evaluation response
+            **provider_kwargs: Additional provider-specific configuration
         """
-        self.judge_url = judge_url
-        self.judge_agent = judge_agent
         self.rubric = rubric or self.DEFAULT_RUBRIC
         self.pass_threshold = pass_threshold
-        self.mock_mode = mock_mode
-        if not mock_mode:
-            self.client = Client(base_url=judge_url)
+        self.temperature = temperature or float(os.getenv("EVALUATION_TEMPERATURE", "0.0"))
+        self.max_tokens = max_tokens or int(os.getenv("EVALUATION_MAX_TOKENS", "1000"))
+        
+        # Determine if we should use provider mode or legacy ACP mode
+        self.use_provider_mode = judge_url is None or judge_url == "http://localhost:8000"
+        
+        # Initialize provider if in provider mode
+        if self.use_provider_mode:
+            # Lazy import to avoid circular dependency
+            from acp_evals.providers import ProviderFactory
+            
+            try:
+                # Auto-detect provider if not specified
+                if not provider:
+                    provider = ProviderFactory.get_default_provider()
+                    if not provider:
+                        if mock_mode is False:
+                            raise ValueError(
+                                "No LLM provider configured. Please set up API keys in .env file "
+                                "or pass provider configuration."
+                            )
+                        # No provider and mock_mode not explicitly False - use mock
+                        self.provider = None
+                        self.provider_name = "mock"
+                        self.mock_mode = True
+                    else:
+                        # Provider found
+                        if model:
+                            provider_kwargs["model"] = model
+                        self.provider = ProviderFactory.create(provider, **provider_kwargs)
+                        self.provider_name = provider
+                        self.mock_mode = False
+                else:
+                    # Provider explicitly specified
+                    if model:
+                        provider_kwargs["model"] = model
+                    self.provider = ProviderFactory.create(provider, **provider_kwargs)
+                    self.provider_name = provider
+                    self.mock_mode = False
+                    
+            except Exception as e:
+                if mock_mode is False:
+                    # User explicitly wants real LLM, so fail
+                    raise
+                # Fall back to mock mode
+                print(f"Warning: {str(e)}. Falling back to mock evaluation mode.")
+                self.provider = None
+                self.provider_name = "mock"
+                self.mock_mode = True
+        else:
+            # Legacy ACP mode
+            self.judge_url = judge_url
+            self.judge_agent = judge_agent or "default"
+            self.mock_mode = mock_mode if mock_mode is not None else False
+            self.provider = None
+            self.provider_name = "acp"
+            
+            if not self.mock_mode:
+                from acp_sdk.client import Client
+                self.client = Client(base_url=judge_url)
     
     @property
     def name(self) -> str:
+        if self.use_provider_mode:
+            return f"llm_judge_{self.provider_name}"
         return "llm_judge"
     
     def _build_evaluation_prompt(
@@ -140,7 +220,7 @@ Important: Return ONLY the JSON object, no other text."""
             score=overall_score,
             passed=overall_score >= self.pass_threshold,
             breakdown=scores,
-            feedback="Mock evaluation (no LLM server required)"
+            feedback="Mock evaluation (no LLM provider configured)"
         )
     
     async def evaluate(
@@ -169,105 +249,105 @@ Important: Return ONLY the JSON object, no other text."""
         # Build evaluation prompt
         eval_prompt = self._build_evaluation_prompt(task, response, reference)
         
-        # Create message for judge
-        message = Message(
-            parts=[MessagePart(content=eval_prompt, content_type="text/plain")]
-        )
-        
-        try:
-            # Get evaluation from judge LLM
-            run = await self.client.run_sync(
-                agent=self.judge_agent,
-                input=[message]
-            )
-            
-            # Extract response
-            if run.output and run.output[0].parts:
-                judge_response = run.output[0].parts[0].content
+        if self.use_provider_mode and self.provider:
+            # Use LLM provider
+            try:
+                # Get evaluation from LLM
+                llm_response = await self.provider.complete(
+                    prompt=eval_prompt,
+                    temperature=self.temperature,
+                    max_tokens=self.max_tokens
+                )
                 
                 # Parse JSON response
                 try:
-                    evaluation = json.loads(judge_response)
+                    evaluation = json.loads(llm_response.content)
                 except json.JSONDecodeError:
                     # Try to extract JSON from response
-                    import re
-                    json_match = re.search(r'\{.*\}', judge_response, re.DOTALL)
+                    json_match = re.search(r'\{.*\}', llm_response.content, re.DOTALL)
                     if json_match:
                         evaluation = json.loads(json_match.group())
                     else:
-                        raise ValueError("Could not parse judge response as JSON")
+                        raise ValueError(f"Could not parse LLM response as JSON: {llm_response.content[:200]}...")
                 
-                # Create result
+                # Validate and extract evaluation data
+                scores = evaluation.get("scores", {})
+                overall_score = evaluation.get("overall_score", 0.0)
+                passed = evaluation.get("passed", overall_score >= self.pass_threshold)
+                feedback = evaluation.get("feedback", "No feedback provided")
+                
+                # Add usage and cost info to feedback if available
+                if llm_response.usage:
+                    feedback += f"\n\n[Evaluation used {llm_response.usage.get('total_tokens', 0)} tokens"
+                    if llm_response.cost and llm_response.cost > 0:
+                        feedback += f", cost: ${llm_response.cost:.4f}"
+                    feedback += "]"
+                
                 return EvaluationResult(
-                    score=evaluation["overall_score"],
-                    passed=evaluation["passed"],
-                    breakdown=evaluation["scores"],
-                    feedback=evaluation["feedback"],
+                    score=overall_score,
+                    passed=passed,
+                    breakdown=scores,
+                    feedback=feedback,
                     metadata={
-                        "judge_agent": self.judge_agent,
-                        "rubric": self.rubric,
-                        "task_length": len(task),
-                        "response_length": len(response),
-                        "has_reference": reference is not None,
+                        "provider": self.provider_name,
+                        "model": self.provider.model,
+                        "usage": llm_response.usage,
+                        "cost": llm_response.cost
                     }
                 )
                 
-            else:
-                # No response from judge
+            except Exception as e:
+                # Log error and fall back to mock
+                print(f"Error during LLM evaluation: {str(e)}")
+                print("Falling back to mock evaluation")
+                return self._mock_evaluate(task, response, reference)
+                
+        else:
+            # Legacy ACP mode
+            from acp_sdk import Message, MessagePart
+            
+            # Create message for judge
+            message = Message(
+                parts=[MessagePart(content=eval_prompt, content_type="text/plain")]
+            )
+            
+            try:
+                # Get evaluation from judge LLM
+                run = await self.client.run_sync(
+                    agent=self.judge_agent,
+                    input=[message]
+                )
+                
+                # Extract response
+                if run.output and run.output[0].parts:
+                    judge_response = run.output[0].parts[0].content
+                    
+                    # Parse JSON response
+                    try:
+                        evaluation = json.loads(judge_response)
+                    except json.JSONDecodeError:
+                        # Try to extract JSON from response
+                        json_match = re.search(r'\{.*\}', judge_response, re.DOTALL)
+                        if json_match:
+                            evaluation = json.loads(json_match.group())
+                        else:
+                            raise ValueError("Could not parse judge response as JSON")
+                    
+                    # Create result
+                    return EvaluationResult(
+                        score=evaluation.get("overall_score", 0.0),
+                        passed=evaluation.get("passed", False),
+                        breakdown=evaluation.get("scores", {}),
+                        feedback=evaluation.get("feedback", "No feedback provided")
+                    )
+                else:
+                    raise ValueError("No response from judge agent")
+                    
+            except Exception as e:
+                # Return error result
                 return EvaluationResult(
                     score=0.0,
                     passed=False,
                     breakdown={},
-                    feedback="Judge agent did not provide a response",
-                    metadata={"error": "no_response"}
+                    feedback=f"Evaluation failed: {str(e)}"
                 )
-                
-        except Exception as e:
-            # Handle evaluation errors
-            return EvaluationResult(
-                score=0.0,
-                passed=False,
-                breakdown={},
-                feedback=f"Evaluation failed: {str(e)}",
-                metadata={"error": str(e), "error_type": type(e).__name__}
-            )
-    
-    async def batch_evaluate(
-        self,
-        evaluations: List[Dict[str, Any]],
-        max_concurrent: int = 5,
-    ) -> List[EvaluationResult]:
-        """
-        Evaluate multiple responses in batch.
-        
-        Args:
-            evaluations: List of dicts with 'task', 'response', 'reference' keys
-            max_concurrent: Maximum concurrent evaluations
-            
-        Returns:
-            List of EvaluationResults
-        """
-        import asyncio
-        
-        results = []
-        
-        # Process in batches to avoid overwhelming the judge
-        for i in range(0, len(evaluations), max_concurrent):
-            batch = evaluations[i:i + max_concurrent]
-            
-            # Create evaluation tasks
-            tasks = [
-                self.evaluate(
-                    task=eval_data["task"],
-                    response=eval_data["response"],
-                    reference=eval_data.get("reference"),
-                    context=eval_data.get("context"),
-                )
-                for eval_data in batch
-            ]
-            
-            # Run batch concurrently
-            batch_results = await asyncio.gather(*tasks)
-            results.extend(batch_results)
-        
-        return results

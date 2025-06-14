@@ -7,6 +7,9 @@ in the ACP ecosystem.
 
 __version__ = "0.1.0"
 
+# Load configuration on import
+from . import config
+
 # Simple API for developer-friendly usage
 from acp_evals.simple import (
     AccuracyEval,

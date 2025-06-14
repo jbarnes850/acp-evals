@@ -284,19 +284,23 @@ class AccuracyEval(BaseEval):
         else:
             rubric_dict = rubric
         
-        # Initialize LLM judge
-        judge_url = judge_config.get("azure_endpoint", "http://localhost:8000") if judge_config else "http://localhost:8000"
-        
-        # Use mock mode for function/instance agents when no server is configured
-        mock_mode = (not isinstance(agent, str)) and judge_url == "http://localhost:8000"
-        
-        self.judge = LLMJudge(
-            judge_url=judge_url,
-            judge_agent=judge_config.get("azure_deployment", "default") if judge_config else "default",
-            rubric=rubric_dict,
-            pass_threshold=pass_threshold,
-            mock_mode=mock_mode,
-        )
+        # Initialize LLM judge with new provider support
+        if judge_config:
+            # Legacy Azure configuration
+            self.judge = LLMJudge(
+                judge_url=judge_config.get("azure_endpoint"),
+                judge_agent=judge_config.get("azure_deployment"),
+                rubric=rubric_dict,
+                pass_threshold=pass_threshold,
+            )
+        else:
+            # Modern provider-based configuration
+            # Auto-detect mock mode for non-URL agents when no provider configured
+            self.judge = LLMJudge(
+                rubric=rubric_dict,
+                pass_threshold=pass_threshold,
+                model=judge_model,  # This was being ignored before
+            )
         self.judge_config = judge_config
     
     async def run(
