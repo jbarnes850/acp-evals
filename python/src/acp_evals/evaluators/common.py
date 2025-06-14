@@ -196,7 +196,10 @@ class BaseEval:
 
         elif callable(self.agent):
             # Agent is a callable function
-            if asyncio.iscoroutinefunction(self.agent):
+            if asyncio.iscoroutinefunction(self.agent) or (
+                hasattr(self.agent, '__call__') and 
+                asyncio.iscoroutinefunction(self.agent.__call__)
+            ):
                 response = await self.agent(input_text, **kwargs)
             else:
                 response = self.agent(input_text, **kwargs)

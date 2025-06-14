@@ -4,6 +4,15 @@ Evaluators for ACP agent outputs.
 
 from acp_evals.evaluators.base import EvaluationResult, Evaluator
 
+# Binary evaluators (research-backed for improved performance)
+from acp_evals.evaluators.binary_evaluator import (
+    BinaryEvaluationResult,
+    BinaryEvaluator,
+    FactualAccuracyEvaluator,
+    RelevanceEvaluator,
+    SafetyEvaluator,
+)
+
 # Composite evaluators
 from acp_evals.evaluators.composite_evaluators import (
     CompositeResult,
@@ -40,6 +49,13 @@ __all__ = [
     "Evaluator",
     "EvaluationResult",
     "LLMJudge",
+    
+    # Binary evaluators
+    "BinaryEvaluator",
+    "BinaryEvaluationResult",
+    "FactualAccuracyEvaluator",
+    "SafetyEvaluator", 
+    "RelevanceEvaluator",
 
     # Core evaluators
     "GroundednessEvaluator",

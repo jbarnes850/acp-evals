@@ -20,9 +20,21 @@ from .llm_judge import LLMJudge
 class AccuracyEval(BaseEval):
     """
     Evaluate agent response accuracy using LLM-as-Judge.
+    
+    Supports both continuous scoring (default) and binary mode based on
+    research showing binary outputs improve evaluator performance.
 
     Example:
+        # Traditional continuous scoring
         eval = AccuracyEval(agent="http://localhost:8000/agents/my-agent")
+        
+        # Binary mode (recommended for better performance)
+        eval = AccuracyEval(
+            agent="http://localhost:8000/agents/my-agent",
+            binary_mode=True,
+            binary_threshold=0.7
+        )
+        
         result = await eval.run(
             input="What is the capital of France?",
             expected="Paris",
@@ -59,6 +71,8 @@ class AccuracyEval(BaseEval):
         rubric: str | dict[str, dict[str, Any]] = "factual",
         pass_threshold: float = 0.7,
         name: str = "Accuracy Evaluation",
+        binary_mode: bool = False,
+        binary_threshold: float | None = None,
     ):
         """
         Initialize accuracy evaluator.
@@ -70,6 +84,8 @@ class AccuracyEval(BaseEval):
             rubric: Built-in rubric name or custom rubric dict
             pass_threshold: Minimum score to pass (0-1)
             name: Name of the evaluation
+            binary_mode: Use binary pass/fail instead of continuous scoring
+            binary_threshold: Threshold for binary mode (defaults to pass_threshold)
         """
         super().__init__(agent, name)
 
@@ -99,6 +115,8 @@ class AccuracyEval(BaseEval):
                 model=judge_model,  # This was being ignored before
             )
         self.judge_config = judge_config
+        self.binary_mode = binary_mode
+        self.binary_threshold = binary_threshold or pass_threshold
 
     async def run(
         self,
@@ -166,23 +184,57 @@ class AccuracyEval(BaseEval):
             if task is not None:
                 progress.update(task, description="Complete!")
 
-        # Create result
-        result = EvalResult(
-            name=self.name,
-            passed=eval_result.passed,
-            score=eval_result.score,
-            details={
-                "feedback": eval_result.feedback,
-                "scores": eval_result.breakdown,
-                "latency_ms": agent_result["latency_ms"],
-            },
-            metadata={
-                "input": input,
-                "expected": expected,
-                "response": response,
-                "run_id": agent_result.get("run_id"),
-            },
-        )
+        # Apply binary mode if enabled
+        if self.binary_mode:
+            # Convert continuous score to binary decision
+            binary_passed = eval_result.score >= self.binary_threshold
+            binary_score = 1.0 if binary_passed else 0.0
+            
+            # Add binary mode info to feedback
+            binary_feedback = (
+                f"{eval_result.feedback}\n\n"
+                f"[Binary Mode: {'PASS' if binary_passed else 'FAIL'} "
+                f"(score {eval_result.score:.3f} vs threshold {self.binary_threshold:.3f})]"
+            )
+            
+            # Create result with binary scoring
+            result = EvalResult(
+                name=self.name,
+                passed=binary_passed,
+                score=binary_score,
+                details={
+                    "feedback": binary_feedback,
+                    "scores": eval_result.breakdown,
+                    "latency_ms": agent_result["latency_ms"],
+                    "binary_mode": True,
+                    "original_score": eval_result.score,
+                    "threshold": self.binary_threshold,
+                },
+                metadata={
+                    "input": input,
+                    "expected": expected,
+                    "response": response,
+                    "run_id": agent_result.get("run_id"),
+                },
+            )
+        else:
+            # Traditional continuous scoring
+            result = EvalResult(
+                name=self.name,
+                passed=eval_result.passed,
+                score=eval_result.score,
+                details={
+                    "feedback": eval_result.feedback,
+                    "scores": eval_result.breakdown,
+                    "latency_ms": agent_result["latency_ms"],
+                },
+                metadata={
+                    "input": input,
+                    "expected": expected,
+                    "response": response,
+                    "run_id": agent_result.get("run_id"),
+                },
+            )
 
         if print_results:
             result.print_summary()

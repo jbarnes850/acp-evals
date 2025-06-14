@@ -12,6 +12,7 @@ Welcome to the ACP Evals documentation. This directory contains detailed guides 
 ### Core Features
 - **[Continuous AI Integration](continuous-ai.md)** - CI/CD for AI agents
 - **[Trace Recycling](trace-recycling.md)** - Convert production telemetry to evaluation datasets
+- **[LLM Evaluators Guide](llm-evaluators-guide.md)** - When to use LLM-as-judge vs finetuned classifiers
 
 ### Key Concepts
 
