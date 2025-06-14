@@ -5,7 +5,7 @@ A framework for benchmarking, measuring, and analyzing agent performance
 in the ACP ecosystem.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 # Load configuration on import
 # Core framework classes

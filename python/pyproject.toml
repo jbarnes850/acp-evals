@@ -1,6 +1,6 @@
 [project]
 name = "acp-evals"
-version = "0.1.0"
+version = "0.1.1"
 description = "Comprehensive evaluation framework for Agent Communication Protocol (ACP) agents"
 readme = "../README.md"
 requires-python = ">=3.11"
