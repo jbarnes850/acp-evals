@@ -7,6 +7,18 @@ in the ACP ecosystem.
 
 __version__ = "0.1.0"
 
+# Simple API for developer-friendly usage
+from acp_evals.simple import (
+    AccuracyEval,
+    PerformanceEval,
+    ReliabilityEval,
+    SafetyEval,
+    EvalResult,
+    BatchResult,
+    evaluate,
+)
+
+# Core framework classes
 from acp_evals.base import (
     BenchmarkResult,
     BenchmarkTask,
@@ -15,6 +27,15 @@ from acp_evals.base import (
 )
 
 __all__ = [
+    # Simple API (primary interface)
+    "AccuracyEval",
+    "PerformanceEval",
+    "ReliabilityEval",
+    "SafetyEval",
+    "EvalResult",
+    "BatchResult",
+    "evaluate",
+    # Core classes
     "MetricResult",
     "TokenUsage",
     "BenchmarkResult",
