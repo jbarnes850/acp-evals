@@ -31,17 +31,6 @@ OPENAI_API_KEY=sk-proj-...your-key...
 OPENAI_MODEL=gpt-4.1
 ```
 
-3. Optional settings:
-```bash
-# For Azure OpenAI or custom endpoints
-OPENAI_API_BASE=https://your-endpoint.openai.azure.com/
-
-# For specific deployments
-AZURE_OPENAI_API_KEY=your-azure-key
-AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
-AZURE_OPENAI_DEPLOYMENT=your-deployment-name
-```
-
 **Pricing (per 1K tokens):**
 - `gpt-4.1`: $0.01/$0.03 (input/output)
 - `o3`: $0.015/$0.075
@@ -234,66 +223,9 @@ OPENAI_API_BASE=https://your-endpoint.com/v1
 OLLAMA_BASE_URL=http://gpu-server:11434
 ```
 
-## Troubleshooting
-
-### Provider Not Found
-
-```
-Error: No LLM provider configured
-```
-
-**Solution:**
-1. Check API keys in `.env`
-2. Verify environment variables are loaded
-3. Use `acp-evals check` to diagnose
-
-### Invalid Model Error
-
-```
-Warning: Model 'gpt-5' may not be valid
-```
-
-**Solution:**
-- Check model name spelling
-- Ensure model is available in your region
-- Update to latest model names
-
-### Connection Errors
-
-```
-Error: Cannot connect to Ollama
-```
-
-**Solution:**
-1. Ensure Ollama is running: `ollama serve`
-2. Check firewall settings
-3. Verify base URL configuration
-
-### Rate Limit Errors
-
-```
-Error: Rate limit exceeded
-```
-
-**Solution:**
-1. Framework auto-retries with backoff
-2. Consider using multiple API keys
-3. Reduce parallel batch size
-
-## Best Practices
-
-1. **Development**: Use Ollama or mock mode
-2. **Testing**: Use smaller models (o4-mini, qwen3:4b)
-3. **Production**: Use GPT-4.1 or Claude-4 for quality
-4. **Cost Optimization**: 
-   - Cache results when possible
-   - Use appropriate model for task complexity
-   - Monitor token usage regularly
-
 ## Provider Roadmap
 
 Coming soon:
 - Google Gemini support
-- Cohere Command R
 - Custom model endpoints
 - Multi-provider evaluation (compare models)

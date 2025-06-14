@@ -166,11 +166,15 @@ class BaseEval:
                 MessagePart(content=input_text, content_type="text/plain")
             ])
             
-            run = await client.run_sync(
-                agent=agent_name,
-                input=[message],
-                **kwargs
-            )
+            try:
+                run = await client.run_sync(
+                    agent=agent_name,
+                    input=[message],
+                    **kwargs
+                )
+            except Exception as e:
+                # Wrap connection errors
+                raise AgentConnectionError(self.agent, e)
             
             # Wait for completion
             while run.status not in ["completed", "failed", "cancelled"]:

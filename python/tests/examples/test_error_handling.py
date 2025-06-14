@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from acp_evals import AccuracyEval, evaluate
 from acp_evals.exceptions import (
     ProviderNotConfiguredError,
-    ProviderConnectionError,
+    AgentConnectionError,
     InvalidEvaluationInputError,
     ConfigurationError
 )
@@ -71,9 +71,10 @@ async def test_invalid_input():
     """Test validation of invalid inputs."""
     print("\n=== Test: Invalid Input Validation ===")
     
+    # Mock mode is auto-detected when no provider is configured
     eval = AccuracyEval(
         agent=lambda x: f"Response to: {x}",
-        mock_mode=True
+        judge_model="mock"  # This will trigger mock mode
     )
     
     # Test 1: Empty input
@@ -98,7 +99,7 @@ async def test_invalid_input():
     try:
         eval = AccuracyEval(
             agent=123,  # Invalid agent type
-            mock_mode=True
+            judge_model="mock"
         )
     except InvalidEvaluationInputError as e:
         print(f"✓ Invalid agent type rejected: {e}")
@@ -108,22 +109,20 @@ async def test_connection_error():
     """Test connection error handling."""
     print("\n=== Test: Connection Error ===")
     
-    # Use Ollama with wrong URL
+    # Create evaluation with non-existent agent URL
     try:
         eval = AccuracyEval(
-            agent=lambda x: f"Response to: {x}",
-            provider="ollama",
-            mock_mode=False,
-            base_url="http://localhost:99999"  # Wrong port
+            agent="http://localhost:99999/agents/nonexistent",  # Wrong port
+            judge_model="mock"  # Use mock judge to isolate agent connection error
         )
         
         result = await eval.run(
             input="Test input",
             expected="Test output"
         )
-    except ProviderConnectionError as e:
+    except AgentConnectionError as e:
         print(f"✓ Connection error handled: {e}")
-        print(f"  Provider: {e.details['provider']}")
+        print(f"  Agent URL: {e.details['agent_url']}")
 
 
 async def test_helpful_setup_instructions():

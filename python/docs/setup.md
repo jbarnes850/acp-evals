@@ -17,7 +17,7 @@ This guide will help you get started with ACP Evals, from installation to runnin
 pip install acp-evals
 
 # Or install from source
-git clone https://github.com/i-am-bee/acp-evals
+git clone https://github.com/jbarnes850/acp-evals
 cd acp-evals/python
 pip install -e .
 ```
@@ -125,7 +125,7 @@ result = evaluate(
 )
 ```
 
-### 2. With Beautiful Output
+### 2. With Rich Output
 
 ```python
 from acp_evals import AccuracyEval
@@ -249,7 +249,6 @@ pyright src/
 
 ## Getting Help
 
-- 📚 [Full Documentation](../README.md)
-- 💬 [GitHub Discussions](https://github.com/i-am-bee/acp-evals/discussions)
-- 🐛 [Issue Tracker](https://github.com/i-am-bee/acp-evals/issues)
-- 💬 [Discord Community](https://discord.gg/NradeA6ZNF)
+- [Full Documentation](../README.md)
+- [GitHub Discussions](https://github.com/jbarnes850/acp-evals/discussions)
+- [Issue Tracker](https://github.com/jbarnes850/acp-evals/issues)

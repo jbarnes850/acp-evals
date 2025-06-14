@@ -14,25 +14,25 @@ ACP Evals is designed with a layered architecture that balances simplicity for d
 
 ## Architecture Layers
 
-```
+```bash
 ┌─────────────────────────────────────────────────────────────┐
-│                      Simple API Layer                        │
+│                      Simple API Layer                       │
 │  AccuracyEval, PerformanceEval, ReliabilityEval, SafetyEval │
 └─────────────────────────────────────────────────────────────┘
                               │
 ┌─────────────────────────────────────────────────────────────┐
-│                    Evaluation Core                           │
-│        LLMJudge, Evaluators, Metrics, Benchmarks           │
+│                    Evaluation Core                          │
+│        LLMJudge, Evaluators, Metrics, Benchmarks            │
 └─────────────────────────────────────────────────────────────┘
                               │
 ┌─────────────────────────────────────────────────────────────┐
-│                    Provider Layer                            │
-│     OpenAI, Anthropic, Ollama, Mock (Auto-detection)       │
+│                    Provider Layer                           │
+│     OpenAI, Anthropic, Ollama, etc. (Auto-detection)        │
 └─────────────────────────────────────────────────────────────┘
                               │
 ┌─────────────────────────────────────────────────────────────┐
-│                  Infrastructure Layer                        │
-│    Validation, Exceptions, Logging, Telemetry, Config      │
+│                  Infrastructure Layer                       │
+│    Validation, Exceptions, Logging, Telemetry, Config       │
 └─────────────────────────────────────────────────────────────┘
 ```
 
