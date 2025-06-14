@@ -8,25 +8,23 @@ allowing developers to evaluate their agents with minimal code.
 import asyncio
 from typing import Any
 
-# Import common components
-from .evaluators.common import EvalResult, BatchResult
-
 # Import evaluators
 from .evaluators.accuracy import AccuracyEval
+
+# Import common components
+from .evaluators.common import BatchResult, EvalResult
 from .evaluators.performance import PerformanceEval
-from .evaluators.reliability import ReliabilityEval
-from .evaluators.safety import SafetyEval
 
 # Re-export quality evaluators
 from .evaluators.quality.quality import (
+    CompletenessEval,
     GroundednessEval,
-    RelevanceEval,
-    CoherenceEval,
-    FluencyEval,
-    RetrievalEval,
-    SimilarityEval,
-    DocumentRetrievalEval,
+    QualityEval,
+    TaskAdherenceEval,
+    ToolAccuracyEval,
 )
+from .evaluators.reliability import ReliabilityEval
+from .evaluators.safety import SafetyEval
 
 # Export all evaluators
 __all__ = [
@@ -40,12 +38,10 @@ __all__ = [
     "SafetyEval",
     # Quality evaluators
     "GroundednessEval",
-    "RelevanceEval", 
-    "CoherenceEval",
-    "FluencyEval",
-    "RetrievalEval",
-    "SimilarityEval",
-    "DocumentRetrievalEval",
+    "CompletenessEval",
+    "TaskAdherenceEval",
+    "ToolAccuracyEval",
+    "QualityEval",
     # Helper function
     "evaluate",
 ]
@@ -65,3 +61,4 @@ def evaluate(eval_obj: Any, *args, **kwargs) -> EvalResult:
         )
     """
     return asyncio.run(eval_obj.run(*args, **kwargs))
+

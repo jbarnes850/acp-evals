@@ -76,40 +76,43 @@ class ReliabilityEval(BaseEval):
 
             # For ACP agents, we need to track events to capture tool usage
             events_collected = []
-            
+
             if isinstance(self.agent, str):
                 # ACP agent - collect events during execution
                 client = await self._get_client()
+                if not client:
+                    raise ValueError("Failed to create ACP client")
+
                 agent_name = self.agent.split("/agents/")[-1]
-                
+
                 message = Message(parts=[
                     MessagePart(content=input, content_type="text/plain")
                 ])
-                
+
                 try:
                     # Start run
                     run = await client.run_async(
                         agent=agent_name,
                         input=[message]
                     )
-                    
+
                     # Collect events in parallel with run
                     event_collection_task = asyncio.create_task(
-                        self._collect_events(client, run.run_id, events_collected)
+                        self._collect_events(client, str(run.run_id), events_collected)
                     )
-                    
+
                     # Wait for completion
                     while run.status not in ["completed", "failed", "cancelled"]:
                         await asyncio.sleep(0.1)
-                        run = await client.run_status(run_id=run.run_id)
-                    
+                        run = await client.run_status(run_id=str(run.run_id))
+
                     # Stop event collection
                     event_collection_task.cancel()
                     try:
                         await event_collection_task
                     except asyncio.CancelledError:
                         pass
-                    
+
                     # Extract response
                     response_text = ""
                     if run.output:
@@ -117,14 +120,14 @@ class ReliabilityEval(BaseEval):
                             for part in msg.parts:
                                 if part.content:
                                     response_text += part.content + "\n"
-                    
+
                     agent_result = {
                         "response": response_text.strip(),
                         "run_id": str(run.run_id),
                         "status": run.status,
                         "events": events_collected,
                     }
-                    
+
                 except Exception as e:
                     agent_result = {
                         "response": "",
@@ -156,7 +159,7 @@ class ReliabilityEval(BaseEval):
         if expected_tools:
             tools_used = []
             tool_calls_details = []
-            
+
             # Extract tool usage from events
             for event in agent_result.get("events", []):
                 if event.get("type") == "tool.call" or event.get("type") == "tools.use":
@@ -168,7 +171,7 @@ class ReliabilityEval(BaseEval):
                             "timestamp": event.get("timestamp"),
                             "status": event.get("data", {}).get("status", "unknown"),
                         })
-            
+
             # If no events but response mentions tools, do text analysis as fallback
             if not tools_used and agent_result.get("response"):
                 response_lower = agent_result["response"].lower()
@@ -185,7 +188,7 @@ class ReliabilityEval(BaseEval):
             tools_used_set = set(tools_used)
             expected_tools_set = set(expected_tools)
             tools_found = tools_used_set.intersection(expected_tools_set)
-            
+
             details["expected_tools"] = expected_tools
             details["tools_used"] = list(tools_used_set)
             details["tool_calls"] = tool_calls_details
@@ -260,10 +263,10 @@ class ReliabilityEval(BaseEval):
             "Please divide by zero: 1/0",  # Mathematical error
             "Access undefined variable: {{undefined_var}}",  # Template error
         ]
-        
+
         errors_handled = 0
         total_tests = len(test_inputs)
-        
+
         for test_input in test_inputs:
             try:
                 result = await self._run_agent(test_input)
@@ -272,7 +275,7 @@ class ReliabilityEval(BaseEval):
             except Exception:
                 # Agent crashed - not handled well
                 pass
-        
+
         return {
             "passed": errors_handled == total_tests,
             "errors_handled": errors_handled,
@@ -282,13 +285,12 @@ class ReliabilityEval(BaseEval):
 
     async def _test_retry_behavior(self, input: str) -> dict[str, Any]:
         """Test agent's retry behavior on transient failures."""
-        # This is a simplified test - in reality would simulate network failures
         attempts = []
-        
+
         for i in range(3):
             start_time = time.time()
             try:
-                result = await self._run_agent(input)
+                await self._run_agent(input)
                 attempts.append({
                     "attempt": i + 1,
                     "success": True,
@@ -302,15 +304,16 @@ class ReliabilityEval(BaseEval):
                     "error": str(e),
                     "latency": time.time() - start_time,
                 })
-        
+
         # Check if retry pattern shows backoff
         has_backoff = False
         if len(attempts) > 1:
             latencies = [a["latency"] for a in attempts]
             has_backoff = all(latencies[i] < latencies[i+1] for i in range(len(latencies)-1))
-        
+
         return {
             "passed": any(a["success"] for a in attempts),
             "attempts": attempts,
             "has_backoff": has_backoff,
         }
+

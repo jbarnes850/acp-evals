@@ -10,8 +10,8 @@ from typing import Any
 
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
-from .common import BaseEval, EvalResult, console
 from ..metrics.token_usage import TokenUsageMetric
+from .common import BaseEval, EvalResult, console
 
 
 class PerformanceEval(BaseEval):
@@ -67,8 +67,6 @@ class PerformanceEval(BaseEval):
         Returns:
             EvalResult with performance metrics
         """
-        # For now, we'll use a simplified approach
-        # In a full implementation, we'd integrate with ACP events
 
         with Progress(
             SpinnerColumn(),
@@ -89,7 +87,7 @@ class PerformanceEval(BaseEval):
             details["latency_ms"] = agent_result["latency_ms"]
             details["latency_seconds"] = agent_result["latency_ms"] / 1000
 
-        # Token tracking (simplified - count response tokens)
+        # Token tracking
         if track_tokens:
             response_tokens = self.token_metric._count_tokens(agent_result["response"])
             input_tokens = self.token_metric._count_tokens(input)
@@ -143,3 +141,4 @@ class PerformanceEval(BaseEval):
             result.print_summary()
 
         return result
+
