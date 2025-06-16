@@ -55,7 +55,7 @@ def test(pattern: str, agents: tuple[str, ...], task: str, export: str | None):
         # Create pattern instance
         # Convert agent URLs to AgentInfo objects
         agent_infos = [AgentInfo(name=f"agent_{i+1}", url=url) for i, url in enumerate(agents)]
-        
+
         if pattern == 'linear':
             pattern_instance = LinearPattern(agent_infos)
         elif pattern == 'supervisor':

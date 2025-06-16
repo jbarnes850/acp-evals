@@ -14,12 +14,12 @@ console = Console()
 
 # Import commands
 from .check import check_providers
-from .commands.test import test
-from .commands.run import run
-from .commands.discover import discover
 from .commands.dataset import dataset
-from .commands.traces import traces
+from .commands.discover import discover
 from .commands.generate import generate
+from .commands.run import run
+from .commands.test import test
+from .commands.traces import traces
 from .commands.workflow import workflow
 
 
@@ -73,10 +73,10 @@ def init(template, name, output, interactive):
     - multi-agent: Multi-agent coordination patterns
     """
     console.print("[bold cyan]ACP Evaluations Template Generator[/bold cyan]\n")
-    
+
     # Load templates from external file for maintainability
     from .templates import TEMPLATES
-    
+
     # Interactive mode
     if interactive:
         template = Prompt.ask(
@@ -84,27 +84,27 @@ def init(template, name, output, interactive):
             choices=['simple', 'comprehensive', 'research', 'tool', 'acp-agent', 'multi-agent'],
             default='simple'
         )
-        
+
         name = Prompt.ask("Agent name", default="MyAgent")
         output = Prompt.ask("Output file", default=f"{name.lower()}_eval.py")
-    
+
     # Generate names from agent name
     if not name:
         name = Path(output).stem.replace('_eval', '').replace('-', '_').title()
-    
+
     agent_function = name.lower().replace(' ', '_')
     agent_class = name.replace(' ', '')
-    
+
     # Get template
     template_content = TEMPLATES[template]
-    
+
     # Customize template
     replacements = {
         "{agent_name}": name,
         "{agent_function}": agent_function,
         "{agent_class}": agent_class,
     }
-    
+
     # Additional prompts for comprehensive template
     if template == 'comprehensive' and interactive:
         rubric_choice = Prompt.ask(
@@ -112,7 +112,7 @@ def init(template, name, output, interactive):
             choices=['factual', 'research_quality', 'code_quality', 'custom'],
             default='factual'
         )
-        
+
         if rubric_choice == 'custom':
             replacements["{rubric_choice}"] = """{
             "accuracy": {"weight": 0.5, "criteria": "Is the response accurate?"},
@@ -121,7 +121,7 @@ def init(template, name, output, interactive):
         }"""
         else:
             replacements["{rubric_choice}"] = f'"{rubric_choice}"'
-        
+
         replacements["{sample_input}"] = Prompt.ask(
             "Sample test input",
             default="What is the capital of France?"
@@ -135,7 +135,7 @@ def init(template, name, output, interactive):
         replacements["{rubric_choice}"] = '"factual"'
         replacements["{sample_input}"] = "What is the capital of France?"
         replacements["{sample_expected}"] = "Paris"
-    
+
     # Additional replacements for ACP and multi-agent templates
     if template == 'acp-agent':
         replacements["{agent_url}"] = "http://localhost:8000/agents/my-agent"
@@ -144,11 +144,11 @@ def init(template, name, output, interactive):
         replacements["{researcher_url}"] = "http://localhost:8000/agents/researcher"
         replacements["{analyst_url}"] = "http://localhost:8000/agents/analyst"
         replacements["{writer_url}"] = "http://localhost:8000/agents/writer"
-    
+
     # Apply replacements
     for key, value in replacements.items():
         template_content = template_content.replace(key, value)
-    
+
     # Check if file exists
     output_path = Path(output)
     if output_path.exists():
@@ -160,24 +160,24 @@ def init(template, name, output, interactive):
         else:
             console.print(f"[yellow]Warning: {output} already exists. Use -i for interactive mode.[/yellow]")
             return
-    
+
     # Write file
     output_path.write_text(template_content)
-    
+
     # Make executable
     os.chmod(output_path, 0o755)
-    
+
     # Success message
     console.print(f"\n[green]Created evaluation template:[/green] [bold]{output}[/bold]")
     console.print(f"\nTemplate type: [cyan]{template}[/cyan]")
     console.print(f"Agent name: [cyan]{name}[/cyan]")
-    
+
     console.print("\n[bold]Next steps:[/bold]")
     console.print("1. Edit the file to implement your agent logic")
     console.print("2. Update test cases with your specific scenarios")
     console.print("3. Run the evaluation:")
     console.print(f"   [dim]python {output}[/dim]")
-    
+
     if template == 'simple':
         console.print("\n[dim]Tip: Use -t comprehensive for a full evaluation suite[/dim]")
 
@@ -186,9 +186,9 @@ def init(template, name, output, interactive):
 def list_rubrics():
     """List available evaluation rubrics."""
     from acp_evals.api import AccuracyEval
-    
+
     console.print("[bold cyan]Available Evaluation Rubrics[/bold cyan]\n")
-    
+
     for name, rubric in AccuracyEval.RUBRICS.items():
         console.print(f"[bold]{name}[/bold]")
         console.print(f"  Best for: {rubric.get('description', 'General evaluation')}")
@@ -206,33 +206,33 @@ def list_rubrics():
 def report(results_file, format):
     """Generate a report from evaluation results."""
     import json
-    
+
     from rich.markdown import Markdown
     from rich.table import Table
-    
+
     # Load results
     with open(results_file) as f:
         data = json.load(f)
-    
+
     if format == 'summary':
         # Summary table
         table = Table(title="Evaluation Summary")
         table.add_column("Metric", style="cyan")
         table.add_column("Value", style="magenta")
-        
+
         summary = data.get('summary', {})
         table.add_row("Total Tests", str(summary.get('total', 0)))
         table.add_row("Passed", f"[green]{summary.get('passed', 0)}[/green]")
         table.add_row("Failed", f"[red]{summary.get('failed', 0)}[/red]")
         table.add_row("Pass Rate", f"{summary.get('pass_rate', 0):.1f}%")
         table.add_row("Average Score", f"{summary.get('avg_score', 0):.2f}")
-        
+
         console.print(table)
-        
+
     elif format == 'detailed':
         # Detailed results
         console.print("[bold]Detailed Evaluation Results[/bold]\n")
-        
+
         for i, result in enumerate(data.get('results', [])):
             status = "[green]PASSED[/green]" if result['passed'] else "[red]FAILED[/red]"
             console.print(f"Test {i+1}: {status} (Score: {result['score']:.2f})")
@@ -240,7 +240,7 @@ def report(results_file, format):
             console.print(f"  Expected: {result.get('metadata', {}).get('expected', 'N/A')}")
             console.print(f"  Feedback: {result.get('details', {}).get('feedback', 'N/A')}")
             console.print()
-            
+
     elif format == 'markdown':
         # Markdown report
         md_content = f"""# Evaluation Report
@@ -254,7 +254,7 @@ def report(results_file, format):
 
 ## Detailed Results
 """
-        
+
         for i, result in enumerate(data.get('results', [])):
             md_content += f"""
 ### Test {i+1}
@@ -264,7 +264,7 @@ def report(results_file, format):
 - **Expected**: `{result.get('metadata', {}).get('expected', 'N/A')}`
 - **Feedback**: {result.get('details', {}).get('feedback', 'N/A')}
 """
-        
+
         console.print(Markdown(md_content))
 
 

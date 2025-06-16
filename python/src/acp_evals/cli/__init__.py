@@ -7,6 +7,6 @@ from acp_evals.cli.main import cli, main
 
 __all__ = [
     "cli",
-    "main", 
+    "main",
     "check_providers",
 ]

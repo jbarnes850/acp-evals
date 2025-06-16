@@ -1,6 +1,9 @@
 """Generate command for synthetic test data creation."""
 
+import asyncio
 import json
+import re
+from datetime import datetime
 from pathlib import Path
 
 import click
@@ -10,9 +13,6 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from ...benchmarks.datasets import adversarial_datasets
 from ...pipeline.simulator import Simulator
 from ...providers.factory import ProviderFactory
-from datetime import datetime
-import asyncio
-import re
 
 console = Console()
 
@@ -21,17 +21,16 @@ def generate_test_with_llm(provider, prompt: str, model: str | None, diversity: 
     """Generate a single test case using an LLM."""
     async def _generate():
         return await provider.complete(
-            messages=[{"role": "user", "content": prompt}],
-            model=model,
+            prompt=prompt,
             temperature=diversity,
         )
-    
+
     # Run async function
     response = asyncio.run(_generate())
-    
+
     # Parse response - try to extract JSON
     content = response.content if hasattr(response, 'content') else str(response)
-    
+
     # Try direct JSON parse first
     try:
         test_case = json.loads(content)
@@ -48,13 +47,13 @@ def generate_test_with_llm(provider, prompt: str, model: str | None, diversity: 
                 'expected': '\n'.join(lines[1:]) if len(lines) > 1 else '',
                 'evaluation_criteria': []
             }
-    
+
     # Ensure required fields
     if 'input' not in test_case:
         test_case['input'] = test_case.get('question', test_case.get('task', ''))
     if 'expected' not in test_case:
         test_case['expected'] = test_case.get('answer', test_case.get('solution', ''))
-    
+
     return test_case
 
 
@@ -87,7 +86,7 @@ def tests(scenario: str, count: int, diversity: float, export: str | None, use_l
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         export = f"datasets/{scenario}_{timestamp}.jsonl"
         console.print(f"[dim]No export path specified, using: {export}[/dim]")
-    
+
     console.print(f"[bold]Generating {count} test cases[/bold]")
     console.print(f"Scenario: [cyan]{scenario}[/cyan]")
     console.print(f"Diversity: [yellow]{diversity:.1f}[/yellow]")
@@ -105,8 +104,8 @@ def tests(scenario: str, count: int, diversity: float, export: str | None, use_l
             if use_llm:
                 # Use LLM for high-quality generation
                 test_cases = []
-                provider = ProviderFactory.get_provider(model)
-                
+                provider = ProviderFactory.create(model)
+
                 # Define scenario prompts for LLM generation
                 scenario_prompts = {
                     'qa': """Generate a diverse and challenging Q&A test case for evaluating an AI agent.
@@ -114,38 +113,38 @@ def tests(scenario: str, count: int, diversity: float, export: str | None, use_l
                                     2) The correct expected answer
                                     3) Key criteria for evaluation
                             Make it realistic and non-trivial.""",
-                    
+
                     'research': """Generate a research task for evaluating an AI agent's analytical capabilities.
                                   Include: 1) A research question or topic
                                           2) Expected approach/methodology
                                           3) Key points that should be covered
                                   Make it require multi-step reasoning.""",
-                    
+
                     'code': """Generate a coding task for evaluating an AI agent's programming abilities.
                               Include: 1) A clear problem statement
                                       2) Expected solution approach
                                       3) Test cases or examples
                               Make it practical and moderately challenging."""
                 }
-                
+
                 base_prompt = scenario_prompts.get(scenario, scenario_prompts['qa'])
-                
+
                 for i in range(count):
                     progress.update(task, description=f"Generating test {i+1}/{count}...")
-                    
+
                     # Add variation to prompt based on diversity
                     variation_prompt = f"\n\nDiversity factor: {diversity:.1f} - " + (
                         "Be creative and varied in your examples." if diversity > 0.7 else
                         "Keep examples focused and consistent." if diversity < 0.3 else
                         "Balance creativity with consistency."
                     )
-                    
+
                     prompt = base_prompt + variation_prompt + "\n\nReturn as JSON with fields: input, expected, evaluation_criteria"
-                    
+
                     try:
                         # Generate test case using LLM
                         test_case = generate_test_with_llm(provider, prompt, model, diversity)
-                        
+
                         test_case['metadata'] = {
                             'generated_by': 'llm',
                             'model': model or getattr(provider, 'default_model', 'unknown'),
@@ -154,7 +153,7 @@ def tests(scenario: str, count: int, diversity: float, export: str | None, use_l
                             'timestamp': datetime.now().isoformat()
                         }
                         test_cases.append(test_case)
-                        
+
                     except Exception as e:
                         console.print(f"[yellow]Warning: Failed to generate test {i+1}: {e}[/yellow]")
                         # Fall back to template for this one
@@ -162,13 +161,13 @@ def tests(scenario: str, count: int, diversity: float, export: str | None, use_l
                         backup = simulator.generate_test_cases(scenario='factual_qa', count=1)
                         if backup:
                             test_cases.append(backup[0])
-                    
+
                     progress.advance(task)
-                    
+
             else:
                 # Use template-based generation
                 simulator = Simulator(agent="mock-agent")
-                
+
                 if scenario == 'all':
                     # Generate mix of scenarios
                     test_cases = []
@@ -194,7 +193,7 @@ def tests(scenario: str, count: int, diversity: float, export: str | None, use_l
                         count=count,
                         diversity=diversity
                     )
-                
+
                 progress.advance(task, advance=count)
 
         # Save test cases
@@ -211,11 +210,14 @@ def tests(scenario: str, count: int, diversity: float, export: str | None, use_l
         console.print(f"Exported to: {export}")
 
         # Show sample
-        console.print("\n[bold]Sample test case:[/bold]")
-        sample = test_cases[0]
-        console.print(f"Input: {sample['input'][:100]}...")
-        if 'expected' in sample:
-            console.print(f"Expected: {sample['expected'][:100]}...")
+        if test_cases:
+            console.print("\n[bold]Sample test case:[/bold]")
+            sample = test_cases[0]
+            input_preview = str(sample.get('input', ''))[:100]
+            console.print(f"Input: {input_preview}...")
+            if 'expected' in sample:
+                expected_preview = str(sample.get('expected', ''))[:100]
+                console.print(f"Expected: {expected_preview}...")
 
     except Exception as e:
         console.print(f"[red]Error generating tests: {e}[/red]")
