@@ -8,11 +8,13 @@
 
 [Documentation](./python/docs) • [Examples](./python/examples) • [CLI Reference](#command-line-interface) • [Contributing](./python/CONTRIBUTING.md)
 
-ACP Evals is a comprehensive evaluation framework designed specifically for developers building AI agents with the Agent Communication Protocol (ACP). When you deploy agents to production, you need to measure whether they're working correctly, efficiently, and safely. This framework provides systematic testing and monitoring capabilities that scale from simple accuracy checks to complex multi-agent coordination analysis.
+Writing evals can be hard and time consuming, especially if you don't know where to start. 
+
+This evals framework is designed specifically for developers building AI agents with the [Agent Communication Protocol (ACP)](https://github.com/i-am-bee/acp) to help remove the guesswork in experimentation and deployment. ACP-Evals provides systematic testing and monitoring capabilities that scale from simple accuracy checks to complex multi-agent coordination analysis.
 
 Agent evaluation involves sending test inputs to your agents and automatically scoring the outputs against expected results. Traditional evaluation tools focus on single AI models, but ACP Evals specializes in the unique challenges of agent systems: measuring how well agents use tools, preserve context across conversations, coordinate with other agents, and maintain performance under production workloads.
 
-The framework implements a progressive disclosure design. You can start with a simple three-line evaluation to test basic functionality, then gradually access more sophisticated features like multi-agent workflow testing, production trace analysis, and continuous monitoring pipelines. Every evaluation automatically tracks token usage and costs across different LLM providers, helping you optimize both quality and efficiency as you scale.
+You can start with a simple three-line evaluation to test basic functionality, then gradually access more sophisticated features like multi-agent workflow testing, production trace analysis, and continuous monitoring pipelines. Every evaluation automatically tracks token usage and costs across different LLM providers, helping you optimize both quality and efficiency as you scale.
 
 ## Quick Start
 
