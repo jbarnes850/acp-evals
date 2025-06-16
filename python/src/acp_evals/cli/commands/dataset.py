@@ -12,6 +12,28 @@ from rich.table import Table
 from ...benchmarks.datasets import gold_standard_datasets
 from ...benchmarks.datasets.dataset_loader import DatasetLoader
 
+
+def validate_file_path(file_path: str, allowed_extensions: set = None) -> str:
+    """Validate file path to prevent directory traversal attacks."""
+    if not file_path:
+        return ""
+    
+    # Convert to Path object for safer handling
+    path = Path(file_path).resolve()
+    
+    # Prevent directory traversal - keep within reasonable bounds
+    try:
+        path.relative_to(Path.cwd().parent.parent)  # Allow up to 2 levels up
+    except ValueError:
+        # If path is outside allowed area, use just the filename in current dir
+        path = Path.cwd() / Path(file_path).name
+    
+    # Validate extension if specified
+    if allowed_extensions and path.suffix.lower() not in allowed_extensions:
+        raise ValueError(f"Invalid file extension. Allowed: {allowed_extensions}")
+    
+    return str(path)
+
 console = Console()
 
 

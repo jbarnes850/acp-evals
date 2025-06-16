@@ -271,7 +271,14 @@ Pass Rate: [{'green' if summary['pass_rate'] >= 80 else 'yellow' if summary['pas
     is_flag=True,
     help="Run in mock mode (no LLM calls)",
 )
-def test(agent: str, test_suite: str, export_path: str | None, mock: bool) -> None:
+@click.option(
+    "--pass-threshold",
+    "-t",
+    type=float,
+    default=60.0,
+    help="Pass rate threshold percentage (default: 60%)",
+)
+def test(agent: str, test_suite: str, export_path: str | None, mock: bool, pass_threshold: float) -> None:
     """Quick test of an ACP agent with predefined test suites.
 
 
@@ -323,9 +330,12 @@ def test(agent: str, test_suite: str, export_path: str | None, mock: bool) -> No
         # Display results
         display_results(summary)
 
-        # Exit code based on pass rate
-        if summary["pass_rate"] < 60:
+        # Exit code based on configurable pass rate threshold
+        if summary["pass_rate"] < pass_threshold:
+            console.print(f"[red]Test failed: Pass rate {summary['pass_rate']:.1f}% below threshold {pass_threshold}%[/red]")
             exit(1)
+        else:
+            console.print(f"[green]Test passed: Pass rate {summary['pass_rate']:.1f}% meets threshold {pass_threshold}%[/green]")
 
     except KeyboardInterrupt:
         console.print("\n[yellow]Test interrupted by user[/yellow]")

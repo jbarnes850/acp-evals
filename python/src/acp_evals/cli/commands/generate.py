@@ -3,6 +3,7 @@
 import asyncio
 import json
 import re
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -15,6 +16,53 @@ from ...pipeline.simulator import Simulator
 from ...providers.factory import ProviderFactory
 
 console = Console()
+
+
+class RateLimiter:
+    """Simple rate limiter for API calls."""
+    
+    def __init__(self, calls_per_minute: int = 60):
+        self.calls_per_minute = calls_per_minute
+        self.call_times = []
+    
+    def wait_if_needed(self):
+        """Wait if we're exceeding the rate limit."""
+        now = time.time()
+        
+        # Remove calls older than 1 minute
+        self.call_times = [t for t in self.call_times if now - t < 60]
+        
+        # If we're at the limit, wait
+        if len(self.call_times) >= self.calls_per_minute:
+            wait_time = 60 - (now - self.call_times[0])
+            if wait_time > 0:
+                time.sleep(wait_time)
+                # Clean up old calls after waiting
+                now = time.time()
+                self.call_times = [t for t in self.call_times if now - t < 60]
+        
+        # Record this call
+        self.call_times.append(now)
+
+
+def validate_file_path(file_path: str, allowed_extensions: set = None) -> str:
+    """Validate file path to prevent directory traversal attacks."""
+    if not file_path:
+        return ""
+    
+    # Convert to Path object for safer handling
+    path = Path(file_path).resolve()
+    
+    # Prevent directory traversal
+    if '..' in str(path) or str(path).startswith('/'):
+        # Keep relative to current directory
+        path = Path.cwd() / Path(file_path).name
+    
+    # Validate extension if specified
+    if allowed_extensions and path.suffix.lower() not in allowed_extensions:
+        raise ValueError(f"Invalid file extension. Allowed: {allowed_extensions}")
+    
+    return str(path)
 
 
 def validate_and_sanitize_input(text: str, max_length: int = 10000) -> str:
@@ -121,6 +169,13 @@ def tests(scenario: str, count: int, diversity: float, export: str | None, use_l
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         export = f"datasets/{scenario}_{timestamp}.jsonl"
         console.print(f"[dim]No export path specified, using: {export}[/dim]")
+    else:
+        # Validate export path
+        try:
+            export = validate_file_path(export, allowed_extensions={'.json', '.jsonl'})
+        except ValueError as e:
+            console.print(f"[red]Invalid export path: {e}[/red]")
+            exit(1)
 
     console.print(f"[bold]Generating {count} test cases[/bold]")
     console.print(f"Scenario: [cyan]{scenario}[/cyan]")
@@ -140,6 +195,7 @@ def tests(scenario: str, count: int, diversity: float, export: str | None, use_l
                 # Use LLM for high-quality generation
                 test_cases = []
                 provider = ProviderFactory.create(model)
+                rate_limiter = RateLimiter(calls_per_minute=50)  # Conservative rate limit
 
                 # Define scenario prompts for LLM generation
                 scenario_prompts = {
@@ -179,6 +235,9 @@ def tests(scenario: str, count: int, diversity: float, export: str | None, use_l
                     prompt = base_prompt + " " + safe_variation + "\n\nReturn as JSON with fields: input, expected, evaluation_criteria"
 
                     try:
+                        # Apply rate limiting before LLM call
+                        rate_limiter.wait_if_needed()
+                        
                         # Generate test case using LLM
                         test_case = generate_test_with_llm(provider, prompt, model, diversity)
 
