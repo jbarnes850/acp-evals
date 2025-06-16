@@ -265,7 +265,6 @@ async def evaluate_multi_agent_system():
     # 3. Test Error Handling and Recovery
     print("\n3. Testing Error Handling in Multi-Agent Flow:")
 
-
     # In a real implementation, we would test these scenarios
     print("   - Researcher failure handling: PASSED (simulated)")
     print("   - Writer timeout handling: PASSED (simulated)")

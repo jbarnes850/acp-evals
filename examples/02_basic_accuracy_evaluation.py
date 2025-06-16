@@ -30,9 +30,7 @@ async def main():
         pass_threshold=0.8,
     )
 
-    await eval1.run(
-        input="What is the capital of France?", expected="Paris", print_results=True
-    )
+    await eval1.run(input="What is the capital of France?", expected="Paris", print_results=True)
 
     # Example 2: Batch evaluation
     print("\n2. Running batch evaluation:")

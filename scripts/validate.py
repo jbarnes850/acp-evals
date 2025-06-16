@@ -180,7 +180,6 @@ class ImplementationValidator:
 
         # Check multi-agent benchmarks
         try:
-
             self.successes.append("✓ Multi-agent benchmarks found")
 
         except Exception as e:
@@ -298,14 +297,12 @@ class ImplementationValidator:
 
         # Context preservation (Cognition)
         try:
-
             self.successes.append("✓ Context preservation metrics implemented")
         except Exception:
             self.errors.append("✗ Missing context preservation metrics")
 
         # Architecture patterns (LangChain)
         try:
-
             self.successes.append("✓ Multiple architecture patterns implemented")
         except Exception:
             self.errors.append("✗ Missing architecture patterns")
