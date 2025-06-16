@@ -23,23 +23,9 @@
 
 </p>
 
----
 
-**ACP Evals** is an open-source, research-driven framework for evaluating AI agents and multi-agent systems—built to set the new standard for reliability, safety, and continuous improvement in agent workflows.
+> **ACP Evals** is an open-source, research-driven framework for evaluating AI agents and multi-agent systems—built to set the new standard for reliability, safety, and continuous improvement in agent workflows, making advanced evaluation as easy as writing a unit test.
 
----
-
-**Agent evaluation is evolving.**
-
-- Traditional tools focus on single-model accuracy, but modern agent systems demand more:
-  - Multi-agent coordination
-  - Tool use and context preservation
-  - Production-grade reliability and safety
-  - Continuous, in-context feedback for developers
-
-ACP Evals brings these capabilities to every developer, making advanced evaluation as easy as writing a unit test.
-
----
 
 ## Quick Start:
 
