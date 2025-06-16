@@ -9,7 +9,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from ...benchmarks.datasets import adversarial_datasets
 from ...pipeline.simulator import Simulator
-from ...providers import get_provider
+from ...providers.factory import ProviderFactory
 from datetime import datetime
 import asyncio
 import re
@@ -105,7 +105,7 @@ def tests(scenario: str, count: int, diversity: float, export: str | None, use_l
             if use_llm:
                 # Use LLM for high-quality generation
                 test_cases = []
-                provider = get_provider(model)
+                provider = ProviderFactory.get_provider(model)
                 
                 # Define scenario prompts for LLM generation
                 scenario_prompts = {

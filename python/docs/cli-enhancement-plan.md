@@ -176,13 +176,13 @@ acp-evals init project my-agent-evals --with-ci --with-datasets
 
 ## Implementation Timeline
 
-### Today (for PyPI release)
+### Today (for PyPI release) ✅ COMPLETED
 1. ✅ Create implementation plan
-2. ⬜ Implement `test` command
-3. ⬜ Implement `run` command  
-4. ⬜ Implement `discover` command
-5. ⬜ Add `acp-agent` and `multi-agent` templates
-6. ⬜ Update help text and documentation
+2. ✅ Implement `test` command
+3. ✅ Implement `run` command  
+4. ✅ Implement `discover` command
+5. ✅ Add `acp-agent` and `multi-agent` templates
+6. ✅ Update help text and documentation
 
 ### Next Release (Week 1) - ALL CAPABILITIES ALREADY EXIST IN CODEBASE!
 
