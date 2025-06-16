@@ -184,11 +184,65 @@ acp-evals init project my-agent-evals --with-ci --with-datasets
 5. ⬜ Add `acp-agent` and `multi-agent` templates
 6. ⬜ Update help text and documentation
 
-### Next Release (Week 1)
-7. ⬜ Implement `dataset` commands
-8. ⬜ Implement `traces` commands
-9. ⬜ Implement `generate` command
-10. ⬜ Implement `workflow` command
+### Next Release (Week 1) - ALL CAPABILITIES ALREADY EXIST IN CODEBASE!
+
+#### 7. `dataset` commands ✅ Ready to implement
+**Existing capabilities to expose:**
+- Dataset registry with 7 external benchmarks (TRAIL, GAIA, SWE-bench, MMLU, HumanEval, TruthfulQA, GSM8K)
+- Gold standard datasets with 30+ production-ready agent tasks
+- Dataset loading with caching and format conversion
+- Benchmark suite creation from multiple datasets
+- Export in JSON/JSONL/CSV formats
+
+```bash
+acp-evals dataset list              # List all available datasets
+acp-evals dataset load GAIA         # Load and preview dataset
+acp-evals dataset create-suite      # Combine multiple datasets
+acp-evals dataset export            # Export in various formats
+```
+
+#### 8. `traces` commands ✅ Ready to implement
+**Existing capabilities to expose:**
+- Multi-format trace ingestion (OpenTelemetry, ACP agent format)
+- Automatic pattern detection and analysis
+- Trace recycling into evaluation datasets with adaptive quality scoring
+- Regression detection between baseline and current traces
+- Pattern export and analysis
+
+```bash
+acp-evals traces ingest <file>      # Ingest traces
+acp-evals traces recycle            # Convert to eval datasets
+acp-evals traces patterns           # Detect and analyze patterns
+acp-evals traces regression         # Compare baseline vs current
+```
+
+#### 9. `generate` command ✅ Ready to implement
+**Existing capabilities to expose:**
+- Template-based test generation with diversity control
+- 8 categories of adversarial tests (prompt injection, harmful content, jailbreaks, etc.)
+- Multi-turn conversation generation
+- Custom template support with variable substitution
+- Severity and difficulty filtering
+
+```bash
+acp-evals generate tests            # Generate from templates
+acp-evals generate adversarial      # Create security tests
+acp-evals generate scenarios        # Multi-turn conversations
+```
+
+#### 10. `workflow` command ✅ Ready to implement
+**Existing capabilities to expose:**
+- Three workflow patterns: Linear, Supervisor, Swarm
+- Pattern comparison benchmarks
+- Handoff quality testing
+- Pattern recommendations based on task type
+- Performance analysis and trade-off evaluation
+
+```bash
+acp-evals workflow test             # Test workflow patterns
+acp-evals workflow compare          # Compare patterns
+acp-evals workflow handoff          # Test information preservation
+```
 
 ### Future Releases
 11. ⬜ Implement `monitor` command

@@ -2,7 +2,6 @@
 
 import asyncio
 import json
-from pathlib import Path
 from typing import Any
 
 import click
@@ -12,7 +11,6 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
 from ...api import AccuracyEval, PerformanceEval, ReliabilityEval, SafetyEval
-from ...core.exceptions import EvaluationError
 from ...providers.factory import ProviderFactory
 
 console = Console()
@@ -109,17 +107,17 @@ async def run_test_suite(
     results = []
     passed = 0
     total = len(suite)
-    
+
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
         console=console,
     ) as progress:
         task = progress.add_task(f"Running {suite_name} tests...", total=total)
-        
+
         for i, test in enumerate(suite):
             progress.update(task, description=f"Running {suite_name} test {i+1}/{total}: {test['name']}")
-            
+
             try:
                 # Create appropriate evaluator
                 if test["evaluator"] == "accuracy":
@@ -129,7 +127,7 @@ async def run_test_suite(
                         input=test["input"],
                         expected=test.get("expected"),
                     )
-                
+
                 elif test["evaluator"] == "performance":
                     evaluator = PerformanceEval(agent=agent)
                     result = await evaluator.run(
@@ -137,7 +135,7 @@ async def run_test_suite(
                         track_tokens=True,
                         track_latency=True,
                     )
-                
+
                 elif test["evaluator"] == "reliability":
                     evaluator = ReliabilityEval(
                         agent=agent,
@@ -147,14 +145,14 @@ async def run_test_suite(
                         input=test["input"],
                         expected_tools=test.get("expected_tools", []),
                     )
-                
+
                 elif test["evaluator"] == "safety":
                     evaluator = SafetyEval(agent=agent)
                     result = await evaluator.run(
                         input=test["input"],
                         test_type=test.get("test_type", "general"),
                     )
-                
+
                 # Collect results
                 test_result = {
                     "name": test["name"],
@@ -164,12 +162,12 @@ async def run_test_suite(
                     "cost": result.cost,
                     "tokens": result.tokens,
                 }
-                
+
                 if result.passed:
                     passed += 1
-                
+
                 results.append(test_result)
-                
+
             except Exception as e:
                 console.print(f"[red]Error in test '{test['name']}': {str(e)}[/red]")
                 results.append({
@@ -178,9 +176,9 @@ async def run_test_suite(
                     "score": 0.0,
                     "error": str(e),
                 })
-        
+
         progress.update(task, description=f"{suite_name} tests complete")
-    
+
     # Calculate summary
     summary = {
         "suite": suite_name,
@@ -190,13 +188,13 @@ async def run_test_suite(
         "pass_rate": (passed / total * 100) if total > 0 else 0,
         "results": results,
     }
-    
+
     # Export if requested
     if export_path:
         with open(export_path, "w") as f:
             json.dump(summary, f, indent=2)
         console.print(f"\n[green]Results exported to:[/green] {export_path}")
-    
+
     return summary
 
 
@@ -208,21 +206,21 @@ def display_results(summary: dict[str, Any]) -> None:
     table.add_column("Status", style="green")
     table.add_column("Score", style="yellow")
     table.add_column("Cost", style="magenta")
-    
+
     for result in summary["results"]:
         status = "[green]✓ PASS[/green]" if result["passed"] else "[red]✗ FAIL[/red]"
         score = f"{result['score']:.2f}" if "score" in result else "N/A"
         cost = f"${result.get('cost', 0):.4f}" if "cost" in result else "N/A"
-        
+
         table.add_row(
             result["name"],
             status,
             score,
             cost,
         )
-    
+
     console.print(table)
-    
+
     # Summary panel
     summary_text = f"""
 [bold]Summary:[/bold]
@@ -231,7 +229,7 @@ Passed: [green]{summary['passed']}[/green]
 Failed: [red]{summary['failed']}[/red]
 Pass Rate: [{'green' if summary['pass_rate'] >= 80 else 'yellow' if summary['pass_rate'] >= 60 else 'red'}]{summary['pass_rate']:.1f}%[/]
 """
-    
+
     console.print(
         Panel(
             summary_text.strip(),
@@ -275,16 +273,17 @@ Pass Rate: [{'green' if summary['pass_rate'] >= 80 else 'yellow' if summary['pas
 )
 def test(agent: str, test_suite: str, export_path: str | None, mock: bool) -> None:
     """Quick test of an ACP agent with predefined test suites.
-    
+
+
     Examples:
         acp-evals test http://localhost:8000/agents/my-agent
         acp-evals test my-agent --comprehensive
         acp-evals test my-agent --adversarial --export results.json
     """
-    console.print(f"\n[bold cyan]ACP Agent Testing[/bold cyan]")
+    console.print("\n[bold cyan]ACP Agent Testing[/bold cyan]")
     console.print(f"Agent: [yellow]{agent}[/yellow]")
     console.print(f"Test Suite: [yellow]{test_suite}[/yellow]\n")
-    
+
     # Check provider configuration
     if mock:
         console.print("[yellow]Running in mock mode (no LLM calls)[/yellow]\n")
@@ -298,7 +297,7 @@ def test(agent: str, test_suite: str, export_path: str | None, mock: bool) -> No
             console.print(f"[red]Provider configuration error: {e}[/red]")
             console.print("Run 'acp-evals check' to verify your configuration")
             return
-    
+
     # Select test suite
     if test_suite == "quick":
         suite = QUICK_TESTS
@@ -309,7 +308,7 @@ def test(agent: str, test_suite: str, export_path: str | None, mock: bool) -> No
     else:
         console.print(f"[red]Unknown test suite: {test_suite}[/red]")
         return
-    
+
     # Run tests
     try:
         summary = asyncio.run(
@@ -320,14 +319,14 @@ def test(agent: str, test_suite: str, export_path: str | None, mock: bool) -> No
                 export_path=export_path,
             )
         )
-        
+
         # Display results
         display_results(summary)
-        
+
         # Exit code based on pass rate
         if summary["pass_rate"] < 60:
             exit(1)
-            
+
     except KeyboardInterrupt:
         console.print("\n[yellow]Test interrupted by user[/yellow]")
         exit(1)

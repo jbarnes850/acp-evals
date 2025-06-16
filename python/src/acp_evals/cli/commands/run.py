@@ -22,40 +22,40 @@ def format_result(result: Any) -> None:
     table = Table(title="Evaluation Result", show_header=False)
     table.add_column("Metric", style="cyan")
     table.add_column("Value", style="yellow")
-    
+
     # Basic metrics
     table.add_row("Score", f"{result.score:.2f}")
     table.add_row("Passed", "[green]Yes[/green]" if result.passed else "[red]No[/red]")
-    
+
     # Cost and tokens if available
     if hasattr(result, "cost") and result.cost is not None:
         table.add_row("Cost", f"${result.cost:.4f}")
-    
+
     if hasattr(result, "tokens") and result.tokens:
         table.add_row("Tokens", str(result.tokens.get("total", "N/A")))
-    
+
     # Latency if available
     if hasattr(result, "latency_ms") and result.latency_ms:
         table.add_row("Latency", f"{result.latency_ms:.0f}ms")
-    
+
     console.print(table)
-    
+
     # Details panel if available
     if hasattr(result, "details") and result.details:
         details_text = ""
-        
+
         # Format details based on content
         if "judge_reasoning" in result.details:
             details_text += f"[bold]Judge Reasoning:[/bold]\n{result.details['judge_reasoning']}\n\n"
-        
+
         if "feedback" in result.details:
             details_text += f"[bold]Feedback:[/bold]\n{result.details['feedback']}\n\n"
-        
+
         if "criteria_scores" in result.details:
             details_text += "[bold]Criteria Scores:[/bold]\n"
             for criterion, score in result.details["criteria_scores"].items():
                 details_text += f"  • {criterion}: {score:.2f}\n"
-        
+
         if details_text:
             console.print(
                 Panel(
@@ -97,7 +97,7 @@ def run(
     mock: bool,
 ) -> None:
     """Run a single evaluation directly from CLI.
-    
+
     Examples:
         acp-evals run accuracy my-agent -i "What is 2+2?" -e "4"
         acp-evals run performance my-agent -i "Complex task" --track-tokens
@@ -109,13 +109,13 @@ def run(
     if agent2:
         console.print(f"Agent 2: [yellow]{agent2}[/yellow]")
     console.print(f"Input: [dim]{input_text[:100]}{'...' if len(input_text) > 100 else ''}[/dim]\n")
-    
+
     # Set mock mode if requested
     if mock:
         console.print("[yellow]Running in mock mode (no LLM calls)[/yellow]\n")
         import os
         os.environ["MOCK_MODE"] = "true"
-    
+
     try:
         # Create and run appropriate evaluator
         if evaluator == "accuracy":
@@ -126,7 +126,7 @@ def run(
                     expected=expected,
                 )
             )
-        
+
         elif evaluator == "performance":
             eval_instance = PerformanceEval(agent=agent)
             result = asyncio.run(
@@ -136,7 +136,7 @@ def run(
                     track_latency=track_latency or True,
                 )
             )
-        
+
         elif evaluator == "reliability":
             eval_instance = ReliabilityEval(
                 agent=agent,
@@ -148,7 +148,7 @@ def run(
                     expected_tools=list(expected_tools) if expected_tools else [],
                 )
             )
-        
+
         elif evaluator == "safety":
             eval_instance = SafetyEval(agent=agent)
             result = asyncio.run(
@@ -156,12 +156,12 @@ def run(
                     input=input_text,
                 )
             )
-        
+
         elif evaluator == "handoff":
             if not agent2:
                 console.print("[red]Handoff evaluation requires two agents[/red]")
                 exit(1)
-            
+
             # Create pattern
             if pattern == "linear":
                 pattern_instance = LinearPattern([agent, agent2])
@@ -172,23 +172,23 @@ def run(
                 )
             else:  # swarm
                 pattern_instance = SwarmPattern([agent, agent2])
-            
+
             # Run handoff benchmark
             benchmark = HandoffQualityBenchmark(
                 pattern=pattern_instance,
                 endpoint="",  # Will use agent URLs directly
             )
-            
+
             result = asyncio.run(
                 benchmark.evaluate_single(
                     task=input_text,
                     expected_handoffs=[f"{agent}->{agent2}"],
                 )
             )
-        
+
         # Display results
         format_result(result)
-        
+
         # Export if requested
         if export:
             export_data = {
@@ -204,15 +204,15 @@ def run(
                     "details": getattr(result, "details", {}),
                 }
             }
-            
+
             with open(export, "w") as f:
                 json.dump(export_data, f, indent=2)
-            
+
             console.print(f"\n[green]Result exported to:[/green] {export}")
-        
+
         # Exit code based on pass/fail
         exit(0 if result.passed else 1)
-        
+
     except KeyboardInterrupt:
         console.print("\n[yellow]Evaluation interrupted by user[/yellow]")
         exit(1)

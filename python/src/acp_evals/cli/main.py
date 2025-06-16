@@ -17,6 +17,10 @@ from .check import check_providers
 from .commands.test import test
 from .commands.run import run
 from .commands.discover import discover
+from .commands.dataset import dataset
+from .commands.traces import traces
+from .commands.generate import generate
+from .commands.workflow import workflow
 
 
 @click.group()
@@ -28,6 +32,11 @@ def cli():
         acp-evals run accuracy <agent> -i "What is AI?" -e "Artificial Intelligence"
         acp-evals discover                   # Find available agents
         acp-evals check                      # Verify configuration
+    
+    Evaluation workflow:
+        acp-evals dataset list               # View available datasets
+        acp-evals generate tests -e tests.jsonl  # Generate test data
+        acp-evals workflow test -p linear    # Test multi-agent workflows
     
     Get help:
         acp-evals --help                     # Show all commands
@@ -41,6 +50,10 @@ cli.add_command(check_providers, name='check')
 cli.add_command(test)
 cli.add_command(run)
 cli.add_command(discover)
+cli.add_command(dataset)
+cli.add_command(traces)
+cli.add_command(generate)
+cli.add_command(workflow)
 
 
 @cli.command()
