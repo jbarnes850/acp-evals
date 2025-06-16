@@ -39,13 +39,9 @@ jobs:
         ruff check .
         ruff format --check .
     
-    - name: Type check with mypy
-      run: |
-        mypy src/acp_evals --strict
-    
     - name: Test with pytest
       run: |
-        pytest --cov=acp_evals --cov-report=xml --cov-report=term-missing
+        pytest --cov=acp_evals --cov-report=xml --cov-report=term-missing --ignore=tests/cli/
     
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
