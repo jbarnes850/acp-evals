@@ -186,22 +186,24 @@ acp-evals init project my-agent-evals --with-ci --with-datasets
 
 ### Next Release (Week 1) - ALL CAPABILITIES ALREADY EXIST IN CODEBASE!
 
-#### 7. `dataset` commands ✅ Ready to implement
-**Existing capabilities to expose:**
+#### 7. `dataset` commands ✅ IMPLEMENTED
+**Existing capabilities exposed:**
 - Dataset registry with 7 external benchmarks (TRAIL, GAIA, SWE-bench, MMLU, HumanEval, TruthfulQA, GSM8K)
-- Gold standard datasets with 30+ production-ready agent tasks
+- Gold standard datasets with 11 production-ready agent tasks
 - Dataset loading with caching and format conversion
 - Benchmark suite creation from multiple datasets
 - Export in JSON/JSONL/CSV formats
+- **Local synthetic dataset management** (NEW)
 
 ```bash
-acp-evals dataset list              # List all available datasets
+acp-evals dataset list              # List all available external datasets
+acp-evals dataset local             # List locally generated datasets (NEW)
 acp-evals dataset load GAIA         # Load and preview dataset
 acp-evals dataset create-suite      # Combine multiple datasets
-acp-evals dataset export            # Export in various formats
+acp-evals dataset analyze           # Analyze dataset statistics
 ```
 
-#### 8. `traces` commands ✅ Ready to implement
+#### 8. `traces` commands ✅ IMPLEMENTED
 **Existing capabilities to expose:**
 - Multi-format trace ingestion (OpenTelemetry, ACP agent format)
 - Automatic pattern detection and analysis
@@ -216,21 +218,27 @@ acp-evals traces patterns           # Detect and analyze patterns
 acp-evals traces regression         # Compare baseline vs current
 ```
 
-#### 9. `generate` command ✅ Ready to implement
-**Existing capabilities to expose:**
+#### 9. `generate` command ✅ IMPLEMENTED
+**Enhanced with LLM-based generation:**
+- **LLM-based test generation** for high-quality synthetic data (NEW)
 - Template-based test generation with diversity control
 - 8 categories of adversarial tests (prompt injection, harmful content, jailbreaks, etc.)
 - Multi-turn conversation generation
-- Custom template support with variable substitution
-- Severity and difficulty filtering
+- Auto-saves to `datasets/` directory for easy access (NEW)
+- Supports custom models and diversity settings
 
 ```bash
-acp-evals generate tests            # Generate from templates
+acp-evals generate tests            # Generate with LLM (default)
+acp-evals generate tests --use-templates  # Use templates instead
+acp-evals generate tests --model gpt-4o    # Use specific model
 acp-evals generate adversarial      # Create security tests
 acp-evals generate scenarios        # Multi-turn conversations
+
+# View generated datasets
+acp-evals dataset local             # List local synthetic datasets
 ```
 
-#### 10. `workflow` command ✅ Ready to implement
+#### 10. `workflow` command ✅ IMPLEMENTED
 **Existing capabilities to expose:**
 - Three workflow patterns: Linear, Supervisor, Swarm
 - Pattern comparison benchmarks

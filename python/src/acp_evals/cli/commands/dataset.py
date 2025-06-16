@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from datetime import datetime
 
 import click
 from rich.console import Console
@@ -18,6 +19,84 @@ console = Console()
 def dataset():
     """Manage evaluation datasets."""
     pass
+
+
+@dataset.command()
+@click.option('--path', '-p', default='datasets', help='Path to datasets directory')
+def local(path: str):
+    """List locally generated synthetic datasets.
+    
+    Examples:
+        acp-evals dataset local
+        acp-evals dataset local --path ./my-datasets
+    """
+    datasets_dir = Path(path)
+    
+    if not datasets_dir.exists():
+        console.print(f"[yellow]No datasets directory found at: {path}[/yellow]")
+        console.print("[dim]Generate datasets using: acp-evals generate tests[/dim]")
+        return
+    
+    console.print(f"[bold cyan]Local Synthetic Datasets[/bold cyan]")
+    console.print(f"Directory: {datasets_dir.absolute()}\n")
+    
+    # Find all dataset files
+    dataset_files = list(datasets_dir.glob("*.json")) + list(datasets_dir.glob("*.jsonl"))
+    
+    if not dataset_files:
+        console.print("[yellow]No datasets found.[/yellow]")
+        console.print("[dim]Generate datasets using: acp-evals generate tests[/dim]")
+        return
+    
+    # Create table
+    table = Table(title="Generated Datasets")
+    table.add_column("Filename", style="cyan")
+    table.add_column("Type", style="yellow")
+    table.add_column("Size", style="green")
+    table.add_column("Created", style="magenta")
+    table.add_column("Test Cases", style="blue")
+    
+    for file_path in sorted(dataset_files):
+        # Get file info
+        stat = file_path.stat()
+        size_kb = stat.st_size / 1024
+        created = datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M")
+        
+        # Count test cases
+        try:
+            if file_path.suffix == '.jsonl':
+                with open(file_path) as f:
+                    count = sum(1 for _ in f)
+            else:
+                with open(file_path) as f:
+                    data = json.load(f)
+                    count = len(data) if isinstance(data, list) else len(data.get('tests', []))
+        except:
+            count = "?"
+        
+        # Determine type from filename
+        file_type = "Unknown"
+        if "qa_" in file_path.name:
+            file_type = "Q&A"
+        elif "research_" in file_path.name:
+            file_type = "Research"
+        elif "code_" in file_path.name:
+            file_type = "Code"
+        elif "adversarial_" in file_path.name:
+            file_type = "Adversarial"
+        elif "scenario_" in file_path.name:
+            file_type = "Scenarios"
+        
+        table.add_row(
+            file_path.name,
+            file_type,
+            f"{size_kb:.1f} KB",
+            created,
+            str(count)
+        )
+    
+    console.print(table)
+    console.print(f"\nTotal datasets: [bold]{len(dataset_files)}[/bold]")
 
 
 @dataset.command()

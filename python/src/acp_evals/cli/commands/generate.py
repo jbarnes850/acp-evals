@@ -9,8 +9,53 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from ...benchmarks.datasets import adversarial_datasets
 from ...pipeline.simulator import Simulator
+from ...providers import get_provider
+from datetime import datetime
+import asyncio
+import re
 
 console = Console()
+
+
+def generate_test_with_llm(provider, prompt: str, model: str | None, diversity: float) -> dict:
+    """Generate a single test case using an LLM."""
+    async def _generate():
+        return await provider.complete(
+            messages=[{"role": "user", "content": prompt}],
+            model=model,
+            temperature=diversity,
+        )
+    
+    # Run async function
+    response = asyncio.run(_generate())
+    
+    # Parse response - try to extract JSON
+    content = response.content if hasattr(response, 'content') else str(response)
+    
+    # Try direct JSON parse first
+    try:
+        test_case = json.loads(content)
+    except:
+        # Try to extract JSON from response
+        json_match = re.search(r'\{.*\}', content, re.DOTALL)
+        if json_match:
+            test_case = json.loads(json_match.group())
+        else:
+            # Create structured data from response
+            lines = content.strip().split('\n')
+            test_case = {
+                'input': lines[0] if lines else '',
+                'expected': '\n'.join(lines[1:]) if len(lines) > 1 else '',
+                'evaluation_criteria': []
+            }
+    
+    # Ensure required fields
+    if 'input' not in test_case:
+        test_case['input'] = test_case.get('question', test_case.get('task', ''))
+    if 'expected' not in test_case:
+        test_case['expected'] = test_case.get('answer', test_case.get('solution', ''))
+    
+    return test_case
 
 
 @click.group()
@@ -23,21 +68,30 @@ def generate():
 @click.option('--scenario', '-s', type=click.Choice(['qa', 'research', 'code', 'all']), default='qa')
 @click.option('--count', '-c', type=int, default=50, help='Number of tests to generate')
 @click.option('--diversity', '-d', type=float, default=0.7, help='Diversity level (0-1)')
-@click.option('--export', '-e', required=True, help='Export path')
-def tests(scenario: str, count: int, diversity: float, export: str):
-    """Generate test cases from templates.
+@click.option('--export', '-e', help='Export path (defaults to datasets/<scenario>_<timestamp>.jsonl)')
+@click.option('--use-llm/--use-templates', default=True, help='Use LLM for generation vs templates')
+@click.option('--model', '-m', help='Model to use for generation (e.g., gpt-4o-mini)')
+def tests(scenario: str, count: int, diversity: float, export: str | None, use_llm: bool, model: str | None):
+    """Generate high-quality synthetic test cases using LLMs.
 
     Examples:
-        acp-evals generate tests -e qa-tests.jsonl
-        acp-evals generate tests --scenario research -c 100 -e research.json
-        acp-evals generate tests --diversity 0.9 -e diverse-tests.jsonl
+        acp-evals generate tests                      # Generate QA tests with LLM
+        acp-evals generate tests --scenario research -c 100
+        acp-evals generate tests --use-templates      # Use templates instead of LLM
+        acp-evals generate tests --model gpt-4o       # Use specific model
     """
+    # Create datasets directory if not specified
+    if not export:
+        datasets_dir = Path("datasets")
+        datasets_dir.mkdir(exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        export = f"datasets/{scenario}_{timestamp}.jsonl"
+        console.print(f"[dim]No export path specified, using: {export}[/dim]")
+    
     console.print(f"[bold]Generating {count} test cases[/bold]")
     console.print(f"Scenario: [cyan]{scenario}[/cyan]")
-    console.print(f"Diversity: [yellow]{diversity:.1f}[/yellow]\n")
-
-    # Create a mock agent for the simulator
-    simulator = Simulator(agent="mock-agent")
+    console.print(f"Diversity: [yellow]{diversity:.1f}[/yellow]")
+    console.print(f"Method: [magenta]{'LLM Generation' if use_llm else 'Template-based'}[/magenta]\n")
 
     try:
         # Generate test cases
@@ -46,33 +100,102 @@ def tests(scenario: str, count: int, diversity: float, export: str):
             TextColumn("[progress.description]{task.description}"),
             console=console,
         ) as progress:
-            task = progress.add_task(f"Generating {scenario} tests...", total=1)
+            task = progress.add_task(f"Generating {scenario} tests...", total=count)
 
-            if scenario == 'all':
-                # Generate mix of scenarios
+            if use_llm:
+                # Use LLM for high-quality generation
                 test_cases = []
-                scenarios = ['factual_qa', 'task_specific', 'multi_turn']
-                per_scenario = count // len(scenarios)
-
-                for s in scenarios:
-                    cases = simulator.generate_synthetic_tests(
-                        scenario=s,
-                        count=per_scenario
-                    )
-                    test_cases.extend(cases)
-            else:
-                # Map CLI scenario to simulator scenario
-                scenario_map = {
-                    'qa': 'factual_qa',
-                    'research': 'task_specific',
-                    'code': 'task_specific'
+                provider = get_provider(model)
+                
+                # Define scenario prompts for LLM generation
+                scenario_prompts = {
+                    'qa': """Generate a diverse and challenging Q&A test case for evaluating an AI agent.
+                            Include: 1) A clear, specific question
+                                    2) The correct expected answer
+                                    3) Key criteria for evaluation
+                            Make it realistic and non-trivial.""",
+                    
+                    'research': """Generate a research task for evaluating an AI agent's analytical capabilities.
+                                  Include: 1) A research question or topic
+                                          2) Expected approach/methodology
+                                          3) Key points that should be covered
+                                  Make it require multi-step reasoning.""",
+                    
+                    'code': """Generate a coding task for evaluating an AI agent's programming abilities.
+                              Include: 1) A clear problem statement
+                                      2) Expected solution approach
+                                      3) Test cases or examples
+                              Make it practical and moderately challenging."""
                 }
-                test_cases = simulator.generate_synthetic_tests(
-                    scenario=scenario_map.get(scenario, 'factual_qa'),
-                    count=count
-                )
+                
+                base_prompt = scenario_prompts.get(scenario, scenario_prompts['qa'])
+                
+                for i in range(count):
+                    progress.update(task, description=f"Generating test {i+1}/{count}...")
+                    
+                    # Add variation to prompt based on diversity
+                    variation_prompt = f"\n\nDiversity factor: {diversity:.1f} - " + (
+                        "Be creative and varied in your examples." if diversity > 0.7 else
+                        "Keep examples focused and consistent." if diversity < 0.3 else
+                        "Balance creativity with consistency."
+                    )
+                    
+                    prompt = base_prompt + variation_prompt + "\n\nReturn as JSON with fields: input, expected, evaluation_criteria"
+                    
+                    try:
+                        # Generate test case using LLM
+                        test_case = generate_test_with_llm(provider, prompt, model, diversity)
+                        
+                        test_case['metadata'] = {
+                            'generated_by': 'llm',
+                            'model': model or getattr(provider, 'default_model', 'unknown'),
+                            'scenario': scenario,
+                            'diversity': diversity,
+                            'timestamp': datetime.now().isoformat()
+                        }
+                        test_cases.append(test_case)
+                        
+                    except Exception as e:
+                        console.print(f"[yellow]Warning: Failed to generate test {i+1}: {e}[/yellow]")
+                        # Fall back to template for this one
+                        simulator = Simulator(agent="mock-agent")
+                        backup = simulator.generate_test_cases(scenario='factual_qa', count=1)
+                        if backup:
+                            test_cases.append(backup[0])
+                    
+                    progress.advance(task)
+                    
+            else:
+                # Use template-based generation
+                simulator = Simulator(agent="mock-agent")
+                
+                if scenario == 'all':
+                    # Generate mix of scenarios
+                    test_cases = []
+                    scenarios = ['factual_qa', 'task_specific', 'conversation']
+                    per_scenario = count // len(scenarios)
 
-            progress.advance(task)
+                    for s in scenarios:
+                        cases = simulator.generate_test_cases(
+                            scenario=s,
+                            count=per_scenario,
+                            diversity=diversity
+                        )
+                        test_cases.extend(cases)
+                else:
+                    # Map CLI scenario to simulator scenario
+                    scenario_map = {
+                        'qa': 'factual_qa',
+                        'research': 'task_specific',
+                        'code': 'task_specific'
+                    }
+                    test_cases = simulator.generate_test_cases(
+                        scenario=scenario_map.get(scenario, 'factual_qa'),
+                        count=count,
+                        diversity=diversity
+                    )
+                
+                progress.advance(task, advance=count)
 
         # Save test cases
         export_path = Path(export)
