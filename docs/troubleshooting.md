@@ -45,9 +45,4 @@ This guide helps you quickly resolve common issues when using ACP Evals.
   2. Verify the agent URL is correct and accessible.
   3. Use `acp-evals discover` to list available agents.
 
-## Getting Further Help
-- **Discord:** [Join our Discord](https://discord.gg/NradeA6ZNF)
-- **GitHub Issues:** [Open an issue](https://github.com/jbarnes850/acp-evals/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/jbarnes850/acp-evals/discussions)
-
 For more examples and advanced troubleshooting, see the `/examples` directory and the main documentation. 

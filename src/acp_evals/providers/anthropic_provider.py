@@ -29,12 +29,7 @@ class AnthropicProvider(LLMProvider):
         "claude-3-haiku": {"input": 0.00025, "output": 0.00125},
     }
 
-    def __init__(
-        self,
-        model: str = "claude-4-sonnet",
-        api_key: str | None = None,
-        **kwargs
-    ):
+    def __init__(self, model: str = "claude-4-sonnet", api_key: str | None = None, **kwargs):
         """
         Initialize Anthropic provider.
 
@@ -56,11 +51,7 @@ class AnthropicProvider(LLMProvider):
         return "anthropic"
 
     async def complete(
-        self,
-        prompt: str,
-        temperature: float = 0.0,
-        max_tokens: int = 1000,
-        **kwargs
+        self, prompt: str, temperature: float = 0.0, max_tokens: int = 1000, **kwargs
     ) -> LLMResponse:
         """Get completion from Anthropic."""
         try:
@@ -71,12 +62,10 @@ class AnthropicProvider(LLMProvider):
             response = await client.messages.create(
                 model=self.model,
                 system="You are an expert evaluator.",
-                messages=[
-                    {"role": "user", "content": prompt}
-                ],
+                messages=[{"role": "user", "content": prompt}],
                 temperature=temperature,
                 max_tokens=max_tokens,
-                **kwargs
+                **kwargs,
             )
 
             # Extract response
@@ -84,29 +73,25 @@ class AnthropicProvider(LLMProvider):
             usage = {
                 "prompt_tokens": response.usage.input_tokens,
                 "completion_tokens": response.usage.output_tokens,
-                "total_tokens": response.usage.input_tokens + response.usage.output_tokens
+                "total_tokens": response.usage.input_tokens + response.usage.output_tokens,
             }
 
             # Calculate cost
             cost = self.calculate_cost(usage)
 
             return LLMResponse(
-                content=content,
-                model=response.model,
-                usage=usage,
-                cost=cost,
-                raw_response=response
+                content=content, model=response.model, usage=usage, cost=cost, raw_response=response
             )
 
         except self.anthropic.RateLimitError as e:
             logger.warning(f"Anthropic rate limit hit: {str(e)}")
             # Extract retry after if available
-            retry_after = getattr(e.response.headers, 'retry-after', None)
+            retry_after = getattr(e.response.headers, "retry-after", None)
             raise ProviderRateLimitError("anthropic", retry_after) from e
 
         except self.anthropic.APIError as e:
             logger.error(f"Anthropic API error: {str(e)}")
-            status_code = getattr(e, 'status_code', None)
+            status_code = getattr(e, "status_code", None)
             raise ProviderAPIError("anthropic", status_code, str(e)) from e
 
         except self.anthropic.APIConnectionError as e:
@@ -142,13 +127,16 @@ class AnthropicProvider(LLMProvider):
             if not os.getenv("ANTHROPIC_API_KEY"):
                 missing.append("ANTHROPIC_API_KEY")
 
-            raise ProviderNotConfiguredError(
-                "anthropic",
-                missing_config=missing
-            )
+            raise ProviderNotConfiguredError("anthropic", missing_config=missing)
 
         # Validate model name
-        valid_models = ["claude-4-opus", "claude-4-sonnet", "claude-3-opus", "claude-3-sonnet", "claude-3-haiku"]
+        valid_models = [
+            "claude-4-opus",
+            "claude-4-sonnet",
+            "claude-3-opus",
+            "claude-3-sonnet",
+            "claude-3-haiku",
+        ]
         if not any(model in self.model for model in valid_models):
             logger.warning(
                 f"Model '{self.model}' may not be valid. Expected one of: {', '.join(valid_models)}"
@@ -158,6 +146,7 @@ class AnthropicProvider(LLMProvider):
         """Import Anthropic library with helpful error message."""
         try:
             import anthropic
+
             self.anthropic = anthropic
         except ImportError:
             raise ImportError(

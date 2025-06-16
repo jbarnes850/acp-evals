@@ -81,10 +81,7 @@ After the delegation plan, provide instructions for combining the results."""
         message = self._create_message(supervisor_prompt)
 
         try:
-            run = await client.run_sync(
-                agent=self.supervisor.name,
-                input=[message]
-            )
+            run = await client.run_sync(agent=self.supervisor.name, input=[message])
 
             delegation_plan = run.output[0].parts[0].content if run.output else ""
             supervisor_latency = (datetime.now() - supervisor_start).total_seconds()
@@ -135,8 +132,7 @@ Now combine these results into a final answer for the original task."""
 
         try:
             run = await client.run_sync(
-                agent=self.supervisor.name,
-                input=[self._create_message(combine_prompt)]
+                agent=self.supervisor.name, input=[self._create_message(combine_prompt)]
             )
 
             final_output = run.output[0].parts[0].content if run.output else ""
@@ -150,15 +146,12 @@ Now combine these results into a final answer for the original task."""
 
         # Calculate overhead
         total_worker_latency = sum(
-            r["latency"] for r in worker_results
-            if isinstance(r, dict) and "latency" in r
+            r["latency"] for r in worker_results if isinstance(r, dict) and "latency" in r
         )
         supervisor_overhead = supervisor_latency + combine_latency
         parallelization_efficiency = (
-            total_worker_latency / max(
-                r["latency"] for r in worker_results
-                if isinstance(r, dict) and "latency" in r
-            )
+            total_worker_latency
+            / max(r["latency"] for r in worker_results if isinstance(r, dict) and "latency" in r)
             if worker_results and any(isinstance(r, dict) for r in worker_results)
             else 0
         )
@@ -204,11 +197,13 @@ Now combine these results into a final answer for the original task."""
                     worker_name = worker_part.strip(". ")
                     task_desc = task_part.strip(". ")
 
-                    delegations.append({
-                        "worker": worker_name,
-                        "task": task_desc,
-                    })
-                except:
+                    delegations.append(
+                        {
+                            "worker": worker_name,
+                            "task": task_desc,
+                        }
+                    )
+                except Exception:
                     continue
 
         return delegations
@@ -222,7 +217,7 @@ Now combine these results into a final answer for the original task."""
         """Execute a single worker agent."""
         start_time = datetime.now()
 
-        worker_prompt = f"""You are a worker agent with the following role: {worker.role or 'general assistant'}
+        worker_prompt = f"""You are a worker agent with the following role: {worker.role or "general assistant"}
 
 Original task context: {original_task}
 
@@ -233,8 +228,7 @@ Complete your subtask and provide a clear, focused response."""
         try:
             client = self._get_client(worker)
             run = await client.run_sync(
-                agent=worker.name,
-                input=[self._create_message(worker_prompt)]
+                agent=worker.name, input=[self._create_message(worker_prompt)]
             )
 
             response = run.output[0].parts[0].content if run.output else ""

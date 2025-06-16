@@ -56,13 +56,17 @@ class PatternComparisonBenchmark(Benchmark):
                 id="data_pipeline",
                 prompt="Extract key facts from this text, summarize them, then create action items: 'The Q3 report shows 15% revenue growth but customer churn increased by 3%. Marketing budget was underspent by $50K. Three new competitors entered our market.'",
                 expected_output={
-                    "required": ["15% revenue growth", "3% churn increase", "$50K underspent", "three competitors"],
+                    "required": [
+                        "15% revenue growth",
+                        "3% churn increase",
+                        "$50K underspent",
+                        "three competitors",
+                    ],
                     "optional": ["action items", "summary"],
                 },
                 category="sequential",
                 metadata={"expected_best_pattern": "linear"},
             ),
-
             # Task 2: Parallel research (favors swarm)
             BenchmarkTask(
                 id="market_research",
@@ -74,7 +78,6 @@ class PatternComparisonBenchmark(Benchmark):
                 category="parallel",
                 metadata={"expected_best_pattern": "swarm"},
             ),
-
             # Task 3: Coordinated analysis (favors supervisor)
             BenchmarkTask(
                 id="complex_analysis",
@@ -86,7 +89,6 @@ class PatternComparisonBenchmark(Benchmark):
                 category="coordination",
                 metadata={"expected_best_pattern": "supervisor"},
             ),
-
             # Task 4: Creative synthesis (pattern-agnostic)
             BenchmarkTask(
                 id="creative_task",
@@ -98,13 +100,16 @@ class PatternComparisonBenchmark(Benchmark):
                 category="creative",
                 metadata={"expected_best_pattern": "any"},
             ),
-
             # Task 5: Error-prone task (tests robustness)
             BenchmarkTask(
                 id="calculation_heavy",
                 prompt="Calculate the compound interest on $10,000 at 5% annual rate for 10 years, then determine how many months it would take to double at that rate, and finally suggest investment strategies for different risk profiles",
                 expected_output={
-                    "required": ["compound interest result", "doubling time", "investment strategies"],
+                    "required": [
+                        "compound interest result",
+                        "doubling time",
+                        "investment strategies",
+                    ],
                     "optional": ["exact calculations", "risk profiles"],
                 },
                 category="calculation",
@@ -169,18 +174,22 @@ class PatternComparisonBenchmark(Benchmark):
                     handoff_metric,
                 )
                 pattern_task_results.append(task_result)
-                all_task_results.append({
-                    **task_result,
-                    "pattern": pattern_type,
-                })
+                all_task_results.append(
+                    {
+                        **task_result,
+                        "pattern": pattern_type,
+                    }
+                )
 
             pattern_end = datetime.now()
 
             # Aggregate pattern results
             pattern_results[pattern_type] = {
                 "tasks_completed": sum(1 for r in pattern_task_results if r["success"]),
-                "average_score": sum(r["score"] for r in pattern_task_results) / len(pattern_task_results),
-                "average_latency": sum(r["latency"] for r in pattern_task_results) / len(pattern_task_results),
+                "average_score": sum(r["score"] for r in pattern_task_results)
+                / len(pattern_task_results),
+                "average_latency": sum(r["latency"] for r in pattern_task_results)
+                / len(pattern_task_results),
                 "total_tokens": sum(r.get("tokens", 0) for r in pattern_task_results),
                 "total_cost": sum(r.get("cost", 0) for r in pattern_task_results),
                 "pattern_latency": (pattern_end - pattern_start).total_seconds(),
@@ -191,17 +200,15 @@ class PatternComparisonBenchmark(Benchmark):
         analysis = self._analyze_pattern_performance(pattern_results, self.test_tasks)
 
         # Determine overall winner
-        best_pattern = max(
-            pattern_results.items(),
-            key=lambda x: x[1]["average_score"]
-        )[0]
+        best_pattern = max(pattern_results.items(), key=lambda x: x[1]["average_score"])[0]
 
         return BenchmarkResult(
             benchmark_name=self.name,
             agent_name=f"multi_agent_ensemble_{len(agents)}",
             tasks_completed=len([r for r in all_task_results if r["success"]]),
             tasks_total=len(self.test_tasks) * len(self.patterns_to_test),
-            overall_score=sum(r["average_score"] for r in pattern_results.values()) / len(pattern_results),
+            overall_score=sum(r["average_score"] for r in pattern_results.values())
+            / len(pattern_results),
             task_results=all_task_results,
             metrics={},  # Will be populated by framework
             summary={
@@ -213,11 +220,7 @@ class PatternComparisonBenchmark(Benchmark):
             },
         )
 
-    def _create_pattern(
-        self,
-        pattern_type: str,
-        agents: list[AgentInfo]
-    ) -> Any | None:
+    def _create_pattern(self, pattern_type: str, agents: list[AgentInfo]) -> Any | None:
         """Create a pattern instance."""
         if pattern_type == "linear":
             return LinearPattern(agents)
@@ -241,8 +244,7 @@ class PatternComparisonBenchmark(Benchmark):
         try:
             # Execute pattern
             result = await pattern.execute(
-                task.prompt,
-                context={"task_id": task.id, "expected": task.expected_output}
+                task.prompt, context={"task_id": task.id, "expected": task.expected_output}
             )
 
             # Evaluate output quality
@@ -263,8 +265,7 @@ class PatternComparisonBenchmark(Benchmark):
                 "cost": result.get("total_cost", 0),
                 "handoff_quality": result.get("information_preservation", 1.0),
                 "pattern_specific": {
-                    k: v for k, v in result.items()
-                    if k not in ["final_output", "success"]
+                    k: v for k, v in result.items() if k not in ["final_output", "success"]
                 },
             }
 
@@ -277,11 +278,7 @@ class PatternComparisonBenchmark(Benchmark):
                 "error": str(e),
             }
 
-    def _evaluate_output(
-        self,
-        output: str,
-        expected: Any | None
-    ) -> float:
+    def _evaluate_output(self, output: str, expected: Any | None) -> float:
         """Evaluate output quality against expected."""
         if not expected:
             return 0.5 if output else 0.0
@@ -344,8 +341,7 @@ class PatternComparisonBenchmark(Benchmark):
                 task_scores = []
                 for task in category_tasks:
                     task_result = next(
-                        (r for r in results["task_results"] if r["task_id"] == task.id),
-                        None
+                        (r for r in results["task_results"] if r["task_id"] == task.id), None
                     )
                     if task_result:
                         task_scores.append(task_result["score"])

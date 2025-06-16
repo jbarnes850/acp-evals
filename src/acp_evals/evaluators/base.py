@@ -11,6 +11,7 @@ from typing import Any
 @dataclass
 class EvaluationResult:
     """Result of an evaluation."""
+
     score: float  # 0.0 to 1.0
     passed: bool
     breakdown: dict[str, float]

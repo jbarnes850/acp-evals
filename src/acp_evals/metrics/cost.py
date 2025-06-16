@@ -4,7 +4,6 @@ Cost metric for ACP agent evaluation.
 Provides detailed cost analysis and projections for agent operations.
 """
 
-
 from acp_sdk.models import Event, Run
 
 from acp_evals.core.base import Metric, MetricResult
@@ -30,7 +29,7 @@ class CostMetric(Metric):
         """
         self.base_costs = base_costs or {
             "token_multiplier": 1.0,  # Adjust for specific pricing
-            "fixed_per_run": 0.0,     # Fixed cost per run if any
+            "fixed_per_run": 0.0,  # Fixed cost per run if any
             "tool_call_cost": 0.0001,  # Cost per tool call
         }
 
@@ -42,7 +41,9 @@ class CostMetric(Metric):
     def description(self) -> str:
         return "Comprehensive cost analysis with projections and efficiency metrics"
 
-    def _calculate_projections(self, run_cost: float, run_duration_seconds: float) -> dict[str, float]:
+    def _calculate_projections(
+        self, run_cost: float, run_duration_seconds: float
+    ) -> dict[str, float]:
         """Calculate cost projections for various time periods."""
         if run_duration_seconds <= 0:
             return {
@@ -100,7 +101,9 @@ class CostMetric(Metric):
         # Identify primary driver
         if drivers["token_cost_percentage"] > 80:
             drivers["primary_driver"] = "tokens"
-            drivers["optimization_suggestion"] = "Focus on reducing token usage through better prompts or context management"
+            drivers["optimization_suggestion"] = (
+                "Focus on reducing token usage through better prompts or context management"
+            )
         elif drivers["tool_cost_percentage"] > 50:
             drivers["primary_driver"] = "tools"
             drivers["optimization_suggestion"] = "Optimize tool usage patterns or batch tool calls"
@@ -139,7 +142,9 @@ class CostMetric(Metric):
 
         # Analyze cost drivers
         cost_drivers = self._analyze_cost_drivers(events, token_cost)
-        total_cost = cost_drivers["token_cost"] + cost_drivers["tool_cost"] + cost_drivers["fixed_cost"]
+        total_cost = (
+            cost_drivers["token_cost"] + cost_drivers["tool_cost"] + cost_drivers["fixed_cost"]
+        )
 
         # Calculate projections
         projections = self._calculate_projections(total_cost, run_duration)
@@ -151,7 +156,7 @@ class CostMetric(Metric):
         if run.status.value == "completed":
             cost_per_success = total_cost
         else:
-            cost_per_success = float('inf')  # Infinite cost for failed runs
+            cost_per_success = float("inf")  # Infinite cost for failed runs
 
         breakdown = {
             "total_cost": total_cost,
@@ -160,14 +165,18 @@ class CostMetric(Metric):
             "cost_per_token": cost_per_token,
             "cost_per_success": cost_per_success,
             "run_duration_seconds": run_duration,
-            "multi_agent_multiplier": cost_drivers["agents_involved"] if cost_drivers["agents_involved"] > 1 else 1,
+            "multi_agent_multiplier": cost_drivers["agents_involved"]
+            if cost_drivers["agents_involved"] > 1
+            else 1,
         }
 
         # Add recommendations based on cost
         if total_cost > 0.10:  # More than 10 cents per run
             breakdown["recommendation"] = "High cost per run - consider optimization"
         elif projections["per_month"] > 1000:  # More than $1000/month at current rate
-            breakdown["recommendation"] = "Projected monthly cost exceeds $1000 - review architecture"
+            breakdown["recommendation"] = (
+                "Projected monthly cost exceeds $1000 - review architecture"
+            )
 
         return MetricResult(
             name=self.name,

@@ -28,7 +28,7 @@ class RetrievalEvaluator(Evaluator):
         relevance_threshold: float = 0.7,
         completeness_weight: float = 0.3,
         relevance_weight: float = 0.5,
-        accuracy_weight: float = 0.2
+        accuracy_weight: float = 0.2,
     ):
         """
         Initialize the retrieval evaluator.
@@ -45,7 +45,7 @@ class RetrievalEvaluator(Evaluator):
         self.weights = {
             "completeness": completeness_weight,
             "relevance": relevance_weight,
-            "accuracy": accuracy_weight
+            "accuracy": accuracy_weight,
         }
 
         self._evaluation_prompt = """
@@ -102,10 +102,10 @@ Overall Assessment: [Brief explanation]
         """
         # Extract retrieved documents if provided in context
         retrieved_docs = []
-        if context and 'source_documents' in context:
-            retrieved_docs = context['source_documents']
-        elif context and 'retrieved' in context:
-            retrieved_docs = context['retrieved']
+        if context and "source_documents" in context:
+            retrieved_docs = context["source_documents"]
+        elif context and "retrieved" in context:
+            retrieved_docs = context["retrieved"]
         else:
             # Treat response as the retrieved content
             retrieved_docs = [response]
@@ -116,9 +116,7 @@ Overall Assessment: [Brief explanation]
         if self.provider:
             # Use LLM for evaluation
             prompt = self._evaluation_prompt.format(
-                query=task,
-                retrieved=retrieved_text,
-                reference=reference or "Not provided"
+                query=task, retrieved=retrieved_text, reference=reference or "Not provided"
             )
 
             try:
@@ -131,9 +129,9 @@ Overall Assessment: [Brief explanation]
 
                 # Calculate weighted score
                 score = (
-                    self.weights["relevance"] * relevance_score +
-                    self.weights["completeness"] * completeness_score +
-                    self.weights["accuracy"] * accuracy_score
+                    self.weights["relevance"] * relevance_score
+                    + self.weights["completeness"] * completeness_score
+                    + self.weights["accuracy"] * accuracy_score
                 )
 
                 # Extract additional information
@@ -147,7 +145,7 @@ Overall Assessment: [Brief explanation]
                     "accuracy": accuracy_score,
                     "weighted_score": score,
                     "missing_items": len(missing_info),
-                    "irrelevant_items": len(irrelevant_info)
+                    "irrelevant_items": len(irrelevant_info),
                 }
 
                 passed = score >= self.relevance_threshold
@@ -181,8 +179,8 @@ Overall Assessment: [Brief explanation]
                 "evaluator": self.name,
                 "query": task,
                 "num_retrieved": len(retrieved_docs),
-                "has_reference": reference is not None
-            }
+                "has_reference": reference is not None,
+            },
         )
 
     def _format_retrieved_docs(self, docs: list[Any]) -> str:
@@ -193,11 +191,11 @@ Overall Assessment: [Brief explanation]
         formatted = []
         for i, doc in enumerate(docs):
             if isinstance(doc, dict):
-                content = doc.get('content', doc.get('text', str(doc)))
-                source = doc.get('source', doc.get('url', ''))
-                formatted.append(f"Document {i+1}:\n{content}\n[Source: {source}]")
+                content = doc.get("content", doc.get("text", str(doc)))
+                source = doc.get("source", doc.get("url", ""))
+                formatted.append(f"Document {i + 1}:\n{content}\n[Source: {source}]")
             else:
-                formatted.append(f"Document {i+1}:\n{str(doc)}")
+                formatted.append(f"Document {i + 1}:\n{str(doc)}")
 
         return "\n\n".join(formatted)
 
@@ -208,8 +206,26 @@ Overall Assessment: [Brief explanation]
         retrieved_terms = set(retrieved.lower().split())
 
         # Remove common words
-        common_words = {'the', 'a', 'an', 'is', 'are', 'was', 'were', 'what', 'when',
-                       'where', 'who', 'why', 'how', 'which', 'of', 'to', 'in', 'for'}
+        common_words = {
+            "the",
+            "a",
+            "an",
+            "is",
+            "are",
+            "was",
+            "were",
+            "what",
+            "when",
+            "where",
+            "who",
+            "why",
+            "how",
+            "which",
+            "of",
+            "to",
+            "in",
+            "for",
+        }
         query_terms = query_terms - common_words
 
         if not query_terms:
@@ -229,18 +245,19 @@ Overall Assessment: [Brief explanation]
     def _extract_score(self, text: str, marker: str) -> float:
         """Extract numerical score from text."""
         import re
+
         pattern = marker + r"\s*([0-9.]+)"
         match = re.search(pattern, text)
         if match:
             try:
                 return float(match.group(1))
-            except:
+            except Exception:
                 pass
         return 0.5
 
     def _extract_list(self, text: str, marker: str) -> list[str]:
         """Extract list items after a marker."""
-        lines = text.split('\n')
+        lines = text.split("\n")
         items = []
         found_marker = False
 
@@ -249,9 +266,9 @@ Overall Assessment: [Brief explanation]
                 found_marker = True
                 continue
             if found_marker and line.strip():
-                if line.strip().startswith('-') or line.strip().startswith('•'):
+                if line.strip().startswith("-") or line.strip().startswith("•"):
                     items.append(line.strip()[1:].strip())
-                elif ':' in line and any(m in line for m in ['Score', 'Information', 'Assessment']):
+                elif ":" in line and any(m in line for m in ["Score", "Information", "Assessment"]):
                     break
 
         return items
@@ -263,12 +280,12 @@ Overall Assessment: [Brief explanation]
             if len(parts) > 1:
                 # Get text until next section or end
                 section = parts[1].strip()
-                lines = section.split('\n')
+                lines = section.split("\n")
                 result = []
                 for line in lines:
-                    if line and not any(m in line for m in ['Score:', 'Information:']):
+                    if line and not any(m in line for m in ["Score:", "Information:"]):
                         result.append(line)
                     else:
                         break
-                return ' '.join(result).strip()
+                return " ".join(result).strip()
         return ""

@@ -63,17 +63,14 @@ class LinearPattern(AgentPattern):
 Original task: {task}
 {f"Context to preserve: {preserved_context}" if preserved_context else ""}
 
-Your role: {agent.role or 'Process the above information'}"""
+Your role: {agent.role or "Process the above information"}"""
 
             # Execute agent
             client = self._get_client(agent)
             message = self._create_message(agent_input)
 
             try:
-                run = await client.run_sync(
-                    agent=agent.name,
-                    input=[message]
-                )
+                run = await client.run_sync(agent=agent.name, input=[message])
 
                 # Extract response
                 if run.output and run.output[0].parts:
@@ -92,7 +89,9 @@ Your role: {agent.role or 'Process the above information'}"""
                     "latency": (agent_end - agent_start).total_seconds(),
                     "preserved_context": self._check_context_preservation(
                         response, preserved_context
-                    ) if i > 0 else None,
+                    )
+                    if i > 0
+                    else None,
                 }
                 handoffs.append(handoff)
 
@@ -114,14 +113,11 @@ Your role: {agent.role or 'Process the above information'}"""
 
         # Calculate information preservation across chain
         preservation_scores = [
-            h["preserved_context"]
-            for h in handoffs
-            if h.get("preserved_context") is not None
+            h["preserved_context"] for h in handoffs if h.get("preserved_context") is not None
         ]
 
         avg_preservation = (
-            sum(preservation_scores) / len(preservation_scores)
-            if preservation_scores else None
+            sum(preservation_scores) / len(preservation_scores) if preservation_scores else None
         )
 
         return {
@@ -135,9 +131,7 @@ Your role: {agent.role or 'Process the above information'}"""
         }
 
     def _check_context_preservation(
-        self,
-        response: str,
-        preserved_context: dict[str, Any]
+        self, response: str, preserved_context: dict[str, Any]
     ) -> float:
         """Check how well context was preserved in response."""
         if not preserved_context:

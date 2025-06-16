@@ -84,7 +84,7 @@ class BatchResult:
     def export(self, path: str):
         """Export results to JSON file."""
         import json
-        
+
         data = {
             "summary": {
                 "total": self.total,
@@ -151,16 +151,10 @@ class BaseEval:
             client = await self._get_client()
             agent_name = self.agent.split("/agents/")[-1]
 
-            message = Message(parts=[
-                MessagePart(content=input_text, content_type="text/plain")
-            ])
+            message = Message(parts=[MessagePart(content=input_text, content_type="text/plain")])
 
             try:
-                run = await client.run_sync(
-                    agent=agent_name,
-                    input=[message],
-                    **kwargs
-                )
+                run = await client.run_sync(agent=agent_name, input=[message], **kwargs)
             except Exception as e:
                 # Wrap connection errors
                 raise AgentConnectionError(self.agent, e)
@@ -175,8 +169,7 @@ class BaseEval:
                     raise AgentTimeoutError(self.agent, timeout_seconds=30)
                 else:
                     raise AgentConnectionError(
-                        self.agent,
-                        Exception(f"Agent run failed with status: {run.status}")
+                        self.agent, Exception(f"Agent run failed with status: {run.status}")
                     )
 
             # Extract response text
@@ -197,8 +190,7 @@ class BaseEval:
         elif callable(self.agent):
             # Agent is a callable function
             if asyncio.iscoroutinefunction(self.agent) or (
-                hasattr(self.agent, '__call__') and 
-                asyncio.iscoroutinefunction(self.agent.__call__)
+                hasattr(self.agent, "__call__") and asyncio.iscoroutinefunction(self.agent.__call__)
             ):
                 response = await self.agent(input_text, **kwargs)
             else:

@@ -19,9 +19,9 @@ def traces():
 
 
 @traces.command()
-@click.argument('trace_file', type=click.Path(exists=True))
-@click.option('--format', '-f', type=click.Choice(['auto', 'otel', 'acp']), default='auto')
-@click.option('--validate', '-v', is_flag=True, help='Validate trace format')
+@click.argument("trace_file", type=click.Path(exists=True))
+@click.option("--format", "-f", type=click.Choice(["auto", "otel", "acp"]), default="auto")
+@click.option("--validate", "-v", is_flag=True, help="Validate trace format")
 def ingest(trace_file: str, format: str, validate: bool):
     """Ingest traces from a file.
 
@@ -41,8 +41,8 @@ def ingest(trace_file: str, format: str, validate: bool):
             data = json.load(f)
 
         # Handle different formats
-        if isinstance(data, dict) and 'traces' in data:
-            traces = data['traces']
+        if isinstance(data, dict) and "traces" in data:
+            traces = data["traces"]
         elif isinstance(data, list):
             traces = data
         else:
@@ -59,16 +59,16 @@ def ingest(trace_file: str, format: str, validate: bool):
             task = progress.add_task("Ingesting traces...", total=len(traces))
 
             for trace in traces:
-                if format == 'auto':
+                if format == "auto":
                     # Auto-detect format
-                    if 'spans' in trace or 'resource' in trace:
-                        detected_format = 'otel'
+                    if "spans" in trace or "resource" in trace:
+                        detected_format = "otel"
                     else:
-                        detected_format = 'acp'
+                        detected_format = "acp"
                 else:
                     detected_format = format
 
-                if detected_format == 'otel':
+                if detected_format == "otel":
                     recycler.ingest_trace(trace)
                 else:
                     # Convert ACP to OTel format
@@ -88,7 +88,7 @@ def ingest(trace_file: str, format: str, validate: bool):
             console.print("\n[bold]Validation Results:[/bold]")
             valid = 0
             for trace in recycler.traces:
-                if trace.get('spans') and len(trace['spans']) > 0:
+                if trace.get("spans") and len(trace["spans"]) > 0:
                     valid += 1
             console.print(f"Valid traces: {valid}/{total_traces}")
 
@@ -98,10 +98,10 @@ def ingest(trace_file: str, format: str, validate: bool):
 
 
 @traces.command()
-@click.option('--output', '-o', required=True, help='Output dataset file')
-@click.option('--count', '-c', type=int, default=100, help='Number of examples to generate')
-@click.option('--quality-threshold', '-q', type=float, default=0.7, help='Minimum quality score')
-@click.option('--format', '-f', type=click.Choice(['json', 'jsonl']), default='jsonl')
+@click.option("--output", "-o", required=True, help="Output dataset file")
+@click.option("--count", "-c", type=int, default=100, help="Number of examples to generate")
+@click.option("--quality-threshold", "-q", type=float, default=0.7, help="Minimum quality score")
+@click.option("--format", "-f", type=click.Choice(["json", "jsonl"]), default="jsonl")
 def recycle(output: str, count: int, quality_threshold: float, format: str):
     """Recycle traces into evaluation datasets.
 
@@ -131,18 +131,16 @@ def recycle(output: str, count: int, quality_threshold: float, format: str):
             task = progress.add_task("Generating dataset...", total=1)
 
             dataset = recycler.generate_dataset(
-                count=count,
-                quality_threshold=quality_threshold,
-                format=format
+                count=count, quality_threshold=quality_threshold, format=format
             )
 
             progress.advance(task)
 
         # Save dataset
-        with open(output, 'w') as f:
-            if format == 'jsonl':
+        with open(output, "w") as f:
+            if format == "jsonl":
                 for item in dataset:
-                    f.write(json.dumps(item) + '\n')
+                    f.write(json.dumps(item) + "\n")
             else:
                 json.dump(dataset, f, indent=2)
 
@@ -150,7 +148,7 @@ def recycle(output: str, count: int, quality_threshold: float, format: str):
         console.print(f"Saved to: {output}")
 
         # Show quality distribution
-        quality_scores = [item.get('_quality_score', 0) for item in dataset]
+        quality_scores = [item.get("_quality_score", 0) for item in dataset]
         if quality_scores:
             avg_quality = sum(quality_scores) / len(quality_scores)
             console.print(f"\nAverage quality score: {avg_quality:.2f}")
@@ -161,8 +159,8 @@ def recycle(output: str, count: int, quality_threshold: float, format: str):
 
 
 @traces.command()
-@click.option('--export', '-e', help='Export patterns to file')
-@click.option('--min-frequency', '-m', type=int, default=2, help='Minimum pattern frequency')
+@click.option("--export", "-e", help="Export patterns to file")
+@click.option("--min-frequency", "-m", type=int, default=2, help="Minimum pattern frequency")
 def patterns(export: str | None, min_frequency: int):
     """Detect and analyze trace patterns.
 
@@ -185,11 +183,12 @@ def patterns(export: str | None, min_frequency: int):
 
     # Filter by frequency
     filtered_patterns = {
-        sig: data for sig, data in patterns.items()
-        if data['frequency'] >= min_frequency
+        sig: data for sig, data in patterns.items() if data["frequency"] >= min_frequency
     }
 
-    console.print(f"Found [cyan]{len(filtered_patterns)}[/cyan] patterns (min frequency: {min_frequency})")
+    console.print(
+        f"Found [cyan]{len(filtered_patterns)}[/cyan] patterns (min frequency: {min_frequency})"
+    )
 
     # Display patterns
     table = Table(title="Trace Patterns")
@@ -199,17 +198,19 @@ def patterns(export: str | None, min_frequency: int):
     table.add_column("Avg Duration", style="magenta")
     table.add_column("Operations", style="white")
 
-    for sig, data in sorted(filtered_patterns.items(), key=lambda x: x[1]['frequency'], reverse=True)[:10]:
-        ops = ', '.join(data['characteristics']['operations'][:3])
-        if len(data['characteristics']['operations']) > 3:
+    for sig, data in sorted(
+        filtered_patterns.items(), key=lambda x: x[1]["frequency"], reverse=True
+    )[:10]:
+        ops = ", ".join(data["characteristics"]["operations"][:3])
+        if len(data["characteristics"]["operations"]) > 3:
             ops += f" (+{len(data['characteristics']['operations']) - 3} more)"
 
         table.add_row(
             sig[:20] + "...",
-            data['type'],
-            str(data['frequency']),
+            data["type"],
+            str(data["frequency"]),
             f"{data['characteristics']['avg_duration']:.2f}s",
-            ops
+            ops,
         )
 
     console.print(table)
@@ -217,7 +218,7 @@ def patterns(export: str | None, min_frequency: int):
     # Export if requested
     if export:
         export_data = recycler.export_patterns()
-        with open(export, 'w') as f:
+        with open(export, "w") as f:
             json.dump(export_data, f, indent=2)
 
         console.print(f"\n[green]Patterns exported to:[/green] {export}")
@@ -225,7 +226,7 @@ def patterns(export: str | None, min_frequency: int):
     # Show pattern distribution
     pattern_types = {}
     for data in filtered_patterns.values():
-        pattern_types[data['type']] = pattern_types.get(data['type'], 0) + 1
+        pattern_types[data["type"]] = pattern_types.get(data["type"], 0) + 1
 
     console.print("\n[bold]Pattern Distribution:[/bold]")
     for ptype, count in pattern_types.items():
@@ -233,9 +234,9 @@ def patterns(export: str | None, min_frequency: int):
 
 
 @traces.command()
-@click.argument('baseline_file', type=click.Path(exists=True))
-@click.argument('current_file', type=click.Path(exists=True))
-@click.option('--report', '-r', help='Save regression report')
+@click.argument("baseline_file", type=click.Path(exists=True))
+@click.argument("current_file", type=click.Path(exists=True))
+@click.option("--report", "-r", help="Save regression report")
 def regression(baseline_file: str, current_file: str, report: str | None):
     """Compare baseline traces with current traces for regressions.
 
@@ -253,13 +254,17 @@ def regression(baseline_file: str, current_file: str, report: str | None):
         with open(baseline_file) as f:
             baseline_data = json.load(f)
 
-        baseline_traces = baseline_data if isinstance(baseline_data, list) else baseline_data.get('traces', [])
+        baseline_traces = (
+            baseline_data if isinstance(baseline_data, list) else baseline_data.get("traces", [])
+        )
 
         # Load current traces
         with open(current_file) as f:
             current_data = json.load(f)
 
-        current_traces = current_data if isinstance(current_data, list) else current_data.get('traces', [])
+        current_traces = (
+            current_data if isinstance(current_data, list) else current_data.get("traces", [])
+        )
 
         console.print(f"Baseline traces: {len(baseline_traces)}")
         console.print(f"Current traces: {len(current_traces)}")
@@ -286,14 +291,14 @@ def regression(baseline_file: str, current_file: str, report: str | None):
         # Save report if requested
         if report:
             report_data = {
-                'baseline_file': baseline_file,
-                'current_file': current_file,
-                'baseline_traces': len(baseline_traces),
-                'current_traces': len(current_traces),
-                'regressions': regressions
+                "baseline_file": baseline_file,
+                "current_file": current_file,
+                "baseline_traces": len(baseline_traces),
+                "current_traces": len(current_traces),
+                "regressions": regressions,
             }
 
-            with open(report, 'w') as f:
+            with open(report, "w") as f:
                 json.dump(report_data, f, indent=2)
 
             console.print(f"\n[green]Report saved to:[/green] {report}")

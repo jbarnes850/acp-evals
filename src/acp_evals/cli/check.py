@@ -32,12 +32,7 @@ def check_env_file() -> Path | None:
 
 def check_provider_connectivity(provider_name: str) -> dict[str, any]:
     """Test connectivity to a provider."""
-    result = {
-        "connected": False,
-        "error": None,
-        "model": None,
-        "latency_ms": None
-    }
+    result = {"connected": False, "error": None, "model": None, "latency_ms": None}
 
     try:
         import asyncio
@@ -52,9 +47,7 @@ def check_provider_connectivity(provider_name: str) -> dict[str, any]:
 
         async def test_provider():
             response = await provider.complete(
-                "Say 'test successful' and nothing else.",
-                temperature=0.0,
-                max_tokens=10
+                "Say 'test successful' and nothing else.", temperature=0.0, max_tokens=10
             )
             return response
 
@@ -79,16 +72,13 @@ def check_provider_connectivity(provider_name: str) -> dict[str, any]:
 
 @click.command()
 @click.option(
-    "--test-connection",
-    "-t",
-    is_flag=True,
-    help="Test connection to configured providers"
+    "--test-connection", "-t", is_flag=True, help="Test connection to configured providers"
 )
 @click.option(
     "--show-setup",
     "-s",
     type=click.Choice(["openai", "anthropic", "ollama"]),
-    help="Show setup instructions for a specific provider"
+    help="Show setup instructions for a specific provider",
 )
 def check_providers(test_connection: bool, show_setup: str | None):
     """Check LLM provider configuration and connectivity."""
@@ -138,12 +128,7 @@ def check_providers(test_connection: bool, show_setup: str | None):
             else:
                 connection_status = f"Error: {test_result['error'][:30]}..."
 
-        table.add_row(
-            provider.title(),
-            status,
-            model,
-            connection_status or "—"
-        )
+        table.add_row(provider.title(), status, model, connection_status or "—")
 
     console.print(table)
 
@@ -160,11 +145,9 @@ def check_providers(test_connection: bool, show_setup: str | None):
     # Show setup instructions if requested
     if show_setup:
         console.print(f"\n[bold]Setup Instructions for {show_setup.title()}:[/bold]")
-        console.print(Panel(
-            format_provider_setup_help(show_setup),
-            box=box.ROUNDED,
-            padding=(1, 2)
-        ))
+        console.print(
+            Panel(format_provider_setup_help(show_setup), box=box.ROUNDED, padding=(1, 2))
+        )
 
     # Show summary and next steps
     configured_count = sum(1 for v in providers.values() if v)
@@ -178,7 +161,9 @@ def check_providers(test_connection: bool, show_setup: str | None):
         console.print("\nFor provider-specific setup: acp-evals check --show-setup <provider>")
 
     elif configured_count < len(providers):
-        console.print(f"\n[yellow]{configured_count}/{len(providers)} providers configured[/yellow]")
+        console.print(
+            f"\n[yellow]{configured_count}/{len(providers)} providers configured[/yellow]"
+        )
         console.print("For help setting up other providers:")
         not_configured = [p for p, v in providers.items() if not v]
         for provider in not_configured:
@@ -199,7 +184,10 @@ def check_providers(test_connection: bool, show_setup: str | None):
             issues.append("OpenAI API key appears to be the placeholder value from .env.example")
 
         # Check for placeholder values
-        if providers.get("anthropic") and os.getenv("ANTHROPIC_API_KEY") == "your-anthropic-api-key-here":
+        if (
+            providers.get("anthropic")
+            and os.getenv("ANTHROPIC_API_KEY") == "your-anthropic-api-key-here"
+        ):
             issues.append("Anthropic API key appears to be the placeholder value from .env.example")
 
         if issues:

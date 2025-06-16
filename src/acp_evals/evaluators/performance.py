@@ -105,7 +105,9 @@ class PerformanceEval(BaseEval):
                 "total": total_tokens,
             }
             details["cost_usd"] = total_cost
-            details["cost_per_1k_tokens"] = (total_cost / total_tokens) * 1000 if total_tokens > 0 else 0
+            details["cost_per_1k_tokens"] = (
+                (total_cost / total_tokens) * 1000 if total_tokens > 0 else 0
+            )
 
         # Memory tracking (placeholder)
         if track_memory:
@@ -141,4 +143,3 @@ class PerformanceEval(BaseEval):
             result.print_summary()
 
         return result
-

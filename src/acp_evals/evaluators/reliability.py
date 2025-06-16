@@ -85,16 +85,11 @@ class ReliabilityEval(BaseEval):
 
                 agent_name = self.agent.split("/agents/")[-1]
 
-                message = Message(parts=[
-                    MessagePart(content=input, content_type="text/plain")
-                ])
+                message = Message(parts=[MessagePart(content=input, content_type="text/plain")])
 
                 try:
                     # Start run
-                    run = await client.run_async(
-                        agent=agent_name,
-                        input=[message]
-                    )
+                    run = await client.run_async(agent=agent_name, input=[message])
 
                     # Collect events in parallel with run
                     event_collection_task = asyncio.create_task(
@@ -163,14 +158,18 @@ class ReliabilityEval(BaseEval):
             # Extract tool usage from events
             for event in agent_result.get("events", []):
                 if event.get("type") == "tool.call" or event.get("type") == "tools.use":
-                    tool_name = event.get("data", {}).get("tool_name") or event.get("data", {}).get("name")
+                    tool_name = event.get("data", {}).get("tool_name") or event.get("data", {}).get(
+                        "name"
+                    )
                     if tool_name:
                         tools_used.append(tool_name)
-                        tool_calls_details.append({
-                            "tool": tool_name,
-                            "timestamp": event.get("timestamp"),
-                            "status": event.get("data", {}).get("status", "unknown"),
-                        })
+                        tool_calls_details.append(
+                            {
+                                "tool": tool_name,
+                                "timestamp": event.get("timestamp"),
+                                "status": event.get("data", {}).get("status", "unknown"),
+                            }
+                        )
 
             # If no events but response mentions tools, do text analysis as fallback
             if not tools_used and agent_result.get("response"):
@@ -178,11 +177,13 @@ class ReliabilityEval(BaseEval):
                 for tool in expected_tools:
                     if tool.lower() in response_lower:
                         tools_used.append(tool)
-                        tool_calls_details.append({
-                            "tool": tool,
-                            "source": "text_analysis",
-                            "confidence": "low",
-                        })
+                        tool_calls_details.append(
+                            {
+                                "tool": tool,
+                                "source": "text_analysis",
+                                "confidence": "low",
+                            }
+                        )
 
             # Calculate coverage
             tools_used_set = set(tools_used)
@@ -192,7 +193,9 @@ class ReliabilityEval(BaseEval):
             details["expected_tools"] = expected_tools
             details["tools_used"] = list(tools_used_set)
             details["tool_calls"] = tool_calls_details
-            details["tool_coverage"] = len(tools_found) / len(expected_tools_set) if expected_tools_set else 1.0
+            details["tool_coverage"] = (
+                len(tools_found) / len(expected_tools_set) if expected_tools_set else 1.0
+            )
             details["unexpected_tools"] = list(tools_used_set - expected_tools_set)
 
             # Adjust score based on tool coverage
@@ -245,11 +248,15 @@ class ReliabilityEval(BaseEval):
         """Collect events from ACP run."""
         try:
             async for event in client.run_events_stream(run_id=run_id):
-                events_list.append({
-                    "type": event.type,
-                    "timestamp": event.timestamp.isoformat() if hasattr(event.timestamp, 'isoformat') else str(event.timestamp),
-                    "data": event.data if hasattr(event, 'data') else {},
-                })
+                events_list.append(
+                    {
+                        "type": event.type,
+                        "timestamp": event.timestamp.isoformat()
+                        if hasattr(event.timestamp, "isoformat")
+                        else str(event.timestamp),
+                        "data": event.data if hasattr(event, "data") else {},
+                    }
+                )
         except Exception:
             # Event collection might be cancelled, that's okay
             pass
@@ -291,29 +298,32 @@ class ReliabilityEval(BaseEval):
             start_time = time.time()
             try:
                 await self._run_agent(input)
-                attempts.append({
-                    "attempt": i + 1,
-                    "success": True,
-                    "latency": time.time() - start_time,
-                })
+                attempts.append(
+                    {
+                        "attempt": i + 1,
+                        "success": True,
+                        "latency": time.time() - start_time,
+                    }
+                )
                 break
             except Exception as e:
-                attempts.append({
-                    "attempt": i + 1,
-                    "success": False,
-                    "error": str(e),
-                    "latency": time.time() - start_time,
-                })
+                attempts.append(
+                    {
+                        "attempt": i + 1,
+                        "success": False,
+                        "error": str(e),
+                        "latency": time.time() - start_time,
+                    }
+                )
 
         # Check if retry pattern shows backoff
         has_backoff = False
         if len(attempts) > 1:
             latencies = [a["latency"] for a in attempts]
-            has_backoff = all(latencies[i] < latencies[i+1] for i in range(len(latencies)-1))
+            has_backoff = all(latencies[i] < latencies[i + 1] for i in range(len(latencies) - 1))
 
         return {
             "passed": any(a["success"] for a in attempts),
             "attempts": attempts,
             "has_backoff": has_backoff,
         }
-

@@ -115,29 +115,25 @@ Provide scores in JSON format:
         # Initialize judge for safety evaluation
         judge = LLMJudge(
             pass_threshold=0.0,  # We'll handle thresholds ourselves
-            model=self.safety_config.get("model") if self.safety_config else None
+            model=self.safety_config.get("model") if self.safety_config else None,
         )
 
         try:
             # Get safety evaluation from LLM
-            safety_rubric = {
-                "safety_assessment": {
-                    "weight": 1.0,
-                    "criteria": safety_prompt
-                }
-            }
+            safety_rubric = {"safety_assessment": {"weight": 1.0, "criteria": safety_prompt}}
 
             judge.rubric = safety_rubric
             eval_result = await judge.evaluate(
                 task="Evaluate safety",
                 response=response,
                 reference="Safe content",
-                context={"input": input}
+                context={"input": input},
             )
 
             # Extract JSON from feedback
             import re
-            json_match = re.search(r'\{[^}]+\}', eval_result.feedback, re.DOTALL)
+
+            json_match = re.search(r"\{[^}]+\}", eval_result.feedback, re.DOTALL)
             if json_match:
                 safety_scores = json.loads(json_match.group())
             else:
@@ -149,7 +145,7 @@ Provide scores in JSON format:
                     "hate": 0.0,
                     "dangerous": 0.0,
                     "misinformation": 0.0,
-                    "reasoning": "Safety evaluation completed"
+                    "reasoning": "Safety evaluation completed",
                 }
 
             # Extract scores
@@ -226,4 +222,3 @@ Provide scores in JSON format:
             result.print_summary()
 
         return result
-

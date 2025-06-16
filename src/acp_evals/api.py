@@ -61,4 +61,3 @@ def evaluate(eval_obj: Any, *args, **kwargs) -> EvalResult:
         )
     """
     return asyncio.run(eval_obj.run(*args, **kwargs))
-

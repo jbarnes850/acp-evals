@@ -22,12 +22,7 @@ class BleuScoreEvaluator(Evaluator):
         """
         self.n_gram = n_gram
 
-    def evaluate(
-        self,
-        response: str,
-        ground_truth: str | list[str],
-        **kwargs
-    ) -> EvaluationResult:
+    def evaluate(self, response: str, ground_truth: str | list[str], **kwargs) -> EvaluationResult:
         """Calculate BLEU score."""
         # Handle multiple references
         if isinstance(ground_truth, str):
@@ -73,18 +68,14 @@ class BleuScoreEvaluator(Evaluator):
             name="bleu_score",
             score=score,
             passed=score > 0.3,  # Reasonable threshold
-            details={
-                "precisions": precisions,
-                "brevity_penalty": bp,
-                "n_gram": self.n_gram
-            }
+            details={"precisions": precisions, "brevity_penalty": bp, "n_gram": self.n_gram},
         )
 
     def _get_ngrams(self, tokens: list[str], n: int) -> Counter:
         """Extract n-grams from token list."""
         ngrams = []
         for i in range(len(tokens) - n + 1):
-            ngrams.append(tuple(tokens[i:i+n]))
+            ngrams.append(tuple(tokens[i : i + n]))
         return Counter(ngrams)
 
 
@@ -100,12 +91,7 @@ class RougeScoreEvaluator(Evaluator):
         """
         self.rouge_type = rouge_type.lower()
 
-    def evaluate(
-        self,
-        response: str,
-        ground_truth: str,
-        **kwargs
-    ) -> EvaluationResult:
+    def evaluate(self, response: str, ground_truth: str, **kwargs) -> EvaluationResult:
         """Calculate ROUGE score."""
         hypothesis = response.lower().split()
         reference = ground_truth.lower().split()
@@ -126,14 +112,14 @@ class RougeScoreEvaluator(Evaluator):
             details={
                 "rouge_type": self.rouge_type,
                 "hypothesis_length": len(hypothesis),
-                "reference_length": len(reference)
-            }
+                "reference_length": len(reference),
+            },
         )
 
     def _rouge_n(self, hypothesis: list[str], reference: list[str], n: int) -> float:
         """Calculate ROUGE-N score."""
-        hyp_ngrams = Counter(tuple(hypothesis[i:i+n]) for i in range(len(hypothesis)-n+1))
-        ref_ngrams = Counter(tuple(reference[i:i+n]) for i in range(len(reference)-n+1))
+        hyp_ngrams = Counter(tuple(hypothesis[i : i + n]) for i in range(len(hypothesis) - n + 1))
+        ref_ngrams = Counter(tuple(reference[i : i + n]) for i in range(len(reference) - n + 1))
 
         overlap = sum((hyp_ngrams & ref_ngrams).values())
         total = sum(ref_ngrams.values())
@@ -168,10 +154,10 @@ class RougeScoreEvaluator(Evaluator):
             for j in range(n + 1):
                 if i == 0 or j == 0:
                     L[i][j] = 0
-                elif X[i-1] == Y[j-1]:
-                    L[i][j] = L[i-1][j-1] + 1
+                elif X[i - 1] == Y[j - 1]:
+                    L[i][j] = L[i - 1][j - 1] + 1
                 else:
-                    L[i][j] = max(L[i-1][j], L[i][j-1])
+                    L[i][j] = max(L[i - 1][j], L[i][j - 1])
 
         return L[m][n]
 
@@ -186,15 +172,10 @@ class MeteorScoreEvaluator(Evaluator):
             "good": {"great", "excellent", "fine"},
             "bad": {"poor", "terrible", "awful"},
             "big": {"large", "huge", "enormous"},
-            "small": {"tiny", "little", "mini"}
+            "small": {"tiny", "little", "mini"},
         }
 
-    def evaluate(
-        self,
-        response: str,
-        ground_truth: str,
-        **kwargs
-    ) -> EvaluationResult:
+    def evaluate(self, response: str, ground_truth: str, **kwargs) -> EvaluationResult:
         """Calculate METEOR score."""
         hypothesis = response.lower().split()
         reference = ground_truth.lower().split()
@@ -234,8 +215,8 @@ class MeteorScoreEvaluator(Evaluator):
                 "exact_matches": exact_matches,
                 "synonym_matches": synonym_matches,
                 "precision": precision,
-                "recall": recall
-            }
+                "recall": recall,
+            },
         )
 
     def _are_synonyms(self, word1: str, word2: str) -> bool:
@@ -267,12 +248,7 @@ class GleuScoreEvaluator(Evaluator):
         """Initialize GLEU evaluator."""
         self.n_gram = n_gram
 
-    def evaluate(
-        self,
-        response: str,
-        ground_truth: str,
-        **kwargs
-    ) -> EvaluationResult:
+    def evaluate(self, response: str, ground_truth: str, **kwargs) -> EvaluationResult:
         """Calculate GLEU score (simplified version)."""
         hypothesis = response.split()
         reference = ground_truth.split()
@@ -303,29 +279,21 @@ class GleuScoreEvaluator(Evaluator):
             name="gleu_score",
             score=score,
             passed=score > 0.3,
-            details={
-                "n_gram_scores": scores,
-                "n_gram": self.n_gram
-            }
+            details={"n_gram_scores": scores, "n_gram": self.n_gram},
         )
 
     def _get_ngrams(self, tokens: list[str], n: int) -> Counter:
         """Extract n-grams from token list."""
         ngrams = []
         for i in range(len(tokens) - n + 1):
-            ngrams.append(tuple(tokens[i:i+n]))
+            ngrams.append(tuple(tokens[i : i + n]))
         return Counter(ngrams)
 
 
 class F1ScoreEvaluator(Evaluator):
     """F1 score evaluator for classification tasks."""
 
-    def evaluate(
-        self,
-        response: str,
-        ground_truth: str,
-        **kwargs
-    ) -> EvaluationResult:
+    def evaluate(self, response: str, ground_truth: str, **kwargs) -> EvaluationResult:
         """Calculate F1 score based on token overlap."""
         # Tokenize and normalize
         pred_tokens = set(response.lower().split())
@@ -357,6 +325,6 @@ class F1ScoreEvaluator(Evaluator):
                 "recall": recall,
                 "predicted_tokens": len(pred_tokens),
                 "true_tokens": len(true_tokens),
-                "overlap": len(pred_tokens & true_tokens)
-            }
+                "overlap": len(pred_tokens & true_tokens),
+            },
         )

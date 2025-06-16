@@ -221,7 +221,9 @@ class TokenUsageMetric(Metric):
                     usage.agent_breakdown[agent_id]["output"] += output_tokens
                     if subagent_id:
                         usage.agent_breakdown[f"{agent_id}/{subagent_id}"]["input"] += input_tokens
-                        usage.agent_breakdown[f"{agent_id}/{subagent_id}"]["output"] += output_tokens
+                        usage.agent_breakdown[f"{agent_id}/{subagent_id}"]["output"] += (
+                            output_tokens
+                        )
 
                     tokens = input_tokens + output_tokens
                 else:
@@ -262,7 +264,9 @@ class TokenUsageMetric(Metric):
                 agent_id, subagent_id = self._extract_agent_info(event)
                 usage.agent_breakdown[agent_id]["tool"] += input_tokens + output_tokens
                 if subagent_id:
-                    usage.agent_breakdown[f"{agent_id}/{subagent_id}"]["tool"] += input_tokens + output_tokens
+                    usage.agent_breakdown[f"{agent_id}/{subagent_id}"]["tool"] += (
+                        input_tokens + output_tokens
+                    )
 
                 cumulative_tokens += input_tokens + output_tokens
                 max_context_used = max(max_context_used, cumulative_tokens)
@@ -281,7 +285,9 @@ class TokenUsageMetric(Metric):
 
         # Calculate context window utilization
         context_window = self._get_context_window(self.model)
-        usage.context_percentage = (max_context_used / context_window) * 100 if context_window > 0 else 0.0
+        usage.context_percentage = (
+            (max_context_used / context_window) * 100 if context_window > 0 else 0.0
+        )
 
         # Calculate efficiency score
         efficiency_score = usage.efficiency_score
@@ -297,7 +303,9 @@ class TokenUsageMetric(Metric):
             "tokens_per_message": usage.total_tokens / len(events) if events else 0,
             "context_percentage": usage.context_percentage,
             "max_context_tokens": max_context_used,
-            "cost_per_1k_tokens": (usage.cost_usd / usage.total_tokens) * 1000 if usage.total_tokens > 0 else 0,
+            "cost_per_1k_tokens": (usage.cost_usd / usage.total_tokens) * 1000
+            if usage.total_tokens > 0
+            else 0,
         }
 
         # Add multi-agent specific metrics if applicable
@@ -313,7 +321,7 @@ class TokenUsageMetric(Metric):
             metadata={
                 "model": self.model,
                 "run_id": run.run_id,
-                "run_status": run.status.value if hasattr(run.status, 'value') else run.status,
+                "run_status": run.status.value if hasattr(run.status, "value") else run.status,
                 "encoding": self.encoding_name,
             },
         )
@@ -330,8 +338,7 @@ class TokenUsageMetric(Metric):
         if single_agent_estimate == 0:
             # Use the agent with most tokens as baseline
             totals = {
-                agent: sum(tokens.values())
-                for agent, tokens in usage.agent_breakdown.items()
+                agent: sum(tokens.values()) for agent, tokens in usage.agent_breakdown.items()
             }
             single_agent_estimate = max(totals.values()) if totals else 0
 

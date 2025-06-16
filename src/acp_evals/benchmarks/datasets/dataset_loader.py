@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class DatasetInfo:
     """Information about an available dataset."""
+
     name: str
     source: str  # huggingface, local, url
     identifier: str  # HF dataset name or path
@@ -43,10 +44,9 @@ DATASET_REGISTRY = {
         metadata={
             "error_categories": ["reasoning", "execution", "planning"],
             "domains": ["software_engineering", "information_retrieval"],
-            "trace_based": True
-        }
+            "trace_based": True,
+        },
     ),
-
     "gaia": DatasetInfo(
         name="GAIA",
         source="huggingface",
@@ -58,10 +58,9 @@ DATASET_REGISTRY = {
         metadata={
             "difficulty_levels": ["easy", "medium", "hard"],
             "requires_tools": True,
-            "domains": ["general_knowledge", "reasoning", "web_search"]
-        }
+            "domains": ["general_knowledge", "reasoning", "web_search"],
+        },
     ),
-
     "swe_bench": DatasetInfo(
         name="SWE-bench",
         source="huggingface",
@@ -70,13 +69,8 @@ DATASET_REGISTRY = {
         task_type="code",
         size=2294,
         requires_auth=False,
-        metadata={
-            "languages": ["python"],
-            "task": "bug_fixing",
-            "real_world": True
-        }
+        metadata={"languages": ["python"], "task": "bug_fixing", "real_world": True},
     ),
-
     "mmlu": DatasetInfo(
         name="MMLU",
         source="huggingface",
@@ -88,10 +82,9 @@ DATASET_REGISTRY = {
         metadata={
             "subjects": 57,
             "domains": ["STEM", "humanities", "social_sciences", "other"],
-            "format": "multiple_choice"
-        }
+            "format": "multiple_choice",
+        },
     ),
-
     "humaneval": DatasetInfo(
         name="HumanEval",
         source="huggingface",
@@ -100,13 +93,8 @@ DATASET_REGISTRY = {
         task_type="code",
         size=164,
         requires_auth=False,
-        metadata={
-            "language": "python",
-            "includes_tests": True,
-            "difficulty": "varied"
-        }
+        metadata={"language": "python", "includes_tests": True, "difficulty": "varied"},
     ),
-
     "truthfulqa": DatasetInfo(
         name="TruthfulQA",
         source="huggingface",
@@ -118,10 +106,9 @@ DATASET_REGISTRY = {
         metadata={
             "categories": ["health", "law", "finance", "politics"],
             "tests": "truthfulness",
-            "adversarial": True
-        }
+            "adversarial": True,
+        },
     ),
-
     "gsm8k": DatasetInfo(
         name="GSM8K",
         source="huggingface",
@@ -133,8 +120,8 @@ DATASET_REGISTRY = {
         metadata={
             "domain": "mathematics",
             "requires": "multi_step_reasoning",
-            "difficulty": "grade_school"
-        }
+            "difficulty": "grade_school",
+        },
     ),
 }
 
@@ -159,11 +146,11 @@ class DatasetLoader:
         """Check if HuggingFace datasets library is available."""
         try:
             import datasets
+
             return True
         except ImportError:
             logger.warning(
-                "HuggingFace datasets library not installed. "
-                "Install with: pip install datasets"
+                "HuggingFace datasets library not installed. Install with: pip install datasets"
             )
             return False
 
@@ -190,7 +177,7 @@ class DatasetLoader:
         dataset_name: str,
         split: str = "test",
         limit: int | None = None,
-        format: str = "agent_eval"
+        format: str = "agent_eval",
     ) -> list[dict[str, Any]]:
         """
         Load a dataset for evaluation.
@@ -206,8 +193,7 @@ class DatasetLoader:
         """
         if dataset_name not in DATASET_REGISTRY:
             raise ValueError(
-                f"Unknown dataset: {dataset_name}. "
-                f"Available: {list(DATASET_REGISTRY.keys())}"
+                f"Unknown dataset: {dataset_name}. Available: {list(DATASET_REGISTRY.keys())}"
             )
 
         dataset_info = DATASET_REGISTRY[dataset_name]
@@ -235,10 +221,7 @@ class DatasetLoader:
         return self._format_dataset(data, dataset_info, format)
 
     def _load_hf_dataset(
-        self,
-        dataset_info: DatasetInfo,
-        split: str,
-        limit: int | None
+        self, dataset_info: DatasetInfo, split: str, limit: int | None
     ) -> list[dict[str, Any]]:
         """Load dataset from HuggingFace."""
         if not self._hf_available:
@@ -260,11 +243,7 @@ class DatasetLoader:
 
             # Load dataset
             logger.info(f"Loading {dataset_info.name} from HuggingFace")
-            dataset = datasets.load_dataset(
-                dataset_info.identifier,
-                split=split,
-                **kwargs
-            )
+            dataset = datasets.load_dataset(dataset_info.identifier, split=split, **kwargs)
 
             # Convert to list of dicts
             data = []
@@ -280,10 +259,7 @@ class DatasetLoader:
             raise
 
     def _format_dataset(
-        self,
-        data: list[dict[str, Any]],
-        dataset_info: DatasetInfo,
-        format: str
+        self, data: list[dict[str, Any]], dataset_info: DatasetInfo, format: str
     ) -> list[dict[str, Any]]:
         """Format dataset for agent evaluation."""
         if format == "raw":
@@ -294,26 +270,18 @@ class DatasetLoader:
         for example in data:
             if format == "agent_eval":
                 # Convert to standard agent evaluation format
-                formatted_example = self._convert_to_agent_format(
-                    example,
-                    dataset_info
-                )
+                formatted_example = self._convert_to_agent_format(example, dataset_info)
                 formatted.append(formatted_example)
 
             elif format == "traces" and dataset_info.metadata.get("trace_based"):
                 # Format trace-based datasets like TRAIL
-                formatted_example = self._convert_trace_format(
-                    example,
-                    dataset_info
-                )
+                formatted_example = self._convert_trace_format(example, dataset_info)
                 formatted.append(formatted_example)
 
         return formatted
 
     def _convert_to_agent_format(
-        self,
-        example: dict[str, Any],
-        dataset_info: DatasetInfo
+        self, example: dict[str, Any], dataset_info: DatasetInfo
     ) -> dict[str, Any]:
         """Convert dataset example to standard agent evaluation format."""
         # Base format
@@ -325,77 +293,90 @@ class DatasetLoader:
 
         # Dataset-specific conversions
         if dataset_info.name == "GAIA":
-            formatted.update({
-                "input": example.get("question", ""),
-                "expected": example.get("final_answer", ""),
-                "metadata": {
-                    "level": example.get("level", ""),
-                    "file_name": example.get("file_name", ""),
-                    "file_path": example.get("file_path", ""),
+            formatted.update(
+                {
+                    "input": example.get("question", ""),
+                    "expected": example.get("final_answer", ""),
+                    "metadata": {
+                        "level": example.get("level", ""),
+                        "file_name": example.get("file_name", ""),
+                        "file_path": example.get("file_path", ""),
+                    },
                 }
-            })
+            )
 
         elif dataset_info.name == "SWE-bench":
-            formatted.update({
-                "input": example.get("problem_statement", ""),
-                "expected": {
-                    "test_patch": example.get("test_patch", ""),
-                    "patch": example.get("patch", ""),
-                },
-                "metadata": {
-                    "repo": example.get("repo", ""),
-                    "instance_id": example.get("instance_id", ""),
-                    "base_commit": example.get("base_commit", ""),
+            formatted.update(
+                {
+                    "input": example.get("problem_statement", ""),
+                    "expected": {
+                        "test_patch": example.get("test_patch", ""),
+                        "patch": example.get("patch", ""),
+                    },
+                    "metadata": {
+                        "repo": example.get("repo", ""),
+                        "instance_id": example.get("instance_id", ""),
+                        "base_commit": example.get("base_commit", ""),
+                    },
                 }
-            })
+            )
 
         elif dataset_info.name == "HumanEval":
-            formatted.update({
-                "input": example.get("prompt", ""),
-                "expected": {
-                    "canonical_solution": example.get("canonical_solution", ""),
-                    "test": example.get("test", ""),
-                },
-                "metadata": {
-                    "task_id": example.get("task_id", ""),
-                    "entry_point": example.get("entry_point", ""),
+            formatted.update(
+                {
+                    "input": example.get("prompt", ""),
+                    "expected": {
+                        "canonical_solution": example.get("canonical_solution", ""),
+                        "test": example.get("test", ""),
+                    },
+                    "metadata": {
+                        "task_id": example.get("task_id", ""),
+                        "entry_point": example.get("entry_point", ""),
+                    },
                 }
-            })
+            )
 
         elif dataset_info.name == "MMLU":
-            formatted.update({
-                "input": example.get("question", ""),
-                "expected": example.get("answer", ""),
-                "metadata": {
-                    "subject": example.get("subject", ""),
-                    "choices": example.get("choices", []),
+            formatted.update(
+                {
+                    "input": example.get("question", ""),
+                    "expected": example.get("answer", ""),
+                    "metadata": {
+                        "subject": example.get("subject", ""),
+                        "choices": example.get("choices", []),
+                    },
                 }
-            })
+            )
 
         elif dataset_info.name == "GSM8K":
-            formatted.update({
-                "input": example.get("question", ""),
-                "expected": example.get("answer", ""),
-                "metadata": {
-                    "answer_number": self._extract_number(example.get("answer", "")),
+            formatted.update(
+                {
+                    "input": example.get("question", ""),
+                    "expected": example.get("answer", ""),
+                    "metadata": {
+                        "answer_number": self._extract_number(example.get("answer", "")),
+                    },
                 }
-            })
+            )
 
         else:
             # Generic conversion
-            formatted.update({
-                "input": example.get("input", example.get("question", "")),
-                "expected": example.get("output", example.get("answer", "")),
-                "metadata": {k: v for k, v in example.items()
-                           if k not in ["input", "output", "question", "answer"]}
-            })
+            formatted.update(
+                {
+                    "input": example.get("input", example.get("question", "")),
+                    "expected": example.get("output", example.get("answer", "")),
+                    "metadata": {
+                        k: v
+                        for k, v in example.items()
+                        if k not in ["input", "output", "question", "answer"]
+                    },
+                }
+            )
 
         return formatted
 
     def _convert_trace_format(
-        self,
-        example: dict[str, Any],
-        dataset_info: DatasetInfo
+        self, example: dict[str, Any], dataset_info: DatasetInfo
     ) -> dict[str, Any]:
         """Convert trace-based dataset example."""
         return {
@@ -407,7 +388,7 @@ class DatasetLoader:
                 "total_spans": example.get("total_spans", 0),
                 "error_count": example.get("error_count", 0),
                 "categories": example.get("error_categories", []),
-            }
+            },
         }
 
     def _extract_number(self, answer: str) -> float | None:
@@ -418,14 +399,14 @@ class DatasetLoader:
                 number_str = answer.split("####")[1].strip()
                 return float(number_str.replace(",", ""))
             return None
-        except:
+        except Exception:
             return None
 
     def create_benchmark_suite(
         self,
         datasets: list[str],
         samples_per_dataset: int = 100,
-        task_types: list[str] | None = None
+        task_types: list[str] | None = None,
     ) -> dict[str, list[dict[str, Any]]]:
         """
         Create a benchmark suite from multiple datasets.
@@ -452,34 +433,23 @@ class DatasetLoader:
                 continue
 
             try:
-                examples = self.load_dataset(
-                    dataset_name,
-                    limit=samples_per_dataset
-                )
+                examples = self.load_dataset(dataset_name, limit=samples_per_dataset)
                 suite[dataset_name] = examples
-                logger.info(
-                    f"Loaded {len(examples)} examples from {dataset_name}"
-                )
+                logger.info(f"Loaded {len(examples)} examples from {dataset_name}")
             except Exception as e:
                 logger.error(f"Failed to load {dataset_name}: {e}")
 
         return suite
 
     def _load_local_dataset(
-        self,
-        dataset_info: DatasetInfo,
-        split: str,
-        limit: int | None
+        self, dataset_info: DatasetInfo, split: str, limit: int | None
     ) -> list[dict[str, Any]]:
         """Load dataset from local file."""
         # Implementation for local datasets
         raise NotImplementedError("Local dataset loading not yet implemented")
 
     def _load_url_dataset(
-        self,
-        dataset_info: DatasetInfo,
-        split: str,
-        limit: int | None
+        self, dataset_info: DatasetInfo, split: str, limit: int | None
     ) -> list[dict[str, Any]]:
         """Load dataset from URL."""
         # Implementation for URL datasets

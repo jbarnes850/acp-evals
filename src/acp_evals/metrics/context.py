@@ -5,7 +5,6 @@ Measures how efficiently agents use their context window and handle
 context degradation.
 """
 
-
 from acp_sdk.models import Event, Message, Run
 
 from acp_evals.core.base import Metric, MetricResult
@@ -65,7 +64,7 @@ class ContextEfficiencyMetric(Metric):
             for part in message.parts:
                 if part.content:
                     # Split into sentences/chunks
-                    chunks = part.content.split('. ')
+                    chunks = part.content.split(". ")
                     for chunk in chunks:
                         chunk = chunk.strip()
                         if len(chunk) > 10:  # Ignore very short chunks
@@ -96,12 +95,14 @@ class ContextEfficiencyMetric(Metric):
                 current_topic = self._extract_topic(content)
 
                 if last_topic and current_topic != last_topic:
-                    switches.append({
-                        "event_index": i,
-                        "from_topic": last_topic,
-                        "to_topic": current_topic,
-                        "message_role": message.role,
-                    })
+                    switches.append(
+                        {
+                            "event_index": i,
+                            "from_topic": last_topic,
+                            "to_topic": current_topic,
+                            "message_role": message.role,
+                        }
+                    )
 
                 if current_topic:
                     last_topic = current_topic
@@ -145,11 +146,13 @@ class ContextEfficiencyMetric(Metric):
                 cumulative_tokens += message_tokens
                 max_tokens = max(max_tokens, cumulative_tokens)
 
-                token_history.append({
-                    "cumulative": cumulative_tokens,
-                    "message_tokens": message_tokens,
-                    "role": message.role,
-                })
+                token_history.append(
+                    {
+                        "cumulative": cumulative_tokens,
+                        "message_tokens": message_tokens,
+                        "role": message.role,
+                    }
+                )
 
         # Determine context window size
         if self.context_window_size:
@@ -173,15 +176,19 @@ class ContextEfficiencyMetric(Metric):
                 role_tokens["assistant"].append(item["message_tokens"])
 
         avg_tokens_by_role = {
-            role: sum(tokens) / len(tokens) if tokens else 0
-            for role, tokens in role_tokens.items()
+            role: sum(tokens) / len(tokens) if tokens else 0 for role, tokens in role_tokens.items()
         }
 
         # Context compression ratio (how much context grows vs information added)
         if len(token_history) > 1:
-            first_quarter_tokens = token_history[len(token_history)//4]["cumulative"]
-            last_quarter_tokens = token_history[-1]["cumulative"] - token_history[3*len(token_history)//4]["cumulative"]
-            compression_ratio = first_quarter_tokens / last_quarter_tokens if last_quarter_tokens > 0 else 1.0
+            first_quarter_tokens = token_history[len(token_history) // 4]["cumulative"]
+            last_quarter_tokens = (
+                token_history[-1]["cumulative"]
+                - token_history[3 * len(token_history) // 4]["cumulative"]
+            )
+            compression_ratio = (
+                first_quarter_tokens / last_quarter_tokens if last_quarter_tokens > 0 else 1.0
+            )
         else:
             compression_ratio = 1.0
 

@@ -19,11 +19,7 @@ class ProviderFactory:
     }
 
     @classmethod
-    def create(
-        cls,
-        provider: str | None = None,
-        **kwargs
-    ) -> LLMProvider:
+    def create(cls, provider: str | None = None, **kwargs) -> LLMProvider:
         """
         Create an LLM provider instance.
 
@@ -42,9 +38,7 @@ class ProviderFactory:
 
         if provider not in cls.PROVIDERS:
             available = ", ".join(cls.PROVIDERS.keys())
-            raise ValueError(
-                f"Unknown provider: {provider}. Available providers: {available}"
-            )
+            raise ValueError(f"Unknown provider: {provider}. Available providers: {available}")
 
         # Get provider class
         provider_class = cls.PROVIDERS[provider]
@@ -71,7 +65,6 @@ class ProviderFactory:
 
         # Check OpenAI
         available["openai"] = bool(os.getenv("OPENAI_API_KEY"))
-
 
         # Check Anthropic
         available["anthropic"] = bool(os.getenv("ANTHROPIC_API_KEY"))

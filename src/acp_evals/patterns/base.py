@@ -13,6 +13,7 @@ from acp_sdk.client import Client
 @dataclass
 class AgentInfo:
     """Information about an agent in a pattern."""
+
     name: str
     url: str
     role: str | None = None
@@ -43,9 +44,7 @@ class AgentPattern(ABC):
 
     def _create_message(self, content: str) -> Message:
         """Create a standard message."""
-        return Message(
-            parts=[MessagePart(content=content, content_type="text/plain")]
-        )
+        return Message(parts=[MessagePart(content=content, content_type="text/plain")])
 
     @abstractmethod
     async def execute(

@@ -128,12 +128,7 @@ class ACPEvaluationClient:
 
         return final_run, self.events, metric_results
 
-    async def run_sync_simple(
-        self,
-        agent_name: str,
-        prompt: str,
-        **kwargs
-    ) -> str:
+    async def run_sync_simple(self, agent_name: str, prompt: str, **kwargs) -> str:
         """
         Simple synchronous run that returns just the response text.
 
@@ -146,9 +141,7 @@ class ACPEvaluationClient:
             Response text
         """
         run = await self.client.run_sync(
-            agent=agent_name,
-            input=[self._create_message(prompt)],
-            **kwargs
+            agent=agent_name, input=[self._create_message(prompt)], **kwargs
         )
 
         # Extract response text
@@ -253,12 +246,7 @@ class ACPEvaluationClient:
 
         return run, self.events, metric_results
 
-    async def run_benchmark(
-        self,
-        agent_name: str,
-        benchmark: Any,
-        **benchmark_kwargs
-    ) -> Any:
+    async def run_benchmark(self, agent_name: str, benchmark: Any, **benchmark_kwargs) -> Any:
         """
         Run a benchmark against an agent.
 

@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class TracePattern:
     """Represents a recurring pattern in traces."""
+
     pattern_id: str
     pattern_type: str  # success, failure, performance_issue, error_pattern
     frequency: int
@@ -36,6 +37,7 @@ class TracePattern:
 @dataclass
 class EvaluationCandidate:
     """A trace that can be converted to an evaluation test case."""
+
     trace_id: str
     timestamp: datetime
     input_data: str
@@ -56,7 +58,7 @@ class TraceRecycler:
         self,
         telemetry_exporter: OTelExporter | None = None,
         retention_days: int = 30,
-        min_pattern_frequency: int = 3
+        min_pattern_frequency: int = 3,
     ):
         """
         Initialize trace recycler.
@@ -142,7 +144,7 @@ class TraceRecycler:
                 first_seen=datetime.now(),
                 last_seen=datetime.now(),
                 example_traces=trace_ids[-5:],
-                characteristics=self._extract_pattern_characteristics(trace_ids)
+                characteristics=self._extract_pattern_characteristics(trace_ids),
             )
             self.patterns[signature] = pattern
             logger.info(f"New pattern detected: {pattern.pattern_id}")
@@ -159,8 +161,10 @@ class TraceRecycler:
                 continue
 
             # Check for errors
-            if any(span.get("status", {}).get("status_code") == "ERROR"
-                   for span in trace.get("spans", [])):
+            if any(
+                span.get("status", {}).get("status_code") == "ERROR"
+                for span in trace.get("spans", [])
+            ):
                 error_count += 1
 
             # Check for slow operations
@@ -181,7 +185,7 @@ class TraceRecycler:
             "common_operations": [],
             "avg_duration_ms": 0,
             "error_types": [],
-            "tools_used": set()
+            "tools_used": set(),
         }
 
         durations = []
@@ -208,8 +212,7 @@ class TraceRecycler:
 
         # Summarize
         characteristics["common_operations"] = [
-            op for op, count in operations.items()
-            if count > len(trace_ids) * 0.5
+            op for op, count in operations.items() if count > len(trace_ids) * 0.5
         ]
         characteristics["avg_duration_ms"] = sum(durations) / len(durations) if durations else 0
         characteristics["tools_used"] = list(characteristics["tools_used"])
@@ -248,7 +251,7 @@ class TraceRecycler:
                 error_info = {
                     "occurred": True,
                     "type": attrs.get("error.type", "unknown"),
-                    "message": attrs.get("error.message", "")
+                    "message": attrs.get("error.message", ""),
                 }
 
         if not input_data:
@@ -258,7 +261,7 @@ class TraceRecycler:
         perf_metrics = {
             "duration_ms": self._calculate_trace_duration(trace),
             "span_count": len(spans),
-            "tool_calls": len(tools_used)
+            "tool_calls": len(tools_used),
         }
 
         # Create candidate
@@ -274,8 +277,8 @@ class TraceRecycler:
             performance_metrics=perf_metrics,
             metadata={
                 "source": "production_trace",
-                "pattern_id": self._compute_pattern_signature(spans)
-            }
+                "pattern_id": self._compute_pattern_signature(spans),
+            },
         )
 
     def generate_evaluation_dataset(
@@ -284,7 +287,7 @@ class TraceRecycler:
         include_patterns: list[str] | None = None,
         exclude_patterns: list[str] | None = None,
         min_quality_score: float | None = None,
-        adaptive_threshold: bool = True
+        adaptive_threshold: bool = True,
     ) -> list[dict[str, Any]]:
         """
         Generate evaluation dataset from recycled traces with adaptive quality scoring.
@@ -341,8 +344,10 @@ class TraceRecycler:
                     "tools_used": candidate.tools_used,
                     "performance_baseline": candidate.performance_metrics,
                     "quality_score": candidate.quality_score,
-                    "pattern_type": self._get_pattern_type(candidate.metadata.get("pattern_id", ""))
-                }
+                    "pattern_type": self._get_pattern_type(
+                        candidate.metadata.get("pattern_id", "")
+                    ),
+                },
             }
 
             # Add error cases for regression testing
@@ -357,15 +362,15 @@ class TraceRecycler:
     def _get_adaptive_threshold(self, requested_count: int) -> float:
         """
         Calculate adaptive quality threshold based on data characteristics.
-        
+
         Research-backed approach (2024-2025) emphasizing:
-        - Data diversity over artificial quality constraints  
+        - Data diversity over artificial quality constraints
         - Coverage-based evaluation dataset construction
         - Production-realistic threshold adjustment
-        
+
         Args:
             requested_count: Number of test cases requested
-            
+
         Returns:
             Adaptive quality threshold (0.2-0.5 range)
         """
@@ -373,8 +378,12 @@ class TraceRecycler:
         pattern_diversity = len(self.patterns)
 
         # Calculate data characteristics
-        avg_score = sum(self._score_candidate(c) for c in self.evaluation_candidates) / max(1, trace_count)
-        error_ratio = sum(1 for c in self.evaluation_candidates if c.error_occurred) / max(1, trace_count)
+        avg_score = sum(self._score_candidate(c) for c in self.evaluation_candidates) / max(
+            1, trace_count
+        )
+        error_ratio = sum(1 for c in self.evaluation_candidates if c.error_occurred) / max(
+            1, trace_count
+        )
 
         # Adaptive threshold logic based on 2025 evaluation research:
         # 1. Limited data → Lower threshold to ensure coverage
@@ -382,7 +391,7 @@ class TraceRecycler:
             base_threshold = 0.2
             logger.info(f"Limited data ({trace_count} traces): Using inclusive threshold")
 
-        # 2. Low pattern diversity → Lower threshold to capture variety  
+        # 2. Low pattern diversity → Lower threshold to capture variety
         elif pattern_diversity < 3:
             base_threshold = 0.25
             logger.info(f"Low pattern diversity ({pattern_diversity} patterns): Lowering threshold")
@@ -408,8 +417,10 @@ class TraceRecycler:
             threshold = min(0.5, base_threshold)
 
         # Log adaptive decision
-        logger.info(f"Adaptive threshold calculation: traces={trace_count}, patterns={pattern_diversity}, "
-                   f"avg_score={avg_score:.2f}, error_ratio={error_ratio:.1%} → threshold={threshold:.2f}")
+        logger.info(
+            f"Adaptive threshold calculation: traces={trace_count}, patterns={pattern_diversity}, "
+            f"avg_score={avg_score:.2f}, error_ratio={error_ratio:.1%} → threshold={threshold:.2f}"
+        )
 
         return threshold
 
@@ -440,9 +451,7 @@ class TraceRecycler:
         return min(score, 1.0)
 
     def _select_diverse_candidates(
-        self,
-        candidates: list[EvaluationCandidate],
-        count: int
+        self, candidates: list[EvaluationCandidate], count: int
     ) -> list[EvaluationCandidate]:
         """Select diverse set of candidates."""
         selected = []
@@ -463,7 +472,9 @@ class TraceRecycler:
 
             # Ensure tool diversity (but be more permissive for small datasets)
             tool_blocked = False
-            max_per_tool = max(3, count // 5)  # Allow at least 3 per tool, or count//5 for better diversity
+            max_per_tool = max(
+                3, count // 5
+            )  # Allow at least 3 per tool, or count//5 for better diversity
 
             for tool in candidate.tools_used:
                 if tool_counts[tool] >= max_per_tool:
@@ -481,9 +492,7 @@ class TraceRecycler:
         return selected
 
     def detect_regressions(
-        self,
-        baseline_traces: list[dict[str, Any]],
-        current_traces: list[dict[str, Any]]
+        self, baseline_traces: list[dict[str, Any]], current_traces: list[dict[str, Any]]
     ) -> list[dict[str, Any]]:
         """
         Detect performance or behavior regressions.
@@ -513,25 +522,30 @@ class TraceRecycler:
 
             # Check for performance regression
             if current_perf["avg_duration"] > baseline_perf["avg_duration"] * 1.5:
-                regressions.append({
-                    "type": "performance_regression",
-                    "pattern_id": pattern_id,
-                    "baseline_duration_ms": baseline_perf["avg_duration"],
-                    "current_duration_ms": current_perf["avg_duration"],
-                    "degradation_factor": current_perf["avg_duration"] / baseline_perf["avg_duration"],
-                    "affected_traces": [t.get("trace_id") for t in current_group]
-                })
+                regressions.append(
+                    {
+                        "type": "performance_regression",
+                        "pattern_id": pattern_id,
+                        "baseline_duration_ms": baseline_perf["avg_duration"],
+                        "current_duration_ms": current_perf["avg_duration"],
+                        "degradation_factor": current_perf["avg_duration"]
+                        / baseline_perf["avg_duration"],
+                        "affected_traces": [t.get("trace_id") for t in current_group],
+                    }
+                )
 
             # Check for error rate regression
             if current_perf["error_rate"] > baseline_perf["error_rate"] + 0.1:
-                regressions.append({
-                    "type": "error_rate_regression",
-                    "pattern_id": pattern_id,
-                    "baseline_error_rate": baseline_perf["error_rate"],
-                    "current_error_rate": current_perf["error_rate"],
-                    "increase": current_perf["error_rate"] - baseline_perf["error_rate"],
-                    "affected_traces": [t.get("trace_id") for t in current_group]
-                })
+                regressions.append(
+                    {
+                        "type": "error_rate_regression",
+                        "pattern_id": pattern_id,
+                        "baseline_error_rate": baseline_perf["error_rate"],
+                        "current_error_rate": current_perf["error_rate"],
+                        "increase": current_perf["error_rate"] - baseline_perf["error_rate"],
+                        "affected_traces": [t.get("trace_id") for t in current_group],
+                    }
+                )
 
         return regressions
 
@@ -552,13 +566,15 @@ class TraceRecycler:
             durations.append(self._calculate_trace_duration(trace))
 
             # Check for errors
-            if any(span.get("status", {}).get("status_code") == "ERROR"
-                   for span in trace.get("spans", [])):
+            if any(
+                span.get("status", {}).get("status_code") == "ERROR"
+                for span in trace.get("spans", [])
+            ):
                 error_count += 1
 
         return {
             "avg_duration": sum(durations) / len(durations) if durations else 0,
-            "error_rate": error_count / len(traces) if traces else 0
+            "error_rate": error_count / len(traces) if traces else 0,
         }
 
     def _calculate_trace_duration(self, trace: dict[str, Any]) -> float:
@@ -604,13 +620,13 @@ class TraceRecycler:
         cutoff = datetime.now() - timedelta(days=self.retention_days)
 
         self.trace_buffer = [
-            trace for trace in self.trace_buffer
+            trace
+            for trace in self.trace_buffer
             if datetime.fromisoformat(trace.get("timestamp", datetime.now().isoformat())) > cutoff
         ]
 
         self.evaluation_candidates = [
-            candidate for candidate in self.evaluation_candidates
-            if candidate.timestamp > cutoff
+            candidate for candidate in self.evaluation_candidates if candidate.timestamp > cutoff
         ]
 
     def export_patterns(self, output_path: str) -> None:
@@ -618,22 +634,28 @@ class TraceRecycler:
         patterns_data = []
 
         for pattern in self.patterns.values():
-            patterns_data.append({
-                "pattern_id": pattern.pattern_id,
-                "type": pattern.pattern_type,
-                "frequency": pattern.frequency,
-                "first_seen": pattern.first_seen.isoformat(),
-                "last_seen": pattern.last_seen.isoformat(),
-                "characteristics": pattern.characteristics,
-                "example_traces": pattern.example_traces[:3]  # Limit examples
-            })
+            patterns_data.append(
+                {
+                    "pattern_id": pattern.pattern_id,
+                    "type": pattern.pattern_type,
+                    "frequency": pattern.frequency,
+                    "first_seen": pattern.first_seen.isoformat(),
+                    "last_seen": pattern.last_seen.isoformat(),
+                    "characteristics": pattern.characteristics,
+                    "example_traces": pattern.example_traces[:3],  # Limit examples
+                }
+            )
 
         with open(output_path, "w") as f:
-            json.dump({
-                "patterns": patterns_data,
-                "total_patterns": len(patterns_data),
-                "export_time": datetime.now().isoformat()
-            }, f, indent=2)
+            json.dump(
+                {
+                    "patterns": patterns_data,
+                    "total_patterns": len(patterns_data),
+                    "export_time": datetime.now().isoformat(),
+                },
+                f,
+                indent=2,
+            )
 
         logger.info(f"Exported {len(patterns_data)} patterns to {output_path}")
 
@@ -645,20 +667,20 @@ class TraceRecycler:
         exclude_patterns: list[str] | None = None,
         min_quality_score: float | None = None,
         adaptive_threshold: bool = True,
-        format: str = "jsonl"
+        format: str = "jsonl",
     ) -> int:
         """
         Generate and export synthetic evaluation dataset to file.
-        
+
         Args:
             output_path: File path to save the dataset
             count: Number of test cases to generate
             include_patterns: Pattern types to include
-            exclude_patterns: Pattern types to exclude  
+            exclude_patterns: Pattern types to exclude
             min_quality_score: Minimum quality score (if None, uses adaptive threshold)
             adaptive_threshold: Use adaptive threshold based on data characteristics
             format: Export format ('jsonl', 'json', 'csv')
-            
+
         Returns:
             Number of synthetic test cases exported
         """
@@ -668,7 +690,7 @@ class TraceRecycler:
             include_patterns=include_patterns,
             exclude_patterns=exclude_patterns,
             min_quality_score=min_quality_score,
-            adaptive_threshold=adaptive_threshold
+            adaptive_threshold=adaptive_threshold,
         )
 
         if not synthetic_tests:
@@ -702,8 +724,8 @@ class TraceRecycler:
                 "total_tests": len(tests),
                 "generated_at": datetime.now().isoformat(),
                 "source": "trace_recycling",
-                "format_version": "1.0"
-            }
+                "format_version": "1.0",
+            },
         }
         with open(output_path, "w") as f:
             json.dump(export_data, f, indent=2)
@@ -716,7 +738,16 @@ class TraceRecycler:
             return
 
         # Define CSV columns
-        fieldnames = ["id", "input", "expected", "quality_score", "source", "timestamp", "tools_used", "pattern_type"]
+        fieldnames = [
+            "id",
+            "input",
+            "expected",
+            "quality_score",
+            "source",
+            "timestamp",
+            "tools_used",
+            "pattern_type",
+        ]
 
         with open(output_path, "w", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -732,14 +763,14 @@ class TraceRecycler:
                     "source": metadata.get("source", ""),
                     "timestamp": metadata.get("timestamp", ""),
                     "tools_used": ",".join(metadata.get("tools_used", [])),
-                    "pattern_type": metadata.get("pattern_type", "")
+                    "pattern_type": metadata.get("pattern_type", ""),
                 }
                 writer.writerow(row)
 
     def _is_acp_agent_trace(self, trace: dict[str, Any]) -> bool:
         """
         Detect if this is an ACP agent trace (vs OpenTelemetry format).
-        
+
         ACP agent traces have: agent, input, output, metadata, session_id
         OpenTelemetry traces have: trace_id, spans, service
         """
@@ -755,11 +786,11 @@ class TraceRecycler:
     def _convert_acp_agent_trace(self, acp_trace: dict[str, Any]) -> dict[str, Any]:
         """
         Convert ACP agent trace format to OpenTelemetry format.
-        
+
         ACP Format:
         {
             "timestamp": "2025-06-14T11:53:03.798642",
-            "agent": "coordinator", 
+            "agent": "coordinator",
             "input": "Hello, can you help me?",
             "output": "Of course! What's your question?",
             "metadata": {
@@ -773,7 +804,7 @@ class TraceRecycler:
             "execution_time_ms": 584.182,
             "token_usage": {...}
         }
-        
+
         OpenTelemetry Format:
         {
             "trace_id": "session_20250614_115303",
@@ -811,7 +842,7 @@ class TraceRecycler:
             execution_ms = acp_trace.get("execution_time_ms", 0)
             end_time = start_time + timedelta(milliseconds=execution_ms)
             end_timestamp = end_time.isoformat()
-        except:
+        except Exception:
             end_timestamp = timestamp
 
         # Extract token usage
@@ -859,7 +890,7 @@ class TraceRecycler:
             "start_time": timestamp,
             "end_time": end_timestamp,
             "attributes": attributes,
-            "status": {"status_code": status_code}
+            "status": {"status_code": status_code},
         }
 
         # Build OpenTelemetry trace
@@ -872,8 +903,8 @@ class TraceRecycler:
                 "source": "acp_agent_conversion",
                 "original_agent": agent_name,
                 "session_id": trace_id,
-                "execution_time_ms": acp_trace.get("execution_time_ms", 0)
-            }
+                "execution_time_ms": acp_trace.get("execution_time_ms", 0),
+            },
         }
 
         logger.debug(f"Converted ACP agent trace from {agent_name} to OpenTelemetry format")
@@ -898,7 +929,7 @@ class TraceRecycler:
 
             count = 0
             for trace in traces:
-                if isinstance(trace, dict) and ('trace_id' in trace or 'spans' in trace):
+                if isinstance(trace, dict) and ("trace_id" in trace or "spans" in trace):
                     self.ingest_trace(trace)
                     count += 1
 
@@ -930,26 +961,38 @@ class TraceRecycler:
             {
                 "type": "api_call",
                 "operations": ["http.request", "auth.validate", "db.query", "http.response"],
-                "error_rate": 0.1
+                "error_rate": 0.1,
             },
             # Tool usage pattern
             {
                 "type": "tool_usage",
                 "operations": ["agent.input", "tool.search", "tool.parse", "agent.output"],
-                "error_rate": 0.2
+                "error_rate": 0.2,
             },
             # Multi-step reasoning pattern
             {
                 "type": "reasoning",
-                "operations": ["agent.input", "llm.generate", "memory.store", "llm.generate", "agent.output"],
-                "error_rate": 0.15
+                "operations": [
+                    "agent.input",
+                    "llm.generate",
+                    "memory.store",
+                    "llm.generate",
+                    "agent.output",
+                ],
+                "error_rate": 0.15,
             },
             # Error recovery pattern
             {
                 "type": "error_recovery",
-                "operations": ["agent.input", "tool.call", "error.catch", "retry.attempt", "agent.output"],
-                "error_rate": 0.5
-            }
+                "operations": [
+                    "agent.input",
+                    "tool.call",
+                    "error.catch",
+                    "retry.attempt",
+                    "agent.output",
+                ],
+                "error_rate": 0.5,
+            },
         ]
 
         for i in range(count):
@@ -966,20 +1009,17 @@ class TraceRecycler:
                 end_time = start_time + timedelta(milliseconds=duration_ms)
 
                 # Determine if this span should error
-                has_error = random.random() < pattern["error_rate"] and j == len(pattern["operations"]) - 2
+                has_error = (
+                    random.random() < pattern["error_rate"] and j == len(pattern["operations"]) - 2
+                )
 
                 span = {
                     "span_id": f"{trace_id}-{j}",
                     "name": op,
                     "start_time": start_time.isoformat(),
                     "end_time": end_time.isoformat(),
-                    "attributes": {
-                        "operation.type": op,
-                        "span.kind": "internal"
-                    },
-                    "status": {
-                        "status_code": "ERROR" if has_error else "OK"
-                    }
+                    "attributes": {"operation.type": op, "span.kind": "internal"},
+                    "status": {"status_code": "ERROR" if has_error else "OK"},
                 }
 
                 # Add operation-specific attributes
@@ -991,10 +1031,14 @@ class TraceRecycler:
                         span["attributes"]["error.type"] = "ProcessingError"
                         span["attributes"]["error.message"] = "Simulated error"
                     else:
-                        span["attributes"]["output.value"] = f"Result of {pattern['type']} operation"
+                        span["attributes"]["output.value"] = (
+                            f"Result of {pattern['type']} operation"
+                        )
 
                 if "tool" in op:
-                    span["attributes"]["tool.name"] = random.choice(["search", "calculator", "code_executor"])
+                    span["attributes"]["tool.name"] = random.choice(
+                        ["search", "calculator", "code_executor"]
+                    )
 
                 spans.append(span)
                 start_time = end_time
@@ -1007,8 +1051,8 @@ class TraceRecycler:
                 "metadata": {
                     "pattern_type": pattern["type"],
                     "agent_version": "1.0.0",
-                    "environment": "production"
-                }
+                    "environment": "production",
+                },
             }
 
             traces.append(trace)

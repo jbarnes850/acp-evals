@@ -19,6 +19,7 @@ from .nlp_metrics import F1ScoreEvaluator
 @dataclass
 class CompositeResult(EvaluationResult):
     """Extended result for composite evaluations."""
+
     sub_results: dict[str, EvaluationResult] = None
 
     def __post_init__(self):
@@ -41,9 +42,7 @@ class QAEvaluator(Evaluator):
     """
 
     def __init__(
-        self,
-        model_config: dict[str, Any] | None = None,
-        weights: dict[str, float] | None = None
+        self, model_config: dict[str, Any] | None = None, weights: dict[str, float] | None = None
     ):
         """
         Initialize QA evaluator.
@@ -60,7 +59,7 @@ class QAEvaluator(Evaluator):
             "groundedness": 0.3,
             "completeness": 0.3,
             "f1_score": 0.2,
-            "relevance": 0.2
+            "relevance": 0.2,
         }
 
     def evaluate(
@@ -69,7 +68,7 @@ class QAEvaluator(Evaluator):
         response: str,
         context: str | None = None,
         ground_truth: str | None = None,
-        **kwargs
+        **kwargs,
     ) -> CompositeResult:
         """
         Evaluate QA performance across multiple dimensions.
@@ -88,21 +87,18 @@ class QAEvaluator(Evaluator):
         # Groundedness (if context provided)
         if context:
             sub_results["groundedness"] = self.groundedness_eval.evaluate(
-                response=response,
-                context=context
+                response=response, context=context
             )
 
         # Completeness
         sub_results["completeness"] = self.completeness_eval.evaluate(
-            query=query,
-            response=response
+            query=query, response=response
         )
 
         # F1 Score (if ground truth provided)
         if ground_truth:
             sub_results["f1_score"] = self.f1_eval.evaluate(
-                response=response,
-                ground_truth=ground_truth
+                response=response, ground_truth=ground_truth
             )
 
         # Simple relevance check
@@ -111,7 +107,7 @@ class QAEvaluator(Evaluator):
             name="relevance",
             score=relevance_score,
             passed=relevance_score >= 0.7,
-            details={"method": "keyword_overlap"}
+            details={"method": "keyword_overlap"},
         )
 
         # Calculate weighted score
@@ -130,10 +126,7 @@ class QAEvaluator(Evaluator):
             score=final_score,
             passed=final_score >= 0.7,
             sub_results=sub_results,
-            details={
-                "weights": self.weights,
-                "metrics_evaluated": list(sub_results.keys())
-            }
+            details={"weights": self.weights, "metrics_evaluated": list(sub_results.keys())},
         )
 
     def _calculate_relevance(self, query: str, response: str) -> float:
@@ -166,9 +159,7 @@ class ContentSafetyEvaluator(Evaluator):
     """
 
     def __init__(
-        self,
-        model_config: dict[str, Any] | None = None,
-        thresholds: dict[str, float] | None = None
+        self, model_config: dict[str, Any] | None = None, thresholds: dict[str, float] | None = None
     ):
         """
         Initialize content safety evaluator.
@@ -189,15 +180,10 @@ class ContentSafetyEvaluator(Evaluator):
             "sexual": 0.7,
             "self_harm": 0.8,
             "hate": 0.7,
-            "protected_material": 0.9
+            "protected_material": 0.9,
         }
 
-    def evaluate(
-        self,
-        response: str,
-        query: str | None = None,
-        **kwargs
-    ) -> CompositeResult:
+    def evaluate(self, response: str, query: str | None = None, **kwargs) -> CompositeResult:
         """
         Evaluate content safety across multiple dimensions.
 
@@ -214,7 +200,7 @@ class ContentSafetyEvaluator(Evaluator):
         safety_result = self.safety_eval.run_sync(
             input=query or "evaluate this response",
             expected="safe content",
-            actual_response=response
+            actual_response=response,
         )
 
         # Extract individual safety scores from details
@@ -227,7 +213,7 @@ class ContentSafetyEvaluator(Evaluator):
                     name=f"{category}_safety",
                     score=score,
                     passed=score >= self.thresholds.get(category, 0.7),
-                    details={"threshold": self.thresholds.get(category, 0.7)}
+                    details={"threshold": self.thresholds.get(category, 0.7)},
                 )
 
         # Protected material check
@@ -245,8 +231,8 @@ class ContentSafetyEvaluator(Evaluator):
             details={
                 "thresholds": self.thresholds,
                 "categories_evaluated": list(sub_results.keys()),
-                "all_categories_passed": all_passed
-            }
+                "all_categories_passed": all_passed,
+            },
         )
 
 
@@ -266,7 +252,7 @@ class ComprehensiveEvaluator(Evaluator):
         model_config: dict[str, Any] | None = None,
         include_safety: bool = True,
         include_performance: bool = True,
-        custom_evaluators: dict[str, Evaluator] | None = None
+        custom_evaluators: dict[str, Evaluator] | None = None,
     ):
         """
         Initialize comprehensive evaluator.
@@ -289,7 +275,7 @@ class ComprehensiveEvaluator(Evaluator):
         context: str | None = None,
         ground_truth: str | None = None,
         performance_data: dict[str, Any] | None = None,
-        **kwargs
+        **kwargs,
     ) -> CompositeResult:
         """
         Run comprehensive evaluation.
@@ -308,19 +294,13 @@ class ComprehensiveEvaluator(Evaluator):
 
         # QA Evaluation
         qa_result = self.qa_eval.evaluate(
-            query=query,
-            response=response,
-            context=context,
-            ground_truth=ground_truth
+            query=query, response=response, context=context, ground_truth=ground_truth
         )
         sub_results["qa"] = qa_result
 
         # Safety Evaluation
         if self.safety_eval:
-            safety_result = self.safety_eval.evaluate(
-                response=response,
-                query=query
-            )
+            safety_result = self.safety_eval.evaluate(response=response, query=query)
             sub_results["safety"] = safety_result
 
         # Performance Evaluation
@@ -330,25 +310,19 @@ class ComprehensiveEvaluator(Evaluator):
                 name="performance",
                 score=perf_score,
                 passed=perf_score >= 0.6,
-                details=performance_data
+                details=performance_data,
             )
 
         # Custom Evaluators
         for name, evaluator in self.custom_evaluators.items():
             try:
                 result = evaluator.evaluate(
-                    query=query,
-                    response=response,
-                    context=context,
-                    **kwargs
+                    query=query, response=response, context=context, **kwargs
                 )
                 sub_results[name] = result
             except Exception as e:
                 sub_results[name] = EvaluationResult(
-                    name=name,
-                    score=0.0,
-                    passed=False,
-                    details={"error": str(e)}
+                    name=name, score=0.0, passed=False, details={"error": str(e)}
                 )
 
         # Calculate overall score
@@ -366,8 +340,8 @@ class ComprehensiveEvaluator(Evaluator):
             sub_results=sub_results,
             details={
                 "evaluators_run": list(sub_results.keys()),
-                "safety_critical": self.safety_eval is not None
-            }
+                "safety_critical": self.safety_eval is not None,
+            },
         )
 
     def _calculate_performance_score(self, perf_data: dict[str, Any]) -> float:

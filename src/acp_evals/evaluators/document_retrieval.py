@@ -16,6 +16,7 @@ from .base import EvaluationResult, Evaluator
 @dataclass
 class RetrievedDocument:
     """Represents a retrieved document."""
+
     doc_id: str
     content: str
     score: float
@@ -38,7 +39,7 @@ class DocumentRetrievalEvaluator(Evaluator):
         self,
         provider: LLMProvider | None = None,
         k_values: list[int] = None,
-        relevance_threshold: float = 0.7
+        relevance_threshold: float = 0.7,
     ):
         """
         Initialize the document retrieval evaluator.
@@ -98,22 +99,22 @@ Explanation: [Brief explanation]
         Returns:
             EvaluationResult with IR metrics
         """
-        if not context or 'retrieved_documents' not in context:
+        if not context or "retrieved_documents" not in context:
             return EvaluationResult(
                 score=0.0,
                 passed=False,
                 breakdown={"error": "No retrieved documents provided"},
                 feedback="Document retrieval evaluation requires 'retrieved_documents' in context",
-                metadata={"evaluator": self.name}
+                metadata={"evaluator": self.name},
             )
 
         # Parse retrieved documents
-        retrieved_docs = self._parse_documents(context['retrieved_documents'])
+        retrieved_docs = self._parse_documents(context["retrieved_documents"])
 
         # Get ground truth if provided
         relevant_ids = set()
         if reference:
-            relevant_ids = set(doc_id.strip() for doc_id in reference.split(','))
+            relevant_ids = set(doc_id.strip() for doc_id in reference.split(","))
 
         # Assess relevance for each document
         relevance_scores = await self._assess_relevance(task, retrieved_docs)
@@ -138,8 +139,8 @@ Explanation: [Brief explanation]
                 "query": task,
                 "num_retrieved": len(retrieved_docs),
                 "num_relevant": len(relevant_ids),
-                "k_values": self.k_values
-            }
+                "k_values": self.k_values,
+            },
         )
 
     def _parse_documents(self, docs: list[Any]) -> list[RetrievedDocument]:
@@ -148,31 +149,28 @@ Explanation: [Brief explanation]
 
         for i, doc in enumerate(docs):
             if isinstance(doc, dict):
-                doc_id = doc.get('id', doc.get('doc_id', f'doc_{i}'))
-                content = doc.get('content', doc.get('text', str(doc)))
-                score = doc.get('score', doc.get('relevance', 1.0))
-                metadata = doc.get('metadata', {})
+                doc_id = doc.get("id", doc.get("doc_id", f"doc_{i}"))
+                content = doc.get("content", doc.get("text", str(doc)))
+                score = doc.get("score", doc.get("relevance", 1.0))
+                metadata = doc.get("metadata", {})
             else:
-                doc_id = f'doc_{i}'
+                doc_id = f"doc_{i}"
                 content = str(doc)
                 score = 1.0
                 metadata = {}
 
-            parsed.append(RetrievedDocument(
-                doc_id=doc_id,
-                content=content,
-                score=float(score),
-                metadata=metadata
-            ))
+            parsed.append(
+                RetrievedDocument(
+                    doc_id=doc_id, content=content, score=float(score), metadata=metadata
+                )
+            )
 
         # Sort by score (descending)
         parsed.sort(key=lambda d: d.score, reverse=True)
         return parsed
 
     async def _assess_relevance(
-        self,
-        query: str,
-        documents: list[RetrievedDocument]
+        self, query: str, documents: list[RetrievedDocument]
     ) -> dict[str, tuple[float, bool]]:
         """Assess relevance of each document to the query."""
         relevance_scores = {}
@@ -182,7 +180,7 @@ Explanation: [Brief explanation]
             for doc in documents:
                 prompt = self._relevance_prompt.format(
                     query=query,
-                    document=doc.content[:1000]  # Limit content length
+                    document=doc.content[:1000],  # Limit content length
                 )
 
                 try:
@@ -190,18 +188,18 @@ Explanation: [Brief explanation]
                     score = self._extract_relevance_score(assessment)
                     is_relevant = self._extract_binary_relevance(assessment)
                     relevance_scores[doc.doc_id] = (score, is_relevant)
-                except:
+                except Exception:
                     # Default to retrieval score
                     relevance_scores[doc.doc_id] = (
                         doc.score * 3,  # Scale to 0-3
-                        doc.score >= self.relevance_threshold
+                        doc.score >= self.relevance_threshold,
                     )
         else:
             # Use retrieval scores directly
             for doc in documents:
                 relevance_scores[doc.doc_id] = (
                     doc.score * 3,  # Scale to 0-3
-                    doc.score >= self.relevance_threshold
+                    doc.score >= self.relevance_threshold,
                 )
 
         return relevance_scores
@@ -210,7 +208,7 @@ Explanation: [Brief explanation]
         self,
         documents: list[RetrievedDocument],
         relevance_scores: dict[str, tuple[float, bool]],
-        ground_truth: set[str]
+        ground_truth: set[str],
     ) -> dict[str, float]:
         """Compute standard IR metrics."""
         metrics = {}
@@ -233,10 +231,10 @@ Explanation: [Brief explanation]
         for k in self.k_values:
             if k <= len(documents):
                 relevant_at_k = sum(retrieved_relevant[:k])
-                metrics[f'P@{k}'] = relevant_at_k / k
+                metrics[f"P@{k}"] = relevant_at_k / k
 
                 if ground_truth:
-                    metrics[f'R@{k}'] = relevant_at_k / max(len(ground_truth), 1)
+                    metrics[f"R@{k}"] = relevant_at_k / max(len(ground_truth), 1)
 
         # F1 Score
         if ground_truth and len(documents) > 0:
@@ -245,20 +243,20 @@ Explanation: [Brief explanation]
             recall = total_retrieved_relevant / len(ground_truth)
 
             if precision + recall > 0:
-                metrics['F1'] = 2 * precision * recall / (precision + recall)
+                metrics["F1"] = 2 * precision * recall / (precision + recall)
             else:
-                metrics['F1'] = 0.0
+                metrics["F1"] = 0.0
 
         # Mean Average Precision (MAP)
-        metrics['MAP'] = self._compute_map(retrieved_relevant)
+        metrics["MAP"] = self._compute_map(retrieved_relevant)
 
         # Normalized Discounted Cumulative Gain (NDCG)
         for k in self.k_values:
             if k <= len(documents):
-                metrics[f'NDCG@{k}'] = self._compute_ndcg(relevance_grades[:k])
+                metrics[f"NDCG@{k}"] = self._compute_ndcg(relevance_grades[:k])
 
         # Mean Reciprocal Rank (MRR)
-        metrics['MRR'] = self._compute_mrr(retrieved_relevant)
+        metrics["MRR"] = self._compute_mrr(retrieved_relevant)
 
         return metrics
 
@@ -307,19 +305,19 @@ Explanation: [Brief explanation]
         # Focus on key metrics
         key_metrics = []
 
-        if 'MAP' in metrics:
-            key_metrics.append(metrics['MAP'])
+        if "MAP" in metrics:
+            key_metrics.append(metrics["MAP"])
 
-        if 'NDCG@5' in metrics:
-            key_metrics.append(metrics['NDCG@5'])
-        elif 'NDCG@3' in metrics:
-            key_metrics.append(metrics['NDCG@3'])
+        if "NDCG@5" in metrics:
+            key_metrics.append(metrics["NDCG@5"])
+        elif "NDCG@3" in metrics:
+            key_metrics.append(metrics["NDCG@3"])
 
-        if 'MRR' in metrics:
-            key_metrics.append(metrics['MRR'])
+        if "MRR" in metrics:
+            key_metrics.append(metrics["MRR"])
 
-        if 'P@5' in metrics:
-            key_metrics.append(metrics['P@5'])
+        if "P@5" in metrics:
+            key_metrics.append(metrics["P@5"])
 
         return sum(key_metrics) / len(key_metrics) if key_metrics else 0.0
 
@@ -328,23 +326,23 @@ Explanation: [Brief explanation]
         feedback = f"Retrieved {num_docs} documents. "
 
         # Report key metrics
-        if 'MAP' in metrics:
+        if "MAP" in metrics:
             feedback += f"MAP: {metrics['MAP']:.3f}, "
 
-        if 'MRR' in metrics:
+        if "MRR" in metrics:
             feedback += f"MRR: {metrics['MRR']:.3f}, "
 
         # Report precision at different k
         p_scores = []
         for k in [1, 3, 5]:
-            if f'P@{k}' in metrics:
+            if f"P@{k}" in metrics:
                 p_scores.append(f"P@{k}={metrics[f'P@{k}']:.2f}")
 
         if p_scores:
             feedback += f"Precision: {', '.join(p_scores)}. "
 
         # Add NDCG if available
-        if 'NDCG@5' in metrics:
+        if "NDCG@5" in metrics:
             feedback += f"NDCG@5: {metrics['NDCG@5']:.3f}."
 
         return feedback.strip()
@@ -352,20 +350,22 @@ Explanation: [Brief explanation]
     def _extract_relevance_score(self, text: str) -> float:
         """Extract relevance score from assessment."""
         import re
+
         pattern = r"Relevance Score:\s*([0-3])"
         match = re.search(pattern, text)
         if match:
             try:
                 return float(match.group(1))
-            except:
+            except Exception:
                 pass
         return 0.0
 
     def _extract_binary_relevance(self, text: str) -> bool:
         """Extract binary relevance from assessment."""
         import re
+
         pattern = r"Binary Relevance:\s*(Yes|No)"
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
-            return match.group(1).lower() == 'yes'
+            return match.group(1).lower() == "yes"
         return False

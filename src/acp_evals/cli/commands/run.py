@@ -46,7 +46,9 @@ def format_result(result: Any) -> None:
 
         # Format details based on content
         if "judge_reasoning" in result.details:
-            details_text += f"[bold]Judge Reasoning:[/bold]\n{result.details['judge_reasoning']}\n\n"
+            details_text += (
+                f"[bold]Judge Reasoning:[/bold]\n{result.details['judge_reasoning']}\n\n"
+            )
 
         if "feedback" in result.details:
             details_text += f"[bold]Feedback:[/bold]\n{result.details['feedback']}\n\n"
@@ -75,7 +77,11 @@ def format_result(result: Any) -> None:
 @click.argument("agent2", required=False)  # For handoff evaluation
 @click.option("-i", "--input", "input_text", required=True, help="Input text for evaluation")
 @click.option("-e", "--expected", help="Expected output (for accuracy evaluation)")
-@click.option("--rubric", type=click.Choice(["factual", "research_quality", "code_quality"]), default="factual")
+@click.option(
+    "--rubric",
+    type=click.Choice(["factual", "research_quality", "code_quality"]),
+    default="factual",
+)
 @click.option("--track-tokens", is_flag=True, help="Track token usage (performance)")
 @click.option("--track-latency", is_flag=True, help="Track response latency (performance)")
 @click.option("--expected-tools", multiple=True, help="Expected tools for reliability eval")
@@ -114,6 +120,7 @@ def run(
     if mock:
         console.print("[yellow]Running in mock mode (no LLM calls)[/yellow]\n")
         import os
+
         os.environ["MOCK_MODE"] = "true"
 
     try:
@@ -202,7 +209,7 @@ def run(
                     "cost": getattr(result, "cost", None),
                     "tokens": getattr(result, "tokens", None),
                     "details": getattr(result, "details", {}),
-                }
+                },
             }
 
             with open(export, "w") as f:
@@ -219,6 +226,7 @@ def run(
     except Exception as e:
         console.print(f"\n[red]Evaluation failed: {e}[/red]")
         import traceback
+
         console.print(f"[dim]{traceback.format_exc()}[/dim]")
         exit(1)
 

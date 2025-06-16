@@ -49,19 +49,16 @@ __all__ = [
     "Evaluator",
     "EvaluationResult",
     "LLMJudge",
-    
     # Binary evaluators
     "BinaryEvaluator",
     "BinaryEvaluationResult",
     "FactualAccuracyEvaluator",
-    "SafetyEvaluator", 
+    "SafetyEvaluator",
     "RelevanceEvaluator",
-
     # Core evaluators
     "GroundednessEvaluator",
     "RetrievalEvaluator",
     "DocumentRetrievalEvaluator",
-
     # Extended evaluators
     "IntentResolutionEvaluator",
     "ResponseCompletenessEvaluator",
@@ -69,14 +66,12 @@ __all__ = [
     "UngroundedAttributesEvaluator",
     "ProtectedMaterialEvaluator",
     "ToolCallAccuracyEvaluator",
-
     # NLP metrics
     "BleuScoreEvaluator",
     "RougeScoreEvaluator",
     "MeteorScoreEvaluator",
     "GleuScoreEvaluator",
     "F1ScoreEvaluator",
-
     # Composite evaluators
     "QAEvaluator",
     "ContentSafetyEvaluator",

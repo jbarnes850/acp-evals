@@ -42,7 +42,9 @@ class OTelExporter:
             resource_attributes: Additional resource attributes
         """
         self.service_name = service_name
-        self.endpoint = endpoint or os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318")
+        self.endpoint = endpoint or os.getenv(
+            "OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318"
+        )
 
         # Create resource
         attributes = {
@@ -311,7 +313,7 @@ class OTelExporter:
                     agent_name=result.agent_name,
                     additional_attributes={
                         "benchmark.name": result.benchmark_name,
-                    }
+                    },
                 )
 
     def create_evaluation_span(
@@ -341,7 +343,7 @@ class OTelExporter:
         for span_data in span_data_list:
             name = span_data.get("name", "evaluation.span")
             attributes = span_data.get("attributes", {})
-            
+
             # Create a span for this data
             with self.tracer.start_as_current_span(name, attributes=attributes):
                 # The span is automatically exported when the context exits

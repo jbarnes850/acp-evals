@@ -2,25 +2,17 @@
 Pytest configuration and shared fixtures for ACP evals tests.
 """
 
-import asyncio
 from datetime import datetime
-from typing import Any, Dict, List, Optional
-from unittest.mock import AsyncMock, Mock, MagicMock
+from typing import Any
+from unittest.mock import AsyncMock, MagicMock, Mock
 
 import pytest
-from acp_sdk import Run, Event, Message, MessagePart, RunStatus
+from acp_sdk import Event, Message, MessagePart, Run
 
 from acp_evals.core.base import (
-    Metric,
-    MetricResult,
-    Benchmark,
-    BenchmarkResult,
     BenchmarkTask,
-    Evaluator,
-    EvaluatorResult,
 )
 from acp_evals.patterns import AgentInfo
-
 
 # Event loop is now handled by pytest-asyncio's default configuration
 
@@ -65,14 +57,14 @@ def mock_message(mock_message_part):
 def mock_events(mock_message):
     """Create a list of mock events."""
     events = []
-    
+
     # Run created event
     run_created = Mock(spec=Event)
     run_created.type = "run.created"
     run_created.timestamp = datetime.now()
     run_created.data = {"run_id": "test-run-123"}
     events.append(run_created)
-    
+
     # Message created events
     for i in range(3):
         msg_event = Mock(spec=Event)
@@ -87,7 +79,7 @@ def mock_events(mock_message):
             }
         }
         events.append(msg_event)
-    
+
     # Tool call events
     tool_event = Mock(spec=Event)
     tool_event.type = "tool.called"
@@ -97,7 +89,7 @@ def mock_events(mock_message):
         "tokens": {"input": 20, "output": 80},
     }
     events.append(tool_event)
-    
+
     return events
 
 
@@ -119,17 +111,19 @@ def mock_agent_info():
 @pytest.fixture
 def mock_llm_response():
     """Mock LLM response for LLMJudge tests."""
-    return AsyncMock(return_value={
-        "score": 0.85,
-        "feedback": "Good quality output with minor issues",
-        "scores": {
-            "factual_accuracy": 0.9,
-            "completeness": 0.8,
-            "clarity": 0.85,
-            "relevance": 0.9,
-            "efficiency": 0.8,
+    return AsyncMock(
+        return_value={
+            "score": 0.85,
+            "feedback": "Good quality output with minor issues",
+            "scores": {
+                "factual_accuracy": 0.9,
+                "completeness": 0.8,
+                "clarity": 0.85,
+                "relevance": 0.9,
+                "efficiency": 0.8,
+            },
         }
-    })
+    )
 
 
 @pytest.fixture
@@ -173,20 +167,20 @@ def mock_telemetry_exporter():
 # Utility functions for tests
 def create_mock_event(
     event_type: str,
-    timestamp: Optional[datetime] = None,
-    data: Optional[Dict[str, Any]] = None,
-    **kwargs
+    timestamp: datetime | None = None,
+    data: dict[str, Any] | None = None,
+    **kwargs,
 ) -> Mock:
     """Create a mock event with specified attributes."""
     event = Mock(spec=Event)
     event.type = event_type
     event.timestamp = timestamp or datetime.now()
     event.data = data or {}
-    
+
     # Add any additional attributes
     for key, value in kwargs.items():
         setattr(event, key, value)
-    
+
     return event
 
 
@@ -194,37 +188,39 @@ def create_mock_run_with_events(
     run_id: str = "test-run",
     num_messages: int = 5,
     num_agents: int = 2,
-) -> tuple[Mock, List[Mock]]:
+) -> tuple[Mock, list[Mock]]:
     """Create a mock run with associated events."""
     run = Mock(spec=Run)
     run.id = run_id
     run.status = "completed"
     run.created_at = datetime.now()
     run.metadata = {"test": True}
-    
+
     events = []
-    
+
     # Run created
     events.append(create_mock_event("run.created", data={"run_id": run_id}))
-    
+
     # Message events
     for i in range(num_messages):
         agent_id = f"agent-{i % num_agents}"
         message = Mock(spec=Message)
         message.parts = [Mock(content=f"Message {i} from {agent_id}")]
-        
-        events.append(create_mock_event(
-            "message.created",
-            message=message,
-            agent_id=agent_id,
-            data={
-                "tokens": {
-                    "input": 100 + i * 10,
-                    "output": 50 + i * 5,
-                }
-            }
-        ))
-    
+
+        events.append(
+            create_mock_event(
+                "message.created",
+                message=message,
+                agent_id=agent_id,
+                data={
+                    "tokens": {
+                        "input": 100 + i * 10,
+                        "output": 50 + i * 5,
+                    }
+                },
+            )
+        )
+
     return run, events
 
 

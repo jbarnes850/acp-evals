@@ -53,7 +53,6 @@ if __name__ == "__main__":
     print("\\nRunning batch test...")
     asyncio.run(test_batch())
 """,
-
     "comprehensive": """#!/usr/bin/env python3
 \"\"\"
 Comprehensive evaluation suite for {agent_name}.
@@ -142,7 +141,6 @@ if __name__ == "__main__":
     results = asyncio.run(evaluate_agent())
     print("\\nEvaluation complete!")
 """,
-
     "research": """#!/usr/bin/env python3
 \"\"\"
 Research agent evaluation template.
@@ -233,7 +231,6 @@ async def evaluate_research_agent():
 if __name__ == "__main__":
     asyncio.run(evaluate_research_agent())
 """,
-
     "tool": """#!/usr/bin/env python3
 \"\"\"
 Tool-using agent evaluation template.
@@ -262,7 +259,7 @@ class ToolAgent:
         # TODO: Implement calculator logic
         import ast
         import operator
-        
+
         # Safe evaluation of mathematical expressions
         supported_ops = {
             ast.Add: operator.add,
@@ -272,7 +269,7 @@ class ToolAgent:
             ast.Pow: operator.pow,
             ast.USub: operator.neg,
         }
-        
+
         def safe_eval(node):
             if isinstance(node, ast.Constant):
                 return node.value
@@ -282,7 +279,7 @@ class ToolAgent:
                 return supported_ops[type(node.op)](safe_eval(node.operand))
             else:
                 raise ValueError(f"Unsupported operation: {type(node)}")
-        
+
         try:
             tree = ast.parse(expression, mode='eval')
             return float(safe_eval(tree.body))
@@ -370,7 +367,6 @@ async def evaluate_tool_agent():
 if __name__ == "__main__":
     asyncio.run(evaluate_tool_agent())
 """,
-
     "acp-agent": """#!/usr/bin/env python3
 \"\"\"
 Real ACP agent evaluation example.
@@ -387,28 +383,28 @@ AGENT_URL = "{agent_url}"
 
 async def evaluate_acp_agent():
     \"\"\"Evaluate a real ACP agent.\"\"\"
-    
+
     # Option 1: Direct URL evaluation
     print("=== Direct ACP Agent Evaluation ===")
     eval = AccuracyEval(
         agent=AGENT_URL,
         rubric="factual"
     )
-    
+
     result = await eval.run(
         input="What are the key features of the ACP protocol?",
         expected="The Agent Communication Protocol (ACP) enables seamless agent-to-agent communication",
         print_results=True
     )
-    
+
     # Option 2: Using ACP client for advanced features
     print("\\n=== ACP Client Evaluation ===")
     client = ACPEvaluationClient(base_url="{base_url}")
-    
+
     # Discover available agents
     agents = await client.list_agents()
     print(f"Available agents: {{[a.name for a in agents]}}")
-    
+
     # Run with event tracking
     if agents:
         agent_name = agents[0].name
@@ -416,11 +412,11 @@ async def evaluate_acp_agent():
             agent_name=agent_name,
             input="Explain how agents collaborate in ACP",
         )
-        
+
         print(f"\\nRun ID: {{run.id}}")
         print(f"Events collected: {{len(events)}}")
         print(f"Metrics: {{metrics}}")
-    
+
     # Option 3: Batch evaluation with real scenarios
     print("\\n=== Batch Evaluation ===")
     acp_test_cases = [
@@ -437,13 +433,13 @@ async def evaluate_acp_agent():
             "expected": "JSON-RPC"
         }}
     ]
-    
+
     batch_results = await eval.run_batch(
         test_cases=acp_test_cases,
         parallel=True,
         print_results=True
     )
-    
+
     print(f"\\nBatch evaluation complete!")
     print(f"Pass rate: {{batch_results.pass_rate:.1f}}%")
     print(f"Average score: {{batch_results.avg_score:.2f}}")
@@ -452,7 +448,6 @@ if __name__ == "__main__":
     # Run the evaluation
     asyncio.run(evaluate_acp_agent())
 """,
-
     "multi-agent": """#!/usr/bin/env python3
 \"\"\"
 Multi-agent coordination evaluation.
@@ -475,20 +470,20 @@ AGENTS = {{
 async def evaluate_linear_pattern():
     \"\"\"Test sequential agent coordination.\"\"\"
     print("=== Linear Pattern Evaluation ===")
-    
+
     # Create linear workflow
     pattern = LinearPattern([
         AGENTS["researcher"],
         AGENTS["analyst"],
         AGENTS["writer"]
     ])
-    
+
     # Run handoff benchmark
     benchmark = HandoffQualityBenchmark(
         pattern=pattern,
         endpoint=""  # Using direct URLs
     )
-    
+
     result = await benchmark.evaluate_single(
         task="Research the latest developments in quantum computing and write a summary",
         expected_handoffs=[
@@ -496,7 +491,7 @@ async def evaluate_linear_pattern():
             "analyst->writer"
         ]
     )
-    
+
     print(f"Handoff Score: {{result.score:.2f}}")
     print(f"Information Preserved: {{result.details.get('preservation_score', 0):.2f}}")
     print(f"Handoffs Completed: {{result.details.get('handoffs_completed', [])}}")
@@ -504,16 +499,16 @@ async def evaluate_linear_pattern():
 async def evaluate_supervisor_pattern():
     \"\"\"Test centralized coordination.\"\"\"
     print("\\n=== Supervisor Pattern Evaluation ===")
-    
+
     # Supervisor coordinates workers
     pattern = SupervisorPattern(
         supervisor=AGENTS["analyst"],  # Analyst as supervisor
         workers=[AGENTS["researcher"], AGENTS["writer"]]
     )
-    
+
     # Create custom evaluation
     from acp_evals import AccuracyEval
-    
+
     # Test supervisor's ability to coordinate
     supervisor_eval = AccuracyEval(
         agent=pattern,  # Pattern acts as agent
@@ -532,29 +527,29 @@ async def evaluate_supervisor_pattern():
             }}
         }}
     )
-    
+
     result = await supervisor_eval.run(
         input="Create a comprehensive report on AI safety, delegating research and writing tasks",
         expected="A well-coordinated report with research and writing properly delegated"
     )
-    
+
     print(f"Coordination Score: {{result.score:.2f}}")
     print(f"Supervisor Effectiveness: {{result.details}}")
 
 async def evaluate_swarm_pattern():
     \"\"\"Test distributed collaboration.\"\"\"
     print("\\n=== Swarm Pattern Evaluation ===")
-    
+
     # All agents collaborate
     pattern = SwarmPattern(list(AGENTS.values()))
-    
+
     # Test emergent behavior
     swarm_tasks = [
         "Collaboratively solve: What are the implications of AGI for society?",
         "Work together to design a sustainable city of the future",
         "Jointly create a business plan for a Mars colony"
     ]
-    
+
     for task in swarm_tasks:
         result = await pattern.run(task)
         print(f"\\nTask: {{task[:50]}}...")
@@ -564,26 +559,26 @@ async def evaluate_swarm_pattern():
 async def compare_patterns():
     \"\"\"Compare different coordination patterns.\"\"\"
     print("\\n=== Pattern Comparison ===")
-    
+
     from acp_evals.benchmarks.multi_agent import PatternComparisonBenchmark
-    
+
     comparison = PatternComparisonBenchmark(
         agents=AGENTS,
         patterns=["linear", "supervisor", "swarm"]
     )
-    
+
     # Run comparison on multiple tasks
     comparison_tasks = [
         "Research and analyze market trends",
         "Create a technical documentation",
         "Solve a complex problem requiring multiple perspectives"
     ]
-    
+
     results = await comparison.run_comparison(
         tasks=comparison_tasks,
         metrics=["efficiency", "quality", "coordination"]
     )
-    
+
     # Display comparison table
     print("\\nPattern Performance Comparison:")
     print("Pattern     | Efficiency | Quality | Coordination")
@@ -597,5 +592,5 @@ if __name__ == "__main__":
     asyncio.run(evaluate_supervisor_pattern())
     asyncio.run(evaluate_swarm_pattern())
     asyncio.run(compare_patterns())
-"""
+""",
 }

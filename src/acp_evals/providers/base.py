@@ -9,6 +9,7 @@ from typing import Any
 @dataclass
 class LLMResponse:
     """Response from an LLM provider."""
+
     content: str
     model: str
     usage: dict[str, int] | None = None
@@ -43,11 +44,7 @@ class LLMProvider(ABC):
 
     @abstractmethod
     async def complete(
-        self,
-        prompt: str,
-        temperature: float = 0.0,
-        max_tokens: int = 1000,
-        **kwargs
+        self, prompt: str, temperature: float = 0.0, max_tokens: int = 1000, **kwargs
     ) -> LLMResponse:
         """
         Get completion from LLM.

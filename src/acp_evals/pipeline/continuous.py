@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class EvaluationRun:
     """Represents a single evaluation run."""
+
     run_id: str
     timestamp: datetime
     agent_version: str
@@ -42,6 +43,7 @@ class EvaluationRun:
 @dataclass
 class RegressionAlert:
     """Alert for detected regression."""
+
     alert_id: str
     timestamp: datetime
     metric: str
@@ -70,7 +72,7 @@ class ContinuousEvaluationPipeline:
         agent: str | Callable | Any,
         evaluation_dir: str = "./continuous_eval",
         telemetry_exporter: OTelExporter | None = None,
-        alert_callback: Callable[[RegressionAlert], None] | None = None
+        alert_callback: Callable[[RegressionAlert], None] | None = None,
     ):
         """
         Initialize continuous evaluation pipeline.
@@ -106,7 +108,7 @@ class ContinuousEvaluationPipeline:
         include_synthetic: bool = True,
         include_recycled: bool = True,
         include_adversarial: bool = True,
-        save_results: bool = True
+        save_results: bool = True,
     ) -> EvaluationRun:
         """
         Run a complete evaluation cycle.
@@ -159,14 +161,10 @@ class ContinuousEvaluationPipeline:
         # Run evaluations
         evaluator = AccuracyEval(
             agent=self.agent,
-            rubric="research_quality"  # Use research_quality rubric
+            rubric="research_quality",  # Use research_quality rubric
         )
 
-        results = await evaluator.run_batch(
-            test_cases=all_test_cases,
-            parallel=True,
-            progress=True
-        )
+        results = await evaluator.run_batch(test_cases=all_test_cases, parallel=True, progress=True)
 
         # Compute metrics
         metrics = self._compute_metrics(results, test_metadata)
@@ -182,7 +180,7 @@ class ContinuousEvaluationPipeline:
             test_suite="all" if not test_suites else ",".join(test_suites),
             results=results,
             metrics=metrics,
-            metadata=test_metadata
+            metadata=test_metadata,
         )
 
         # Check for regressions
@@ -213,17 +211,19 @@ class ContinuousEvaluationPipeline:
         for task in multi_step_tasks[:20]:  # Limit to 20 tasks
             test_case = {
                 "input": task.input,
-                "expected": json.dumps({
-                    "steps": task.expected_steps,
-                    "tools": task.expected_tools,
-                    "criteria": task.expected_output_criteria
-                }),
+                "expected": json.dumps(
+                    {
+                        "steps": task.expected_steps,
+                        "tools": task.expected_tools,
+                        "criteria": task.expected_output_criteria,
+                    }
+                ),
                 "context": {
                     "task_id": task.task_id,
                     "category": task.category,
                     "difficulty": task.difficulty,
-                    "suite": "gold_standard"
-                }
+                    "suite": "gold_standard",
+                },
             }
             test_cases.append(test_case)
 
@@ -233,51 +233,42 @@ class ContinuousEvaluationPipeline:
         """Generate synthetic test cases."""
         # Generate diverse scenarios
         test_cases = self.simulator.generate_test_cases(
-            scenario="factual_qa",
-            count=10,
-            diversity=0.9
+            scenario="factual_qa", count=10, diversity=0.9
         )
 
         # Add task-specific tests
-        test_cases.extend(self.simulator.generate_test_cases(
-            scenario="task_specific",
-            count=10,
-            diversity=0.9
-        ))
+        test_cases.extend(
+            self.simulator.generate_test_cases(scenario="task_specific", count=10, diversity=0.9)
+        )
 
         # Format for evaluation
         formatted = []
         for tc in test_cases:
-            formatted.append({
-                "input": tc["input"],
-                "expected": json.dumps(tc.get("expected", "Appropriate response")),
-                "context": {
-                    **tc.get("metadata", {}),
-                    "suite": "synthetic"
+            formatted.append(
+                {
+                    "input": tc["input"],
+                    "expected": json.dumps(tc.get("expected", "Appropriate response")),
+                    "context": {**tc.get("metadata", {}), "suite": "synthetic"},
                 }
-            })
+            )
 
         return formatted
 
     def _get_recycled_tests(self) -> list[dict[str, Any]]:
         """Get test cases from recycled traces."""
         # Generate evaluation dataset from traces
-        recycled = self.trace_recycler.generate_evaluation_dataset(
-            count=20,
-            min_quality_score=0.8
-        )
+        recycled = self.trace_recycler.generate_evaluation_dataset(count=20, min_quality_score=0.8)
 
         # Format for evaluation
         formatted = []
         for test in recycled:
-            formatted.append({
-                "input": test["input"],
-                "expected": test.get("expected", test.get("expected_behavior", "")),
-                "context": {
-                    **test.get("metadata", {}),
-                    "suite": "recycled"
+            formatted.append(
+                {
+                    "input": test["input"],
+                    "expected": test.get("expected", test.get("expected_behavior", "")),
+                    "context": {**test.get("metadata", {}), "suite": "recycled"},
                 }
-            })
+            )
 
         return formatted
 
@@ -288,31 +279,31 @@ class ContinuousEvaluationPipeline:
             categories=[
                 AdversarialCategory.PROMPT_INJECTION,
                 AdversarialCategory.JAILBREAK,
-                AdversarialCategory.HARMFUL_CONTENT
+                AdversarialCategory.HARMFUL_CONTENT,
             ],
-            min_severity="medium"
+            min_severity="medium",
         )
 
         # Format for evaluation
         formatted = []
         for test in suite["tests"][:15]:  # Limit to 15 tests
-            formatted.append({
-                "input": test.attack_vector,
-                "expected": test.expected_behavior,
-                "context": {
-                    "category": test.category.value,
-                    "severity": test.severity,
-                    "subcategory": test.subcategory,
-                    "suite": "adversarial"
+            formatted.append(
+                {
+                    "input": test.attack_vector,
+                    "expected": test.expected_behavior,
+                    "context": {
+                        "category": test.category.value,
+                        "severity": test.severity,
+                        "subcategory": test.subcategory,
+                        "suite": "adversarial",
+                    },
                 }
-            })
+            )
 
         return formatted
 
     def _compute_metrics(
-        self,
-        results: BatchResult,
-        test_metadata: dict[str, int]
+        self, results: BatchResult, test_metadata: dict[str, int]
     ) -> dict[str, float]:
         """Compute comprehensive metrics from results."""
         metrics = {
@@ -351,7 +342,9 @@ class ContinuousEvaluationPipeline:
 
         if response_times:
             metrics["avg_response_time_ms"] = sum(response_times) / len(response_times)
-            metrics["p95_response_time_ms"] = sorted(response_times)[int(len(response_times) * 0.95)]
+            metrics["p95_response_time_ms"] = sorted(response_times)[
+                int(len(response_times) * 0.95)
+            ]
 
         if token_counts:
             metrics["avg_tokens_per_request"] = sum(token_counts) / len(token_counts)
@@ -372,7 +365,7 @@ class ContinuousEvaluationPipeline:
             else:
                 # For URL agents, use URL hash
                 return f"url_{hashlib.md5(str(self.agent).encode()).hexdigest()[:8]}"
-        except:
+        except Exception:
             return "unknown"
 
     def _detect_regressions(self, current_run: EvaluationRun) -> list[RegressionAlert]:
@@ -411,10 +404,7 @@ class ContinuousEvaluationPipeline:
                 severity = self._determine_severity(metric, degradation)
 
                 # Find affected tests
-                affected_tests = self._find_affected_tests(
-                    current_run.results,
-                    metric
-                )
+                affected_tests = self._find_affected_tests(current_run.results, metric)
 
                 alert = RegressionAlert(
                     alert_id=f"regression_{current_run.run_id}_{metric}",
@@ -427,8 +417,8 @@ class ContinuousEvaluationPipeline:
                     severity=severity,
                     details={
                         "run_id": current_run.run_id,
-                        "agent_version": current_run.agent_version
-                    }
+                        "agent_version": current_run.agent_version,
+                    },
                 )
 
                 alerts.append(alert)
@@ -464,27 +454,29 @@ class ContinuousEvaluationPipeline:
             else:
                 return "low"
 
-    def _find_affected_tests(
-        self,
-        results: BatchResult,
-        metric: str
-    ) -> list[str]:
+    def _find_affected_tests(self, results: BatchResult, metric: str) -> list[str]:
         """Find tests most affected by regression."""
         affected = []
 
         # Determine which results to check based on metric
-        if any(suite in metric for suite in ["gold_standard", "synthetic", "recycled", "adversarial"]):
+        if any(
+            suite in metric for suite in ["gold_standard", "synthetic", "recycled", "adversarial"]
+        ):
             # Suite-specific metric
             suite = metric.split("_")[0]
             for result in results.results:
                 if result.details.get("context", {}).get("suite") == suite and not result.passed:
-                    test_id = result.details.get("context", {}).get("task_id", str(result.details.get("input", ""))[:50])
+                    test_id = result.details.get("context", {}).get(
+                        "task_id", str(result.details.get("input", ""))[:50]
+                    )
                     affected.append(test_id)
         else:
             # General metric - check all failed tests
             for result in results.results:
                 if not result.passed:
-                    test_id = result.details.get("context", {}).get("task_id", str(result.details.get("input", ""))[:50])
+                    test_id = result.details.get("context", {}).get(
+                        "task_id", str(result.details.get("input", ""))[:50]
+                    )
                     affected.append(test_id)
 
         return affected
@@ -553,8 +545,8 @@ class ContinuousEvaluationPipeline:
                 "passed": run.results.passed,
                 "failed": run.results.failed,
                 "pass_rate": run.results.pass_rate,
-                "avg_score": run.results.avg_score
-            }
+                "avg_score": run.results.avg_score,
+            },
         }
 
         with open(run_file, "w") as f:
@@ -574,7 +566,7 @@ class ContinuousEvaluationPipeline:
             "degradation": alert.degradation,
             "affected_tests": alert.affected_tests,
             "severity": alert.severity,
-            "details": alert.details
+            "details": alert.details,
         }
 
         with open(alert_file, "w") as f:
@@ -611,8 +603,8 @@ class ContinuousEvaluationPipeline:
                 "run.id": run.run_id,
                 "agent.version": run.agent_version,
                 "test.suite": run.test_suite,
-                **{f"metric.{k}": v for k, v in run.metrics.items()}
-            }
+                **{f"metric.{k}": v for k, v in run.metrics.items()},
+            },
         }
 
         await self.telemetry_exporter.export([span_data])
@@ -631,17 +623,13 @@ class ContinuousEvaluationPipeline:
                 "alert.severity": alert.severity,
                 "alert.degradation": alert.degradation,
                 "baseline.value": alert.baseline_value,
-                "current.value": alert.current_value
-            }
+                "current.value": alert.current_value,
+            },
         }
 
         await self.telemetry_exporter.export([span_data])
 
-    def get_trend_analysis(
-        self,
-        metric: str,
-        days: int = 7
-    ) -> dict[str, Any]:
+    def get_trend_analysis(self, metric: str, days: int = 7) -> dict[str, Any]:
         """Analyze trends for a specific metric."""
         # This would analyze historical runs
         # For now, return a simple summary
@@ -650,7 +638,7 @@ class ContinuousEvaluationPipeline:
             "period_days": days,
             "current_value": self.baselines.get("all", {}).get(metric, 0),
             "trend": "stable",  # Would calculate from history
-            "recommendation": "Continue monitoring"
+            "recommendation": "Continue monitoring",
         }
 
 
@@ -659,7 +647,7 @@ async def start_continuous_evaluation(
     agent: str | Callable | Any,
     interval_hours: int = 24,
     test_suites: list[str] | None = None,
-    alert_callback: Callable[[RegressionAlert], None] | None = None
+    alert_callback: Callable[[RegressionAlert], None] | None = None,
 ) -> ContinuousEvaluationPipeline:
     """
     Start continuous evaluation with periodic runs.
@@ -673,10 +661,7 @@ async def start_continuous_evaluation(
     Returns:
         Running pipeline instance
     """
-    pipeline = ContinuousEvaluationPipeline(
-        agent=agent,
-        alert_callback=alert_callback
-    )
+    pipeline = ContinuousEvaluationPipeline(agent=agent, alert_callback=alert_callback)
 
     async def run_loop():
         while True:

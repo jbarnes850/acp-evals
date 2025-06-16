@@ -18,14 +18,12 @@ class IntentResolutionEvaluator(Evaluator):
 
     def __init__(self, model_config: dict[str, Any] | None = None):
         """Initialize intent resolution evaluator."""
-        self.provider = ProviderFactory.create(**model_config) if model_config else ProviderFactory.create()
+        self.provider = (
+            ProviderFactory.create(**model_config) if model_config else ProviderFactory.create()
+        )
 
     def evaluate(
-        self,
-        query: str,
-        response: str,
-        context: str | None = None,
-        **kwargs
+        self, query: str, response: str, context: str | None = None, **kwargs
     ) -> EvaluationResult:
         """Evaluate intent resolution quality."""
         prompt = f"""
@@ -60,15 +58,15 @@ class IntentResolutionEvaluator(Evaluator):
                 details={
                     "explanation": evaluation.get("explanation", ""),
                     "unresolved_aspects": evaluation.get("unresolved_aspects", []),
-                    "model": self.provider.model_name
-                }
+                    "model": self.provider.model_name,
+                },
             )
-        except:
+        except Exception:
             return EvaluationResult(
                 name="intent_resolution",
                 score=0.0,
                 passed=False,
-                details={"error": "Failed to parse evaluation"}
+                details={"error": "Failed to parse evaluation"},
             )
 
 
@@ -77,14 +75,12 @@ class ResponseCompletenessEvaluator(Evaluator):
 
     def __init__(self, model_config: dict[str, Any] | None = None):
         """Initialize response completeness evaluator."""
-        self.provider = ProviderFactory.create(**model_config) if model_config else ProviderFactory.create()
+        self.provider = (
+            ProviderFactory.create(**model_config) if model_config else ProviderFactory.create()
+        )
 
     def evaluate(
-        self,
-        query: str,
-        response: str,
-        expected_parts: list[str] | None = None,
-        **kwargs
+        self, query: str, response: str, expected_parts: list[str] | None = None, **kwargs
     ) -> EvaluationResult:
         """Evaluate response completeness."""
         prompt = f"""
@@ -118,15 +114,15 @@ class ResponseCompletenessEvaluator(Evaluator):
                 details={
                     "addressed_parts": evaluation.get("addressed_parts", []),
                     "missing_parts": evaluation.get("missing_parts", []),
-                    "coverage_depth": evaluation.get("coverage_depth", "unknown")
-                }
+                    "coverage_depth": evaluation.get("coverage_depth", "unknown"),
+                },
             )
-        except:
+        except Exception:
             return EvaluationResult(
                 name="response_completeness",
                 score=0.0,
                 passed=False,
-                details={"error": "Failed to parse evaluation"}
+                details={"error": "Failed to parse evaluation"},
             )
 
 
@@ -158,19 +154,16 @@ class CodeVulnerabilityEvaluator(Evaluator):
         "hardcoded_secrets": [
             r"(password|api_key|secret)\s*=\s*['\"][^'\"]+['\"]",
             r"(AWS_SECRET|GITHUB_TOKEN)\s*=",
-        ]
+        ],
     }
 
     def __init__(self, model_config: dict[str, Any] | None = None):
         """Initialize code vulnerability evaluator."""
-        self.provider = ProviderFactory.create(**model_config) if model_config else ProviderFactory.create()
+        self.provider = (
+            ProviderFactory.create(**model_config) if model_config else ProviderFactory.create()
+        )
 
-    def evaluate(
-        self,
-        response: str,
-        code_language: str = "python",
-        **kwargs
-    ) -> EvaluationResult:
+    def evaluate(self, response: str, code_language: str = "python", **kwargs) -> EvaluationResult:
         """Evaluate code for vulnerabilities."""
         # First do pattern-based detection
         vulnerabilities = []
@@ -178,11 +171,13 @@ class CodeVulnerabilityEvaluator(Evaluator):
         for vuln_type, patterns in self.VULNERABILITY_PATTERNS.items():
             for pattern in patterns:
                 if re.search(pattern, response, re.IGNORECASE):
-                    vulnerabilities.append({
-                        "type": vuln_type,
-                        "pattern_matched": pattern,
-                        "severity": "high" if "injection" in vuln_type else "medium"
-                    })
+                    vulnerabilities.append(
+                        {
+                            "type": vuln_type,
+                            "pattern_matched": pattern,
+                            "severity": "high" if "injection" in vuln_type else "medium",
+                        }
+                    )
 
         # Then use LLM for deeper analysis
         prompt = f"""
@@ -221,10 +216,10 @@ class CodeVulnerabilityEvaluator(Evaluator):
                     "risk_score": risk_score,
                     "recommendations": llm_analysis.get("recommendations", []),
                     "pattern_scan": len(vulnerabilities) > 0,
-                    "llm_analysis": True
-                }
+                    "llm_analysis": True,
+                },
             )
-        except:
+        except Exception:
             # Fallback to pattern-only analysis
             risk_score = len(vulnerabilities) * 0.2
             risk_score = min(risk_score, 1.0)
@@ -237,8 +232,8 @@ class CodeVulnerabilityEvaluator(Evaluator):
                     "vulnerabilities": vulnerabilities,
                     "risk_score": risk_score,
                     "pattern_scan": True,
-                    "llm_analysis": False
-                }
+                    "llm_analysis": False,
+                },
             )
 
 
@@ -247,14 +242,11 @@ class UngroundedAttributesEvaluator(Evaluator):
 
     def __init__(self, model_config: dict[str, Any] | None = None):
         """Initialize ungrounded attributes evaluator."""
-        self.provider = ProviderFactory.create(**model_config) if model_config else ProviderFactory.create()
+        self.provider = (
+            ProviderFactory.create(**model_config) if model_config else ProviderFactory.create()
+        )
 
-    def evaluate(
-        self,
-        response: str,
-        context: str,
-        **kwargs
-    ) -> EvaluationResult:
+    def evaluate(self, response: str, context: str, **kwargs) -> EvaluationResult:
         """Check for ungrounded attributes/claims."""
         prompt = f"""
         Analyze if all attributes and claims in the response are grounded in the provided context.
@@ -285,16 +277,16 @@ class UngroundedAttributesEvaluator(Evaluator):
                 details={
                     "grounded_claims": evaluation.get("grounded_claims", []),
                     "ungrounded_claims": evaluation.get("ungrounded_claims", []),
-                    "total_claims": len(evaluation.get("grounded_claims", [])) +
-                                   len(evaluation.get("ungrounded_claims", []))
-                }
+                    "total_claims": len(evaluation.get("grounded_claims", []))
+                    + len(evaluation.get("ungrounded_claims", [])),
+                },
             )
-        except:
+        except Exception:
             return EvaluationResult(
                 name="ungrounded_attributes",
                 score=0.0,
                 passed=False,
-                details={"error": "Failed to parse evaluation"}
+                details={"error": "Failed to parse evaluation"},
             )
 
 
@@ -315,18 +307,16 @@ class ProtectedMaterialEvaluator(Evaluator):
         "code_licenses": [
             r"licensed under.*apache|mit|gpl",
             r"copyright.*all rights reserved",
-        ]
+        ],
     }
 
     def __init__(self, model_config: dict[str, Any] | None = None):
         """Initialize protected material evaluator."""
-        self.provider = ProviderFactory.create(**model_config) if model_config else ProviderFactory.create()
+        self.provider = (
+            ProviderFactory.create(**model_config) if model_config else ProviderFactory.create()
+        )
 
-    def evaluate(
-        self,
-        response: str,
-        **kwargs
-    ) -> EvaluationResult:
+    def evaluate(self, response: str, **kwargs) -> EvaluationResult:
         """Check for protected material."""
         # Pattern-based detection
         detections = []
@@ -334,10 +324,7 @@ class ProtectedMaterialEvaluator(Evaluator):
         for material_type, patterns in self.PROTECTED_PATTERNS.items():
             for pattern in patterns:
                 if re.search(pattern, response, re.IGNORECASE | re.MULTILINE):
-                    detections.append({
-                        "type": material_type,
-                        "pattern": pattern
-                    })
+                    detections.append({"type": material_type, "pattern": pattern})
 
         # LLM analysis for nuanced detection
         prompt = f"""
@@ -373,10 +360,10 @@ class ProtectedMaterialEvaluator(Evaluator):
                     "material_type": evaluation.get("material_type", "none"),
                     "confidence": confidence,
                     "pattern_detections": detections,
-                    "explanation": evaluation.get("explanation", "")
-                }
+                    "explanation": evaluation.get("explanation", ""),
+                },
             )
-        except:
+        except Exception:
             # Fallback to pattern detection only
             contains_protected = len(detections) > 0
 
@@ -387,8 +374,8 @@ class ProtectedMaterialEvaluator(Evaluator):
                 details={
                     "contains_protected": contains_protected,
                     "pattern_detections": detections,
-                    "llm_analysis": False
-                }
+                    "llm_analysis": False,
+                },
             )
 
 
@@ -405,7 +392,7 @@ class ToolCallAccuracyEvaluator(Evaluator):
         tool_calls: list[dict[str, Any]],
         available_tools: list[dict[str, Any]],
         expected_tools: list[str] | None = None,
-        **kwargs
+        **kwargs,
     ) -> EvaluationResult:
         """Evaluate tool call accuracy."""
         # Analyze tool selection
@@ -427,10 +414,7 @@ class ToolCallAccuracyEvaluator(Evaluator):
                 required_params = tool_def.get("required_parameters", [])
                 missing = [p for p in required_params if p not in params]
                 if missing:
-                    param_errors.append({
-                        "tool": tool_name,
-                        "missing_params": missing
-                    })
+                    param_errors.append({"tool": tool_name, "missing_params": missing})
 
         # Calculate scores
         selection_score = 1.0 if not invalid_tools else 0.5
@@ -454,6 +438,6 @@ class ToolCallAccuracyEvaluator(Evaluator):
                 "parameter_errors": param_errors,
                 "expected_tools_matched": expected_tools and set(tools_used) & set(expected_tools),
                 "selection_score": selection_score,
-                "parameter_score": param_score
-            }
+                "parameter_score": param_score,
+            },
         )

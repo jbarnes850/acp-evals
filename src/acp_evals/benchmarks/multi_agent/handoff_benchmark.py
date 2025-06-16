@@ -66,15 +66,20 @@ class HandoffQualityBenchmark(Benchmark):
                 Pass this information to the next agent for implementation planning.""",
                 expected_output={
                     "constraints": [
-                        "$50,000", "March 15, 2025", "5 developers",
-                        "Python", "React", "user authentication",
-                        "real-time updates", "mobile support", "SOC 2"
+                        "$50,000",
+                        "March 15, 2025",
+                        "5 developers",
+                        "Python",
+                        "React",
+                        "user authentication",
+                        "real-time updates",
+                        "mobile support",
+                        "SOC 2",
                     ],
                 },
                 category="constraints",
                 metadata={"critical_elements": 9},
             ),
-
             # Scenario 2: Preserve decisions and rationale
             BenchmarkTask(
                 id="technical_decisions",
@@ -88,18 +93,24 @@ class HandoffQualityBenchmark(Benchmark):
                 Each decision was made for the specific reason noted. Ensure the next agent understands both the decisions and their rationale.""",
                 expected_output={
                     "decisions": [
-                        "PostgreSQL", "microservices", "AWS", "EKS",
-                        "Redis", "GitHub Actions"
+                        "PostgreSQL",
+                        "microservices",
+                        "AWS",
+                        "EKS",
+                        "Redis",
+                        "GitHub Actions",
                     ],
                     "rationales": [
-                        "complex queries", "scalability", "team expertise",
-                        "performance", "cost-effective"
+                        "complex queries",
+                        "scalability",
+                        "team expertise",
+                        "performance",
+                        "cost-effective",
                     ],
                 },
                 category="decisions",
                 metadata={"decision_count": 5, "requires_rationale": True},
             ),
-
             # Scenario 3: Complex multi-step instructions
             BenchmarkTask(
                 id="deployment_steps",
@@ -117,17 +128,25 @@ class HandoffQualityBenchmark(Benchmark):
                 The order is critical. Pass these instructions to the next agent.""",
                 expected_output={
                     "steps": [
-                        "backup", "staging", "integration test", "100%",
-                        "maintenance window", "2 AM EST", "migrate",
-                        "frontend", "CDN", "clear caches", "restart",
-                        "health checks", "rollback"
+                        "backup",
+                        "staging",
+                        "integration test",
+                        "100%",
+                        "maintenance window",
+                        "2 AM EST",
+                        "migrate",
+                        "frontend",
+                        "CDN",
+                        "clear caches",
+                        "restart",
+                        "health checks",
+                        "rollback",
                     ],
                     "order_critical": True,
                 },
                 category="procedures",
                 metadata={"step_count": 9, "order_matters": True},
             ),
-
             # Scenario 4: Numerical data preservation
             BenchmarkTask(
                 id="metrics_report",
@@ -142,14 +161,22 @@ class HandoffQualityBenchmark(Benchmark):
                 Pass these metrics to the analyst for quarterly review.""",
                 expected_output={
                     "numbers": [
-                        "2.4M", "23%", "45,678", "15%", "2.3%",
-                        "3.1%", "72", "70", "234", "4.5", "99.97%"
+                        "2.4M",
+                        "23%",
+                        "45,678",
+                        "15%",
+                        "2.3%",
+                        "3.1%",
+                        "72",
+                        "70",
+                        "234",
+                        "4.5",
+                        "99.97%",
                     ],
                 },
                 category="data",
                 metadata={"precision_required": True},
             ),
-
             # Scenario 5: Context with dependencies
             BenchmarkTask(
                 id="api_dependencies",
@@ -162,15 +189,13 @@ class HandoffQualityBenchmark(Benchmark):
 
                 These dependencies are critical for proper system design.""",
                 expected_output={
-                    "services": [
-                        "payment", "user", "notification", "analytics", "admin panel"
-                    ],
+                    "services": ["payment", "user", "notification", "analytics", "admin panel"],
                     "dependencies": [
                         "payment depends on user",
                         "notification requires user",
                         "notification requires payment",
                         "analytics consumes events",
-                        "admin panel role admin"
+                        "admin panel role admin",
                     ],
                     "requirements": ["circuit breakers"],
                 },
@@ -219,7 +244,7 @@ class HandoffQualityBenchmark(Benchmark):
                         chain_agent = AgentInfo(
                             name=f"{agent_template.name}_position_{i}",
                             url=agent_template.url,
-                            role=f"Agent {i+1} in handoff chain",
+                            role=f"Agent {i + 1} in handoff chain",
                             capabilities=agent_template.capabilities,
                         )
                     else:
@@ -227,7 +252,7 @@ class HandoffQualityBenchmark(Benchmark):
                         chain_agent = {
                             **agent_template,
                             "name": f"{agent_template.get('name', 'agent')}_position_{i}",
-                            "role": f"Agent {i+1} in handoff chain",
+                            "role": f"Agent {i + 1} in handoff chain",
                         }
 
                     chain_agents.append(chain_agent)
@@ -256,10 +281,12 @@ class HandoffQualityBenchmark(Benchmark):
                 )
 
                 chain_results[chain_length].append(result)
-                all_results.append({
-                    **result,
-                    "chain_length": chain_length,
-                })
+                all_results.append(
+                    {
+                        **result,
+                        "chain_length": chain_length,
+                    }
+                )
 
         # Analyze results
         analysis = self._analyze_handoff_patterns(chain_results)
@@ -330,7 +357,9 @@ Be complete and accurate in your communication."""
                 "latency": (end_time - start_time).total_seconds(),
                 "handoff_count": len(result.get("handoffs", [])),
                 "final_output_length": len(result.get("final_output", "")),
-                "degradation_per_hop": (1 - preservation_score) / chain_length if chain_length > 0 else 0,
+                "degradation_per_hop": (1 - preservation_score) / chain_length
+                if chain_length > 0
+                else 0,
             }
 
         except Exception as e:
@@ -406,12 +435,12 @@ Be complete and accurate in your communication."""
             if pos >= 0:
                 positions.append(pos)
             else:
-                positions.append(float('inf'))  # Not found
+                positions.append(float("inf"))  # Not found
 
         # Check if positions are in increasing order
         correct_order = 0
         for i in range(1, len(positions)):
-            if positions[i] > positions[i-1] and positions[i] != float('inf'):
+            if positions[i] > positions[i - 1] and positions[i] != float("inf"):
                 correct_order += 1
 
         return correct_order / (len(positions) - 1) if len(positions) > 1 else 1.0
@@ -443,9 +472,9 @@ Be complete and accurate in your communication."""
                 # Calculate average decay per hop
                 decay_rates = []
                 for i in range(1, len(scores)):
-                    if scores[i-1] > 0:
-                        decay = (scores[i-1] - scores[i]) / scores[i-1]
-                        decay_rates.append(decay / (lengths[i] - lengths[i-1]))
+                    if scores[i - 1] > 0:
+                        decay = (scores[i - 1] - scores[i]) / scores[i - 1]
+                        decay_rates.append(decay / (lengths[i] - lengths[i - 1]))
 
                 if decay_rates:
                     analysis["exponential_decay_rate"] = sum(decay_rates) / len(decay_rates)
@@ -459,7 +488,9 @@ Be complete and accurate in your communication."""
             for length, results in chain_results.items():
                 cat_results = [r for r in results if r.get("category") == category]
                 if cat_results:
-                    category_scores[length] = sum(r["preservation_score"] for r in cat_results) / len(cat_results)
+                    category_scores[length] = sum(
+                        r["preservation_score"] for r in cat_results
+                    ) / len(cat_results)
 
             if category_scores:
                 best_length = max(category_scores.items(), key=lambda x: x[1])[0]
@@ -468,7 +499,8 @@ Be complete and accurate in your communication."""
                 analysis["category_resilience"][category] = {
                     "best_chain_length": best_length,
                     "worst_chain_length": worst_length,
-                    "degradation_range": category_scores[best_length] - category_scores[worst_length],
+                    "degradation_range": category_scores[best_length]
+                    - category_scores[worst_length],
                 }
 
         # Find critical chain length (where preservation drops below 70%)

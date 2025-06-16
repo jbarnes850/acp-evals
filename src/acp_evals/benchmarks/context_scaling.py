@@ -128,11 +128,13 @@ Task: {task.prompt}"""
         try:
             # Run the agent
             # This assumes agent has a run method or is an ACP client
-            if hasattr(agent, 'run'):
+            if hasattr(agent, "run"):
                 result = await agent.run(prompt)
                 response = str(result)
-            elif hasattr(agent, 'run_sync'):
-                result = await agent.run_sync(agent_name="default", input=[{"parts": [{"content": prompt}]}])
+            elif hasattr(agent, "run_sync"):
+                result = await agent.run_sync(
+                    agent_name="default", input=[{"parts": [{"content": prompt}]}]
+                )
                 response = result.output[0].parts[0].content if result.output else ""
             else:
                 # Assume it's a callable
@@ -176,7 +178,9 @@ Task: {task.prompt}"""
         # Handle different types of expected output
         if isinstance(task.expected_output, list):
             # Check how many expected elements are present
-            found = sum(1 for expected in task.expected_output if expected.lower() in response_lower)
+            found = sum(
+                1 for expected in task.expected_output if expected.lower() in response_lower
+            )
             score = found / len(task.expected_output)
         elif isinstance(task.expected_output, dict):
             # For dict, check required keys
@@ -244,8 +248,16 @@ Task: {task.prompt}"""
             avg_latency = sum(latencies) / len(latencies) if latencies else 0
 
             # Calculate degradation percentages
-            score_degradation = ((avg_baseline_score - avg_score) / avg_baseline_score * 100) if avg_baseline_score > 0 else 0
-            latency_increase = ((avg_latency - avg_baseline_latency) / avg_baseline_latency * 100) if avg_baseline_latency > 0 else 0
+            score_degradation = (
+                ((avg_baseline_score - avg_score) / avg_baseline_score * 100)
+                if avg_baseline_score > 0
+                else 0
+            )
+            latency_increase = (
+                ((avg_latency - avg_baseline_latency) / avg_baseline_latency * 100)
+                if avg_baseline_latency > 0
+                else 0
+            )
 
             degradation_metrics[f"score_degradation_{level}_distractors"] = score_degradation
             degradation_metrics[f"latency_increase_{level}_distractors"] = latency_increase
@@ -279,7 +291,9 @@ Task: {task.prompt}"""
         # Calculate aggregate metrics
         total_tasks = len(all_results)
         successful_tasks = sum(1 for r in all_results if r.get("success", False))
-        overall_score = sum(r.get("score", 0) for r in all_results) / total_tasks if total_tasks > 0 else 0
+        overall_score = (
+            sum(r.get("score", 0) for r in all_results) / total_tasks if total_tasks > 0 else 0
+        )
 
         # Calculate degradation metrics
         degradation_metrics = self._calculate_degradation(results_by_level)
@@ -290,13 +304,17 @@ Task: {task.prompt}"""
             if results:
                 avg_scores_by_level[level] = sum(r["score"] for r in results) / len(results)
 
-        optimal_context_level = max(avg_scores_by_level.items(), key=lambda x: x[1])[0] if avg_scores_by_level else 0
+        optimal_context_level = (
+            max(avg_scores_by_level.items(), key=lambda x: x[1])[0] if avg_scores_by_level else 0
+        )
 
         # Build summary
         summary = {
             "average_scores_by_distractor_level": avg_scores_by_level,
             "optimal_distractor_level": optimal_context_level,
-            "total_degradation": degradation_metrics.get(f"score_degradation_{max(self.distractor_levels)}_distractors", 0),
+            "total_degradation": degradation_metrics.get(
+                f"score_degradation_{max(self.distractor_levels)}_distractors", 0
+            ),
             **degradation_metrics,
         }
 

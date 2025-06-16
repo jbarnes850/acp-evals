@@ -77,23 +77,20 @@ Provide your evaluation in the following format:
         Returns:
             EvaluationResult with groundedness score and breakdown
         """
-        if not context or 'context' not in context:
+        if not context or "context" not in context:
             return EvaluationResult(
                 score=0.0,
                 passed=False,
                 breakdown={"error": "No context provided for groundedness evaluation"},
                 feedback="Context is required for groundedness evaluation",
-                metadata={"evaluator": self.name}
+                metadata={"evaluator": self.name},
             )
 
-        grounding_context = context['context']
+        grounding_context = context["context"]
 
         # Use LLM to evaluate groundedness
         if self.provider:
-            prompt = self._evaluation_prompt.format(
-                context=grounding_context,
-                response=response
-            )
+            prompt = self._evaluation_prompt.format(context=grounding_context, response=response)
 
             try:
                 evaluation = await self.provider.generate(prompt)
@@ -111,7 +108,7 @@ Provide your evaluation in the following format:
                     "grounded_claims": len(grounded_claims),
                     "ungrounded_claims": len(ungrounded_claims),
                     "contradictions": len(contradictions),
-                    "groundedness_score": score
+                    "groundedness_score": score,
                 }
 
                 feedback = f"Groundedness: {score:.2f}/1.0. "
@@ -142,8 +139,8 @@ Provide your evaluation in the following format:
                 "evaluator": self.name,
                 "task": task,
                 "context_length": len(grounding_context),
-                "response_length": len(response)
-            }
+                "response_length": len(response),
+            },
         )
 
     def _simple_groundedness_check(self, response: str, context: str) -> float:
@@ -153,10 +150,42 @@ Provide your evaluation in the following format:
         context_terms = set(context.lower().split())
 
         # Remove common words
-        common_words = {'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been',
-                       'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would',
-                       'could', 'should', 'may', 'might', 'can', 'of', 'to', 'in',
-                       'on', 'at', 'by', 'for', 'with', 'from', 'up', 'down', 'out'}
+        common_words = {
+            "the",
+            "a",
+            "an",
+            "is",
+            "are",
+            "was",
+            "were",
+            "be",
+            "been",
+            "have",
+            "has",
+            "had",
+            "do",
+            "does",
+            "did",
+            "will",
+            "would",
+            "could",
+            "should",
+            "may",
+            "might",
+            "can",
+            "of",
+            "to",
+            "in",
+            "on",
+            "at",
+            "by",
+            "for",
+            "with",
+            "from",
+            "up",
+            "down",
+            "out",
+        }
 
         response_terms = response_terms - common_words
         context_terms = context_terms - common_words
@@ -173,18 +202,19 @@ Provide your evaluation in the following format:
     def _extract_score(self, text: str) -> float:
         """Extract score from evaluation text."""
         import re
+
         pattern = r"Overall groundedness score:\s*([0-9.]+)"
         match = re.search(pattern, text)
         if match:
             try:
                 return float(match.group(1))
-            except:
+            except Exception:
                 pass
         return 0.5  # Default middle score
 
     def _extract_list(self, text: str, marker: str) -> list[str]:
         """Extract list items after a marker."""
-        lines = text.split('\n')
+        lines = text.split("\n")
         items = []
         found_marker = False
 
@@ -193,9 +223,12 @@ Provide your evaluation in the following format:
                 found_marker = True
                 continue
             if found_marker and line.strip():
-                if line.strip().startswith('-'):
+                if line.strip().startswith("-"):
                     items.append(line.strip()[1:].strip())
-                elif any(line.strip().startswith(m) for m in ['Ungrounded', 'Contradictions', 'Overall', 'Explanation']):
+                elif any(
+                    line.strip().startswith(m)
+                    for m in ["Ungrounded", "Contradictions", "Overall", "Explanation"]
+                ):
                     break
                 else:
                     items.append(line.strip())
@@ -207,5 +240,5 @@ Provide your evaluation in the following format:
         if marker in text:
             parts = text.split(marker)
             if len(parts) > 1:
-                return parts[1].strip().split('\n')[0].strip()
+                return parts[1].strip().split("\n")[0].strip()
         return ""

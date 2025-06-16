@@ -136,8 +136,7 @@ Provide your independent solution to this task."""
         try:
             client = self._get_client(agent)
             run = await client.run_sync(
-                agent=agent.name,
-                input=[self._create_message(agent_prompt)]
+                agent=agent.name, input=[self._create_message(agent_prompt)]
             )
 
             response = run.output[0].parts[0].content if run.output else ""
@@ -158,10 +157,7 @@ Provide your independent solution to this task."""
                 "success": False,
             }
 
-    def _aggregate_majority_vote(
-        self,
-        results: list[dict[str, Any]]
-    ) -> tuple[str, dict[str, Any]]:
+    def _aggregate_majority_vote(self, results: list[dict[str, Any]]) -> tuple[str, dict[str, Any]]:
         """Aggregate using majority voting on key points."""
         if not results:
             return "", {"no_results": True}
@@ -183,7 +179,9 @@ Provide your independent solution to this task."""
             if count >= len(results) / 2:  # Appears in at least half
                 consensus_points.append(point)
 
-        final_output = ". ".join(consensus_points) + "." if consensus_points else results[0]["response"]
+        final_output = (
+            ". ".join(consensus_points) + "." if consensus_points else results[0]["response"]
+        )
 
         return final_output, {
             "total_points": len(all_points),
@@ -192,8 +190,7 @@ Provide your independent solution to this task."""
         }
 
     def _aggregate_longest_common(
-        self,
-        results: list[dict[str, Any]]
+        self, results: list[dict[str, Any]]
     ) -> tuple[str, dict[str, Any]]:
         """Aggregate by finding longest common subsequences."""
         if not results:
@@ -220,8 +217,7 @@ Provide your independent solution to this task."""
         }
 
     def _aggregate_quality_weighted(
-        self,
-        results: list[dict[str, Any]]
+        self, results: list[dict[str, Any]]
     ) -> tuple[str, dict[str, Any]]:
         """Aggregate weighted by response quality metrics."""
         if not results:
@@ -247,7 +243,9 @@ Provide your independent solution to this task."""
         return best_result["response"], {
             "best_score": scored_results[0][0],
             "worst_score": scored_results[-1][0] if scored_results else 0,
-            "score_range": scored_results[0][0] - scored_results[-1][0] if len(scored_results) > 1 else 0,
+            "score_range": scored_results[0][0] - scored_results[-1][0]
+            if len(scored_results) > 1
+            else 0,
         }
 
     def _calculate_diversity(self, results: list[dict[str, Any]]) -> float:

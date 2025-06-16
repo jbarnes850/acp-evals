@@ -116,7 +116,9 @@ async def run_test_suite(
         task = progress.add_task(f"Running {suite_name} tests...", total=total)
 
         for i, test in enumerate(suite):
-            progress.update(task, description=f"Running {suite_name} test {i+1}/{total}: {test['name']}")
+            progress.update(
+                task, description=f"Running {suite_name} test {i + 1}/{total}: {test['name']}"
+            )
 
             try:
                 # Create appropriate evaluator
@@ -170,12 +172,14 @@ async def run_test_suite(
 
             except Exception as e:
                 console.print(f"[red]Error in test '{test['name']}': {str(e)}[/red]")
-                results.append({
-                    "name": test["name"],
-                    "passed": False,
-                    "score": 0.0,
-                    "error": str(e),
-                })
+                results.append(
+                    {
+                        "name": test["name"],
+                        "passed": False,
+                        "score": 0.0,
+                        "error": str(e),
+                    }
+                )
 
         progress.update(task, description=f"{suite_name} tests complete")
 
@@ -224,10 +228,10 @@ def display_results(summary: dict[str, Any]) -> None:
     # Summary panel
     summary_text = f"""
 [bold]Summary:[/bold]
-Total Tests: {summary['total']}
-Passed: [green]{summary['passed']}[/green]
-Failed: [red]{summary['failed']}[/red]
-Pass Rate: [{'green' if summary['pass_rate'] >= 80 else 'yellow' if summary['pass_rate'] >= 60 else 'red'}]{summary['pass_rate']:.1f}%[/]
+Total Tests: {summary["total"]}
+Passed: [green]{summary["passed"]}[/green]
+Failed: [red]{summary["failed"]}[/red]
+Pass Rate: [{"green" if summary["pass_rate"] >= 80 else "yellow" if summary["pass_rate"] >= 60 else "red"}]{summary["pass_rate"]:.1f}%[/]
 """
 
     console.print(
@@ -278,7 +282,9 @@ Pass Rate: [{'green' if summary['pass_rate'] >= 80 else 'yellow' if summary['pas
     default=60.0,
     help="Pass rate threshold percentage (default: 60%)",
 )
-def test(agent: str, test_suite: str, export_path: str | None, mock: bool, pass_threshold: float) -> None:
+def test(
+    agent: str, test_suite: str, export_path: str | None, mock: bool, pass_threshold: float
+) -> None:
     """Quick test of an ACP agent with predefined test suites.
 
 
@@ -295,6 +301,7 @@ def test(agent: str, test_suite: str, export_path: str | None, mock: bool, pass_
     if mock:
         console.print("[yellow]Running in mock mode (no LLM calls)[/yellow]\n")
         import os
+
         os.environ["MOCK_MODE"] = "true"
     else:
         try:
@@ -332,10 +339,14 @@ def test(agent: str, test_suite: str, export_path: str | None, mock: bool, pass_
 
         # Exit code based on configurable pass rate threshold
         if summary["pass_rate"] < pass_threshold:
-            console.print(f"[red]Test failed: Pass rate {summary['pass_rate']:.1f}% below threshold {pass_threshold}%[/red]")
+            console.print(
+                f"[red]Test failed: Pass rate {summary['pass_rate']:.1f}% below threshold {pass_threshold}%[/red]"
+            )
             exit(1)
         else:
-            console.print(f"[green]Test passed: Pass rate {summary['pass_rate']:.1f}% meets threshold {pass_threshold}%[/green]")
+            console.print(
+                f"[green]Test passed: Pass rate {summary['pass_rate']:.1f}% meets threshold {pass_threshold}%[/green]"
+            )
 
     except KeyboardInterrupt:
         console.print("\n[yellow]Test interrupted by user[/yellow]")

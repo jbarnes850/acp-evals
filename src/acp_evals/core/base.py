@@ -101,19 +101,19 @@ class MetricResult:
 @dataclass
 class EvaluatorResult:
     """Result from an individual evaluator run."""
-    
+
     score: float
     passed: bool
     details: dict[str, Any]
     metadata: dict[str, Any] = field(default_factory=dict)
-    
+
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "score": self.score,
             "passed": self.passed,
             "details": self.details,
-            "metadata": self.metadata
+            "metadata": self.metadata,
         }
 
 
@@ -161,7 +161,9 @@ class BenchmarkTask:
 
     def with_context(self, additional_context: str) -> "BenchmarkTask":
         """Create a new task with additional context prepended."""
-        new_context = f"{additional_context}\n\n{self.context}" if self.context else additional_context
+        new_context = (
+            f"{additional_context}\n\n{self.context}" if self.context else additional_context
+        )
         return BenchmarkTask(
             id=self.id,
             prompt=self.prompt,
@@ -250,11 +252,7 @@ class Evaluator(ABC):
 
     @abstractmethod
     async def evaluate(
-        self,
-        task: str,
-        response: str,
-        expected: Any | None = None,
-        **kwargs
+        self, task: str, response: str, expected: Any | None = None, **kwargs
     ) -> dict[str, Any]:
         """
         Evaluate an agent's response.
@@ -307,21 +305,27 @@ class EvaluationRun(BaseModel):
         ]
 
         for benchmark in self.benchmarks:
-            lines.append(f"  {benchmark.benchmark_name}: {benchmark.overall_score:.2%} ({benchmark.success_rate:.0f}% success rate)")
+            lines.append(
+                f"  {benchmark.benchmark_name}: {benchmark.overall_score:.2%} ({benchmark.success_rate:.0f}% success rate)"
+            )
 
-        lines.extend([
-            "",
-            "Key Metrics:",
-        ])
+        lines.extend(
+            [
+                "",
+                "Key Metrics:",
+            ]
+        )
 
         for metric in self.metrics.values():
             lines.append(f"  {metric}")
 
         if self.total_cost > 0:
-            lines.extend([
-                "",
-                f"Total Cost: ${self.total_cost:.4f}",
-            ])
+            lines.extend(
+                [
+                    "",
+                    f"Total Cost: ${self.total_cost:.4f}",
+                ]
+            )
 
         return "\n".join(lines)
 

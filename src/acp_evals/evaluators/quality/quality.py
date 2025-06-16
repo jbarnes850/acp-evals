@@ -28,27 +28,27 @@ class GroundednessEval(AccuracyEval):
         rubric = {
             "grounded_in_context": {
                 "weight": 0.4,
-                "criteria": "Is every claim in the response directly supported by the provided context?"
+                "criteria": "Is every claim in the response directly supported by the provided context?",
             },
             "no_hallucination": {
                 "weight": 0.3,
-                "criteria": "Does the response avoid adding information not present in the context?"
+                "criteria": "Does the response avoid adding information not present in the context?",
             },
             "accurate_citations": {
                 "weight": 0.2,
-                "criteria": "Are sources/citations accurate when provided?"
+                "criteria": "Are sources/citations accurate when provided?",
             },
             "acknowledges_limitations": {
                 "weight": 0.1,
-                "criteria": "Does the response acknowledge when information is not available in context?"
-            }
+                "criteria": "Does the response acknowledge when information is not available in context?",
+            },
         }
 
         super().__init__(
             agent=agent,
             rubric=rubric,
             pass_threshold=0.8,  # High threshold for groundedness
-            name=name
+            name=name,
         )
 
     async def run(
@@ -74,18 +74,22 @@ class GroundednessEval(AccuracyEval):
         """
         # Ensure context includes source material
         if "documents" not in context and "sources" not in context:
-            raise ValueError("Context must include 'documents' or 'sources' for groundedness evaluation")
+            raise ValueError(
+                "Context must include 'documents' or 'sources' for groundedness evaluation"
+            )
 
         # Create expected behavior if not provided
         if expected is None:
-            expected = "Response should be fully grounded in the provided context without hallucination"
+            expected = (
+                "Response should be fully grounded in the provided context without hallucination"
+            )
 
         return await super().run(
             input=input,
             expected=expected,
             context=context,
             print_results=print_results,
-            _disable_progress=_disable_progress
+            _disable_progress=_disable_progress,
         )
 
 
@@ -106,28 +110,23 @@ class CompletenessEval(AccuracyEval):
         rubric = {
             "addresses_all_parts": {
                 "weight": 0.4,
-                "criteria": "Does the response address every part of the multi-part question?"
+                "criteria": "Does the response address every part of the multi-part question?",
             },
             "sufficient_detail": {
                 "weight": 0.3,
-                "criteria": "Is each part answered with appropriate depth and detail?"
+                "criteria": "Is each part answered with appropriate depth and detail?",
             },
             "logical_organization": {
                 "weight": 0.2,
-                "criteria": "Are all parts organized in a logical, easy-to-follow structure?"
+                "criteria": "Are all parts organized in a logical, easy-to-follow structure?",
             },
             "no_missing_elements": {
                 "weight": 0.1,
-                "criteria": "Are there no obviously missing elements that the question asked for?"
-            }
+                "criteria": "Are there no obviously missing elements that the question asked for?",
+            },
         }
 
-        super().__init__(
-            agent=agent,
-            rubric=rubric,
-            pass_threshold=0.75,
-            name=name
-        )
+        super().__init__(agent=agent, rubric=rubric, pass_threshold=0.75, name=name)
 
 
 class TaskAdherenceEval(AccuracyEval):
@@ -155,28 +154,23 @@ class TaskAdherenceEval(AccuracyEval):
         rubric = {
             "follows_instructions": {
                 "weight": 0.4,
-                "criteria": "Does the response follow all given instructions exactly?"
+                "criteria": "Does the response follow all given instructions exactly?",
             },
             "correct_format": {
                 "weight": 0.3,
-                "criteria": "Is the response in the requested format (if specified)?"
+                "criteria": "Is the response in the requested format (if specified)?",
             },
             "meets_constraints": {
                 "weight": 0.2,
-                "criteria": "Does the response meet all specified constraints (length, style, etc.)?"
+                "criteria": "Does the response meet all specified constraints (length, style, etc.)?",
             },
             "appropriate_tone": {
                 "weight": 0.1,
-                "criteria": "Is the tone/style appropriate for the requested task?"
-            }
+                "criteria": "Is the tone/style appropriate for the requested task?",
+            },
         }
 
-        super().__init__(
-            agent=agent,
-            rubric=rubric,
-            pass_threshold=0.8,
-            name=name
-        )
+        super().__init__(agent=agent, rubric=rubric, pass_threshold=0.8, name=name)
 
         self.task_requirements = task_requirements or {}
 
@@ -205,28 +199,23 @@ class ToolAccuracyEval(AccuracyEval):
         rubric = {
             "correct_tool_selection": {
                 "weight": 0.4,
-                "criteria": "Does the agent select the most appropriate tool(s) for the task?"
+                "criteria": "Does the agent select the most appropriate tool(s) for the task?",
             },
             "proper_tool_usage": {
                 "weight": 0.3,
-                "criteria": "Are tools used with correct parameters and in the right sequence?"
+                "criteria": "Are tools used with correct parameters and in the right sequence?",
             },
             "result_interpretation": {
                 "weight": 0.2,
-                "criteria": "Does the agent correctly interpret and use tool outputs?"
+                "criteria": "Does the agent correctly interpret and use tool outputs?",
             },
             "efficiency": {
                 "weight": 0.1,
-                "criteria": "Are tools used efficiently without unnecessary calls?"
-            }
+                "criteria": "Are tools used efficiently without unnecessary calls?",
+            },
         }
 
-        super().__init__(
-            agent=agent,
-            rubric=rubric,
-            pass_threshold=0.75,
-            name=name
-        )
+        super().__init__(agent=agent, rubric=rubric, pass_threshold=0.75, name=name)
 
         self.available_tools = available_tools
 
@@ -265,7 +254,7 @@ class ToolAccuracyEval(AccuracyEval):
             expected=expected,
             context=context,
             print_results=print_results,
-            _disable_progress=_disable_progress
+            _disable_progress=_disable_progress,
         )
 
 
@@ -333,42 +322,34 @@ class QualityEval:
         scores = []
 
         # Run applicable evaluators
-        if "groundedness" in self.evaluators and context and ("documents" in context or "sources" in context):
+        if (
+            "groundedness" in self.evaluators
+            and context
+            and ("documents" in context or "sources" in context)
+        ):
             result = await self.evaluators["groundedness"].run(
-                input=input,
-                context=context,
-                expected=expected,
-                print_results=False
+                input=input, context=context, expected=expected, print_results=False
             )
             results["groundedness"] = result
             scores.append(result.score)
 
         if "completeness" in self.evaluators:
             result = await self.evaluators["completeness"].run(
-                input=input,
-                expected=expected,
-                context=context,
-                print_results=False
+                input=input, expected=expected, context=context, print_results=False
             )
             results["completeness"] = result
             scores.append(result.score)
 
         if "task_adherence" in self.evaluators:
             result = await self.evaluators["task_adherence"].run(
-                input=input,
-                expected=expected,
-                context=context,
-                print_results=False
+                input=input, expected=expected, context=context, print_results=False
             )
             results["task_adherence"] = result
             scores.append(result.score)
 
         if "tool_accuracy" in self.evaluators and expected_tools:
             result = await self.evaluators["tool_accuracy"].run(
-                input=input,
-                expected_tools=expected_tools,
-                context=context,
-                print_results=False
+                input=input, expected_tools=expected_tools, context=context, print_results=False
             )
             results["tool_accuracy"] = result
             scores.append(result.score)
@@ -381,7 +362,7 @@ class QualityEval:
             "overall_score": overall_score,
             "overall_passed": overall_passed,
             "aspect_scores": {name: r.score for name, r in results.items()},
-            "detailed_results": results
+            "detailed_results": results,
         }
 
         if print_results:
@@ -398,17 +379,13 @@ class QualityEval:
 
             for name, result in results.items():
                 status = "✅" if result.passed else "❌"
-                table.add_row(
-                    name.replace("_", " ").title(),
-                    f"{result.score:.2f}",
-                    status
-                )
+                table.add_row(name.replace("_", " ").title(), f"{result.score:.2f}", status)
 
             table.add_row(
                 "[bold]Overall[/bold]",
                 f"[bold]{overall_score:.2f}[/bold]",
                 "✅" if overall_passed else "❌",
-                style="bold"
+                style="bold",
             )
 
             console.print(table)

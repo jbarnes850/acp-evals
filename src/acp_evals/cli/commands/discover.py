@@ -66,7 +66,9 @@ async def test_agent(agent_url: str, agent_name: str) -> dict[str, Any]:
         }
 
 
-def display_agents(agents: list[dict[str, Any]], test_results: list[dict[str, Any]] | None = None) -> None:
+def display_agents(
+    agents: list[dict[str, Any]], test_results: list[dict[str, Any]] | None = None
+) -> None:
     """Display discovered agents in a table."""
     if not agents:
         console.print("[yellow]No agents found[/yellow]")
@@ -88,7 +90,9 @@ def display_agents(agents: list[dict[str, Any]], test_results: list[dict[str, An
     for agent in agents:
         row = [
             agent["name"],
-            agent["description"][:50] + "..." if len(agent["description"]) > 50 else agent["description"],
+            agent["description"][:50] + "..."
+            if len(agent["description"]) > 50
+            else agent["description"],
             agent["version"],
         ]
 
@@ -174,6 +178,7 @@ def discover(server: str, test_all: bool, export: str | None, filter: str | None
     # Apply filter if provided
     if filter:
         import fnmatch
+
         agents = [a for a in agents if fnmatch.fnmatch(a["name"], filter)]
         console.print(f"Filtered to {len(agents)} agents matching '{filter}'\n")
 
@@ -193,12 +198,10 @@ def discover(server: str, test_all: bool, export: str | None, filter: str | None
             for i, agent in enumerate(agents):
                 progress.update(
                     task,
-                    description=f"Testing {agent['name']} ({i+1}/{len(agents)})",
+                    description=f"Testing {agent['name']} ({i + 1}/{len(agents)})",
                 )
 
-                result = asyncio.run(
-                    test_agent(agent["url"], agent["name"])
-                )
+                result = asyncio.run(test_agent(agent["url"], agent["name"]))
                 test_results.append(result)
 
     # Display results
@@ -226,9 +229,10 @@ def discover(server: str, test_all: bool, export: str | None, filter: str | None
         console.print("\n[bold]Quick Start:[/bold]")
         first_agent = agents[0]
         console.print(f"Test an agent: [dim]acp-evals test {first_agent['url']}[/dim]")
-        console.print(f"Run evaluation: [dim]acp-evals run accuracy {first_agent['url']} -i \"What is AI?\" -e \"Artificial Intelligence\"[/dim]")
+        console.print(
+            f'Run evaluation: [dim]acp-evals run accuracy {first_agent["url"]} -i "What is AI?" -e "Artificial Intelligence"[/dim]'
+        )
 
 
 if __name__ == "__main__":
     discover()
-

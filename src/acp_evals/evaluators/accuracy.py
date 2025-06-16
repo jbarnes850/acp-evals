@@ -20,21 +20,21 @@ from .llm_judge import LLMJudge
 class AccuracyEval(BaseEval):
     """
     Evaluate agent response accuracy using LLM-as-Judge.
-    
+
     Supports both continuous scoring (default) and binary mode based on
     research showing binary outputs improve evaluator performance.
 
     Example:
         # Traditional continuous scoring
         eval = AccuracyEval(agent="http://localhost:8000/agents/my-agent")
-        
+
         # Binary mode (recommended for better performance)
         eval = AccuracyEval(
             agent="http://localhost:8000/agents/my-agent",
             binary_mode=True,
             binary_threshold=0.7
         )
-        
+
         result = await eval.run(
             input="What is the capital of France?",
             expected="Paris",
@@ -92,7 +92,9 @@ class AccuracyEval(BaseEval):
         # Get rubric
         if isinstance(rubric, str):
             if rubric not in self.RUBRICS:
-                raise ValueError(f"Unknown rubric: {rubric}. Available: {list(self.RUBRICS.keys())}")
+                raise ValueError(
+                    f"Unknown rubric: {rubric}. Available: {list(self.RUBRICS.keys())}"
+                )
             rubric_dict = self.RUBRICS[rubric]
         else:
             rubric_dict = rubric
@@ -146,15 +148,20 @@ class AccuracyEval(BaseEval):
                 console=console,
             )
         else:
+
             class NullProgress:
                 def __enter__(self):
                     return self
+
                 def __exit__(self, *args):
                     pass
+
                 def add_task(self, *args, **kwargs):
                     return None
+
                 def update(self, *args, **kwargs):
                     pass
+
             progress_ctx = NullProgress()
 
         with progress_ctx as progress:
@@ -175,10 +182,7 @@ class AccuracyEval(BaseEval):
 
             # Run evaluation
             eval_result = await self.judge.evaluate(
-                task=input,
-                response=response,
-                reference=expected_str,
-                context=context
+                task=input, response=response, reference=expected_str, context=context
             )
 
             if task is not None:
@@ -189,14 +193,14 @@ class AccuracyEval(BaseEval):
             # Convert continuous score to binary decision
             binary_passed = eval_result.score >= self.binary_threshold
             binary_score = 1.0 if binary_passed else 0.0
-            
+
             # Add binary mode info to feedback
             binary_feedback = (
                 f"{eval_result.feedback}\n\n"
                 f"[Binary Mode: {'PASS' if binary_passed else 'FAIL'} "
                 f"(score {eval_result.score:.3f} vs threshold {self.binary_threshold:.3f})]"
             )
-            
+
             # Create result with binary scoring
             result = EvalResult(
                 name=self.name,

@@ -21,11 +21,11 @@ class OpenAIProvider(LLMProvider):
     # Pricing per 1K tokens (as of June 2025)
     PRICING = {
         # June 2025 Models
-        "gpt-4.1": {"input": 0.01, "output": 0.03}, 
-        "gpt-4.1-nano": {"input": 0.005, "output": 0.015},  
-        "o3": {"input": 0.015, "output": 0.075},  
-        "o3-mini": {"input": 0.003, "output": 0.015},  
-        "o4-mini": {"input": 0.002, "output": 0.010},  
+        "gpt-4.1": {"input": 0.01, "output": 0.03},
+        "gpt-4.1-nano": {"input": 0.005, "output": 0.015},
+        "o3": {"input": 0.015, "output": 0.075},
+        "o3-mini": {"input": 0.003, "output": 0.015},
+        "o4-mini": {"input": 0.002, "output": 0.010},
     }
 
     def __init__(
@@ -33,7 +33,7 @@ class OpenAIProvider(LLMProvider):
         model: str = "gpt-4.1",
         api_key: str | None = None,
         api_base: str | None = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Initialize OpenAI provider.
@@ -58,30 +58,23 @@ class OpenAIProvider(LLMProvider):
         return "openai"
 
     async def complete(
-        self,
-        prompt: str,
-        temperature: float = 0.0,
-        max_tokens: int = 1000,
-        **kwargs
+        self, prompt: str, temperature: float = 0.0, max_tokens: int = 1000, **kwargs
     ) -> LLMResponse:
         """Get completion from OpenAI."""
         try:
             # Configure client
-            client = self.openai.AsyncOpenAI(
-                api_key=self.api_key,
-                base_url=self.api_base
-            )
+            client = self.openai.AsyncOpenAI(api_key=self.api_key, base_url=self.api_base)
 
             # Make request
             response = await client.chat.completions.create(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": "You are an expert evaluator."},
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": prompt},
                 ],
                 temperature=temperature,
                 max_tokens=max_tokens,
-                **kwargs
+                **kwargs,
             )
 
             # Extract response
@@ -89,29 +82,25 @@ class OpenAIProvider(LLMProvider):
             usage = {
                 "prompt_tokens": response.usage.prompt_tokens,
                 "completion_tokens": response.usage.completion_tokens,
-                "total_tokens": response.usage.total_tokens
+                "total_tokens": response.usage.total_tokens,
             }
 
             # Calculate cost
             cost = self.calculate_cost(usage)
 
             return LLMResponse(
-                content=content,
-                model=response.model,
-                usage=usage,
-                cost=cost,
-                raw_response=response
+                content=content, model=response.model, usage=usage, cost=cost, raw_response=response
             )
 
         except self.openai.RateLimitError as e:
             logger.warning(f"OpenAI rate limit hit: {str(e)}")
             # Extract retry after if available
-            retry_after = getattr(e, 'retry_after', None)
+            retry_after = getattr(e, "retry_after", None)
             raise ProviderRateLimitError("openai", retry_after) from e
 
         except self.openai.APIError as e:
             logger.error(f"OpenAI API error: {str(e)}")
-            status_code = getattr(e, 'status_code', None)
+            status_code = getattr(e, "status_code", None)
             raise ProviderAPIError("openai", status_code, str(e)) from e
 
         except self.openai.APIConnectionError as e:
@@ -147,13 +136,19 @@ class OpenAIProvider(LLMProvider):
             if not os.getenv("OPENAI_API_KEY"):
                 missing.append("OPENAI_API_KEY")
 
-            raise ProviderNotConfiguredError(
-                "openai",
-                missing_config=missing
-            )
+            raise ProviderNotConfiguredError("openai", missing_config=missing)
 
         # Validate model name
-        valid_models = ["gpt-4.1", "gpt-4.1-nano", "o3", "o3-mini", "o4-mini", "gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"]
+        valid_models = [
+            "gpt-4.1",
+            "gpt-4.1-nano",
+            "o3",
+            "o3-mini",
+            "o4-mini",
+            "gpt-4",
+            "gpt-4-turbo",
+            "gpt-3.5-turbo",
+        ]
         if not any(model in self.model for model in valid_models):
             logger.warning(
                 f"Model '{self.model}' may not be valid. Expected one of: {', '.join(valid_models)}"
@@ -163,6 +158,7 @@ class OpenAIProvider(LLMProvider):
         """Import OpenAI library with helpful error message."""
         try:
             import openai
+
             self.openai = openai
         except ImportError:
             raise ImportError(

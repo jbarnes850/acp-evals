@@ -14,12 +14,7 @@ logger = logging.getLogger(__name__)
 class OllamaProvider(LLMProvider):
     """Ollama provider for local LLM inference."""
 
-    def __init__(
-        self,
-        model: str = "qwen3:30b-a3b",
-        base_url: str | None = None,
-        **kwargs
-    ):
+    def __init__(self, model: str = "qwen3:30b-a3b", base_url: str | None = None, **kwargs):
         """
         Initialize Ollama provider.
 
@@ -35,11 +30,7 @@ class OllamaProvider(LLMProvider):
         return "ollama"
 
     async def complete(
-        self,
-        prompt: str,
-        temperature: float = 0.0,
-        max_tokens: int = 1000,
-        **kwargs
+        self, prompt: str, temperature: float = 0.0, max_tokens: int = 1000, **kwargs
     ) -> LLMResponse:
         """Get completion from Ollama."""
         try:
@@ -53,14 +44,12 @@ class OllamaProvider(LLMProvider):
                         "num_predict": max_tokens,
                         "temperature": temperature,
                     },
-                    "stream": False
+                    "stream": False,
                 }
 
                 # Make request
                 response = await client.post(
-                    f"{self.base_url}/api/generate",
-                    json=payload,
-                    timeout=60.0
+                    f"{self.base_url}/api/generate", json=payload, timeout=60.0
                 )
 
                 if response.status_code != 200:
@@ -78,7 +67,7 @@ class OllamaProvider(LLMProvider):
                 usage = {
                     "prompt_tokens": len(prompt.split()) * 1.3,
                     "completion_tokens": estimated_tokens,
-                    "total_tokens": len(prompt.split()) * 1.3 + estimated_tokens
+                    "total_tokens": len(prompt.split()) * 1.3 + estimated_tokens,
                 }
 
                 return LLMResponse(
@@ -86,21 +75,23 @@ class OllamaProvider(LLMProvider):
                     model=self.model,
                     usage=usage,
                     cost=0.0,  # Local inference has no API cost
-                    raw_response=data
+                    raw_response=data,
                 )
 
         except httpx.ConnectError as e:
             logger.error(f"Cannot connect to Ollama at {self.base_url}")
             raise ProviderConnectionError(
                 "ollama",
-                Exception(f"Cannot connect to {self.base_url}. Make sure Ollama is running (ollama serve).")
+                Exception(
+                    f"Cannot connect to {self.base_url}. Make sure Ollama is running (ollama serve)."
+                ),
             ) from e
 
         except httpx.TimeoutException as e:
             logger.error("Ollama request timed out")
             raise ProviderAPIError(
                 "ollama",
-                error_message="Request timed out. The model may be loading or the response is taking too long."
+                error_message="Request timed out. The model may be loading or the response is taking too long.",
             ) from e
 
         except Exception as e:
@@ -127,10 +118,7 @@ class OllamaProvider(LLMProvider):
         """Check if Ollama server is reachable."""
         try:
             async with httpx.AsyncClient() as client:
-                response = await client.get(
-                    f"{self.base_url}/api/tags",
-                    timeout=5.0
-                )
+                response = await client.get(f"{self.base_url}/api/tags", timeout=5.0)
                 return response.status_code == 200
-        except:
+        except Exception:
             return False

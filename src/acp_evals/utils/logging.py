@@ -6,9 +6,7 @@ import sys
 
 
 def setup_logging(
-    level: str | None = None,
-    log_file: str | None = None,
-    log_llm_calls: bool = False
+    level: str | None = None, log_file: str | None = None, log_llm_calls: bool = False
 ) -> None:
     """
     Configure logging for ACP Evals.
@@ -27,9 +25,7 @@ def setup_logging(
 
     # Console handler with custom formatter
     console_handler = logging.StreamHandler(sys.stderr)
-    console_formatter = logging.Formatter(
-        "[%(levelname)s] %(name)s: %(message)s"
-    )
+    console_formatter = logging.Formatter("[%(levelname)s] %(name)s: %(message)s")
     console_handler.setFormatter(console_formatter)
     handlers.append(console_handler)
 
@@ -37,17 +33,12 @@ def setup_logging(
     if log_file or os.getenv("LOG_FILE"):
         log_file = log_file or os.getenv("LOG_FILE")
         file_handler = logging.FileHandler(log_file)
-        file_formatter = logging.Formatter(
-            "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-        )
+        file_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
         file_handler.setFormatter(file_formatter)
         handlers.append(file_handler)
 
     # Configure root logger
-    logging.basicConfig(
-        level=getattr(logging, level.upper()),
-        handlers=handlers
-    )
+    logging.basicConfig(level=getattr(logging, level.upper()), handlers=handlers)
 
     # Configure specific loggers
     if log_llm_calls:
@@ -63,7 +54,9 @@ def setup_logging(
 
     # Log startup info
     logger = logging.getLogger("acp_evals")
-    logger.debug(f"Logging configured: level={level}, log_file={log_file}, log_llm_calls={log_llm_calls}")
+    logger.debug(
+        f"Logging configured: level={level}, log_file={log_file}, log_llm_calls={log_llm_calls}"
+    )
 
 
 def get_logger(name: str) -> logging.Logger:

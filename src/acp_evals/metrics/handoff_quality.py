@@ -139,14 +139,16 @@ class HandoffQualityMetric(Metric):
                     current_content = self._extract_message_content(event)
 
                     if previous_content and current_content:
-                        handoffs.append({
-                            "source_agent": current_agent,
-                            "target_agent": event.agent_id,
-                            "source_content": previous_content,
-                            "target_content": current_content,
-                            "original_context": original_context or previous_content,
-                            "timestamp": event.timestamp,
-                        })
+                        handoffs.append(
+                            {
+                                "source_agent": current_agent,
+                                "target_agent": event.agent_id,
+                                "source_content": previous_content,
+                                "target_content": current_content,
+                                "original_context": original_context or previous_content,
+                                "timestamp": event.timestamp,
+                            }
+                        )
 
                 # Update tracking
                 current_agent = event.agent_id
@@ -170,7 +172,7 @@ class HandoffQualityMetric(Metric):
                     return "\n".join(parts)
                 elif hasattr(event.message, "content"):
                     return event.message.content
-        except:
+        except Exception:
             pass
         return None
 
@@ -298,12 +300,7 @@ class HandoffQualityMetric(Metric):
         # Simple approach: capitalized words that aren't sentence starts
         words = content.split()
         for i, word in enumerate(words):
-            if (
-                word[0].isupper() and
-                i > 0 and
-                not words[i-1].endswith(".") and
-                len(word) > 2
-            ):
+            if word[0].isupper() and i > 0 and not words[i - 1].endswith(".") and len(word) > 2:
                 elements["entities"].add(word.strip(".,;:"))
 
         return elements
@@ -382,8 +379,8 @@ class HandoffQualityMetric(Metric):
         # Simplified: calculate average decay rate
         decay_rates = []
         for i in range(1, len(scores)):
-            if scores[i-1] > 0:
-                decay_rate = -1 * (scores[i] - scores[i-1]) / scores[i-1]
+            if scores[i - 1] > 0:
+                decay_rate = -1 * (scores[i] - scores[i - 1]) / scores[i - 1]
                 decay_rates.append(decay_rate)
 
         return sum(decay_rates) / len(decay_rates) if decay_rates else 0.0

@@ -36,8 +36,8 @@ class LatencyMetric(Metric):
             return timestamp
         elif isinstance(timestamp, str):
             try:
-                return datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
-            except:
+                return datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+            except Exception:
                 return None
         return None
 
@@ -106,10 +106,14 @@ class LatencyMetric(Metric):
         # Calculate time to first token
         time_to_first_token = 0.0
         if first_user_message_time and first_agent_message_time:
-            time_to_first_token = (first_agent_message_time - first_user_message_time).total_seconds()
+            time_to_first_token = (
+                first_agent_message_time - first_user_message_time
+            ).total_seconds()
 
         # Calculate average latencies
-        avg_message_latency = sum(message_latencies) / len(message_latencies) if message_latencies else 0.0
+        avg_message_latency = (
+            sum(message_latencies) / len(message_latencies) if message_latencies else 0.0
+        )
         avg_tool_latency = sum(tool_latencies) / len(tool_latencies) if tool_latencies else 0.0
 
         breakdown = {

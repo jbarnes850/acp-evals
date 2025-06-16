@@ -27,21 +27,17 @@ class InputValidator:
                 if not parsed.scheme or not parsed.netloc:
                     raise InvalidEvaluationInputError(
                         "agent",
-                        f"Invalid URL format: {agent}. Expected format: http://host:port/agents/name"
+                        f"Invalid URL format: {agent}. Expected format: http://host:port/agents/name",
                     )
 
                 # Check for /agents/ path
                 if "/agents/" not in agent:
                     raise InvalidEvaluationInputError(
-                        "agent",
-                        f"Agent URL must contain '/agents/' path. Got: {agent}"
+                        "agent", f"Agent URL must contain '/agents/' path. Got: {agent}"
                     )
 
             except Exception as e:
-                raise InvalidEvaluationInputError(
-                    "agent",
-                    f"Invalid agent URL: {str(e)}"
-                )
+                raise InvalidEvaluationInputError("agent", f"Invalid agent URL: {str(e)}")
 
         elif callable(agent):
             # Callable is valid
@@ -54,7 +50,7 @@ class InputValidator:
         else:
             raise InvalidEvaluationInputError(
                 "agent",
-                f"Agent must be a URL string, callable, or instance with 'run' method. Got: {type(agent)}"
+                f"Agent must be a URL string, callable, or instance with 'run' method. Got: {type(agent)}",
             )
 
     @staticmethod
@@ -70,21 +66,17 @@ class InputValidator:
         """
         if not isinstance(test_input, str):
             raise InvalidEvaluationInputError(
-                "input",
-                f"Test input must be a string. Got: {type(test_input)}"
+                "input", f"Test input must be a string. Got: {type(test_input)}"
             )
 
         if not test_input.strip():
-            raise InvalidEvaluationInputError(
-                "input",
-                "Test input cannot be empty"
-            )
+            raise InvalidEvaluationInputError("input", "Test input cannot be empty")
 
         # Check for reasonable length
         if len(test_input) > 100000:
             raise InvalidEvaluationInputError(
                 "input",
-                f"Test input too long ({len(test_input)} chars). Maximum: 100,000 characters"
+                f"Test input too long ({len(test_input)} chars). Maximum: 100,000 characters",
             )
 
     @staticmethod
@@ -100,22 +92,17 @@ class InputValidator:
         """
         if isinstance(expected, str):
             if not expected.strip():
-                raise InvalidEvaluationInputError(
-                    "expected",
-                    "Expected output cannot be empty"
-                )
+                raise InvalidEvaluationInputError("expected", "Expected output cannot be empty")
 
         elif isinstance(expected, dict):
             if not expected:
                 raise InvalidEvaluationInputError(
-                    "expected",
-                    "Expected output dict cannot be empty"
+                    "expected", "Expected output dict cannot be empty"
                 )
 
         else:
             raise InvalidEvaluationInputError(
-                "expected",
-                f"Expected output must be string or dict. Got: {type(expected)}"
+                "expected", f"Expected output must be string or dict. Got: {type(expected)}"
             )
 
     @staticmethod
@@ -131,15 +118,11 @@ class InputValidator:
         """
         if not isinstance(rubric, dict):
             raise InvalidEvaluationInputError(
-                "rubric",
-                f"Rubric must be a dictionary. Got: {type(rubric)}"
+                "rubric", f"Rubric must be a dictionary. Got: {type(rubric)}"
             )
 
         if not rubric:
-            raise InvalidEvaluationInputError(
-                "rubric",
-                "Rubric cannot be empty"
-            )
+            raise InvalidEvaluationInputError("rubric", "Rubric cannot be empty")
 
         errors = {}
         total_weight = 0.0
@@ -177,10 +160,7 @@ class InputValidator:
             errors["_total_weight"] = f"Total weight must equal 1.0. Got: {total_weight:.3f}"
 
         if errors:
-            raise InvalidEvaluationInputError(
-                "rubric",
-                format_validation_error(errors)
-            )
+            raise InvalidEvaluationInputError("rubric", format_validation_error(errors))
 
     @staticmethod
     def validate_threshold(threshold: float, name: str = "threshold") -> None:
@@ -197,16 +177,10 @@ class InputValidator:
         try:
             threshold = float(threshold)
         except (TypeError, ValueError):
-            raise InvalidEvaluationInputError(
-                name,
-                f"Must be a number. Got: {type(threshold)}"
-            )
+            raise InvalidEvaluationInputError(name, f"Must be a number. Got: {type(threshold)}")
 
         if threshold < 0 or threshold > 1:
-            raise InvalidEvaluationInputError(
-                name,
-                f"Must be between 0 and 1. Got: {threshold}"
-            )
+            raise InvalidEvaluationInputError(name, f"Must be between 0 and 1. Got: {threshold}")
 
     @staticmethod
     def validate_test_cases(test_cases: list[dict[str, Any]]) -> None:
@@ -221,15 +195,11 @@ class InputValidator:
         """
         if not isinstance(test_cases, list):
             raise InvalidEvaluationInputError(
-                "test_cases",
-                f"Must be a list. Got: {type(test_cases)}"
+                "test_cases", f"Must be a list. Got: {type(test_cases)}"
             )
 
         if not test_cases:
-            raise InvalidEvaluationInputError(
-                "test_cases",
-                "Test cases list cannot be empty"
-            )
+            raise InvalidEvaluationInputError("test_cases", "Test cases list cannot be empty")
 
         errors = {}
 
@@ -263,7 +233,4 @@ class InputValidator:
                 errors[f"test_case_{i}"] = "; ".join(case_errors)
 
         if errors:
-            raise InvalidEvaluationInputError(
-                "test_cases",
-                format_validation_error(errors)
-            )
+            raise InvalidEvaluationInputError("test_cases", format_validation_error(errors))

@@ -13,6 +13,7 @@ class ACPEvalsError(Exception):
 
 class ProviderError(ACPEvalsError):
     """Base exception for provider-related errors."""
+
     pass
 
 
@@ -70,8 +71,9 @@ class ProviderRateLimitError(ProviderError):
 class ProviderAPIError(ProviderError):
     """Raised for API-specific errors."""
 
-    def __init__(self, provider: str, status_code: int | None = None,
-                 error_message: str | None = None):
+    def __init__(
+        self, provider: str, status_code: int | None = None, error_message: str | None = None
+    ):
         message = f"API error from {provider} provider"
 
         if status_code:
@@ -103,6 +105,7 @@ class ProviderTimeoutError(ProviderError):
 
 class EvaluationError(ACPEvalsError):
     """Base exception for evaluation errors."""
+
     pass
 
 
@@ -145,11 +148,13 @@ class ConfigurationError(ACPEvalsError):
 
 class ValidationError(ACPEvalsError):
     """Raised for validation errors."""
+
     pass
 
 
 class AgentError(ACPEvalsError):
     """Base exception for agent-related errors."""
+
     pass
 
 
@@ -185,8 +190,9 @@ class AgentTimeoutError(AgentError):
 class AgentAPIError(AgentError):
     """Raised for agent API-specific errors."""
 
-    def __init__(self, agent_url: str, status_code: int | None = None,
-                 error_message: str | None = None):
+    def __init__(
+        self, agent_url: str, status_code: int | None = None, error_message: str | None = None
+    ):
         message = f"API error from agent at {agent_url}"
 
         if status_code:
@@ -243,7 +249,9 @@ OLLAMA_BASE_URL=http://localhost:11434
 """,
     }
 
-    return setup_guides.get(provider, f"Please refer to the documentation for setting up {provider}.")
+    return setup_guides.get(
+        provider, f"Please refer to the documentation for setting up {provider}."
+    )
 
 
 def format_validation_error(errors: dict[str, str]) -> str:
