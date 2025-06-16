@@ -2,7 +2,7 @@
 
 # ACP Evals
 
-**Production-ready evaluation framework for ACP agents and multi-agent systems**
+**Open-Source, Research-Driven Evaluation Framework for ACP Agents and Multi-Agent Systems**
 
 <a href="https://www.python.org">
   <img src="https://img.shields.io/badge/Python-3.11+-blue.svg" alt="Python" />
@@ -23,17 +23,54 @@
 
 </p>
 
+---
+
+## Educational Introduction & Value Proposition
+
 Writing evals can be hard and time consuming, especially if you don't know where to start. 
 
-This evals framework is designed specifically for developers building AI agents with the [Agent Communication Protocol (ACP)](https://github.com/i-am-bee/acp) to help remove the guesswork in experimentation and deployment. ACP-Evals provides systematic testing and monitoring capabilities that scale from simple accuracy checks to complex multi-agent coordination analysis.
+**ACP Evals** is an open-source, production-ready evaluation framework designed for developers building AI agents and multi-agent systems using the [Agent Communication Protocol (ACP)](https://github.com/i-am-bee/acp). It removes the guesswork from experimentation and deployment, providing systematic testing and monitoring capabilities that scale from simple accuracy checks to complex multi-agent coordination analysis.
 
 Agent evaluation involves sending test inputs to your agents and automatically scoring the outputs against expected results. Traditional evaluation tools focus on single AI models, but ACP Evals specializes in the unique challenges of agent systems: measuring how well agents use tools, preserve context across conversations, coordinate with other agents, and maintain performance under production workloads.
 
 You can start with a simple three-line evaluation to test basic functionality, then gradually access more sophisticated features like multi-agent workflow testing, production trace analysis, and continuous monitoring pipelines. Every evaluation automatically tracks token usage and costs across different LLM providers, helping you optimize both quality and efficiency as you scale.
 
+---
+
+## Why ACP Evals?
+
+**Agent evaluation is evolving.**
+
+- Traditional tools focus on single-model accuracy, but modern agent systems demand more:
+  - Multi-agent coordination
+  - Tool use and context preservation
+  - Production-grade reliability and safety
+  - Continuous, in-context feedback for developers
+
+**ACP Evals** is built for this new era—drawing on the latest research ([Agent Bricks](https://www.databricks.com/product/artificial-intelligence/agent-bricks), [Loop](https://www.braintrust.dev/docs/guides/loop)), open protocols ([ACP](https://agentcommunicationprotocol.dev), [MCP](https://www.anthropic.com/news/model-context-protocol), [NLIP](https://github.com/nlip-project/documents/blob/main/NLIP%5FSpecification.pdf)), and real-world developer workflows. It's the open-source, extensible backbone for agent reliability, benchmarking, and governance.
+
+---
+
+## Inspired by Leading Research & Protocols
+
+- **Agent Bricks (Databricks):**
+  - Auto-synthesized evals, continuous optimization, and Pareto-front cost/quality tradeoffs ([Agent Bricks](https://www.databricks.com/product/artificial-intelligence/agent-bricks), [Introducing Agent Bricks](https://www.databricks.com/blog/introducing-agent-bricks?utm_source=chatgpt.com), [Databricks Launches Agent Bricks](https://www.databricks.com/company/newsroom/press-releases/databricks-launches-agent-bricks-new-approach-building-ai-agents?utm_source=chatgpt.com))
+- **Loop (Braintrust):**
+  - Inline diff, conversational eval UX, and test-as-you-code feedback ([Loop Docs](https://www.braintrust.dev/docs/guides/loop), [Visualize and interpret evaluations](https://www.braintrust.dev/docs/guides/evals/interpret?utm_source=chatgpt.com))
+- **Protocol Foundations:**
+  - ACP, MCP, NLIP, and ACDP—standardizing agent communication, discovery, and evaluation ([ACP Discussion](https://github.com/i-am-bee/beeai-platform/discussions/284))
+
+**What's new in ACP Evals?**
+- Multi-agent, workflow-level metrics (e.g., MAEBE, TRAIL)
+- Production trace recycling and continuous monitoring
+- Extensible, developer-first CLI and API
+- Native ACP/BeeAI integration
+
+---
+
 ## Quick Start
 
-**Three-line evaluation:**
+**Minimal Python Example**
 ```python
 from acp_evals import evaluate, AccuracyEval
 
@@ -45,55 +82,81 @@ result = evaluate(
 print(f"Score: {result.score:.2f}, Tokens: {result.tokens}")
 ```
 
-**CLI workflow:**
+**CLI Workflow**
 ```bash
-# Provider setup and health check
+pip install acp-evals
 acp-evals check
-
-# Quick agent testing
 acp-evals test http://localhost:8000/agents/my-agent --comprehensive
-
-# Generate synthetic test data with LLM
 acp-evals generate tests --scenario qa --count 50 --export tests.jsonl
-
-# Multi-agent workflow testing
 acp-evals workflow test --pattern supervisor --agents agent1,agent2,agent3
 ```
 
-### Installation & Setup
+---
 
-```bash
-# Install framework
-pip install acp-evals
+## Core Features
 
-# Configure providers (copy from python/.env.example)
-export OPENAI_API_KEY=sk-...
-export ANTHROPIC_API_KEY=sk-ant-...
+- **Quality & Performance:**
+  - LLM-as-judge scoring, token/cost tracking, latency, groundedness, retrieval metrics
+- **Multi-Agent Coordination:**
+  - Linear, supervisor, and swarm patterns; handoff quality; workflow-level evaluation
+- **Safety & Reliability:**
+  - Content filtering, bias/harm checks, adversarial and edge-case testing
+- **Production Integration:**
+  - Trace recycling, continuous evaluation, OpenTelemetry export, CI/CD hooks
+- **Extensible & Modular:**
+  - Plug in new evaluators, providers, patterns, and datasets
 
-# Verify setup
-acp-evals check
+---
+
+## UX & Workflow Innovations
+
+- **Auto-synthesized edge-case evals** from live logs (cf. Agent Bricks)
+- **Inline diff and conversational feedback** (cf. Loop/Braintrust)
+- **Design-time, in-context evaluation:**
+  - Treat evals like unit tests—see results instantly, fix failures before merge
+- **Continuous optimization:**
+  - Pareto-front tuning for cost vs. quality, nightly retraining from prod traces
+
+---
+
+## High-Level Architecture
+
+```mermaid
+flowchart TD
+    subgraph Developer
+      CLI[CLI / VS Code Plugin]
+      API[Python API]
+    end
+    CLI -- "Run Evals, Generate Data" --> Core
+    API -- "Programmatic Access" --> Core
+
+    subgraph ACP_Evals_Core["ACP Evals Core"]
+      Core[Evaluation Orchestrator]
+      Evaluators[Evaluators: Quality, Safety, Coordination]
+      Patterns[Coordination Patterns: Linear, Supervisor, Swarm]
+      Providers[LLM Providers: OpenAI, Anthropic, Ollama, Mock]
+      Datasets[Datasets & Benchmarks]
+      Telemetry[Telemetry & Monitoring]
+    end
+
+    Core -- "Agent Calls, Trace Ingest" --> ACP[ACP Agents / BeeAI]
+    Core -- "Export Metrics" --> Telemetry
+    Core -- "Store Results" --> Datasets
+    Core -- "Integrate" --> Providers
+    Core -- "Pattern Execution" --> Patterns
+    Core -- "Eval Logic" --> Evaluators
 ```
 
-## Core Capabilities
+---
 
-ACP Evals provides four main categories of evaluation capabilities that address the fundamental needs of agent developers. Each category serves a specific purpose in ensuring your agents work reliably in production environments.
-
-**Quality and Performance Evaluation** focuses on measuring how well your agents respond to inputs and how efficiently they use computational resources. The AccuracyEval component uses LLM-as-judge methodology to score response quality against customizable rubrics for different domains like factual accuracy, research quality, or code correctness. PerformanceEval tracks token usage, response latency, and costs across different LLM providers, giving you detailed insights into resource consumption. The framework also includes GroundednessEval for validating that agent responses stay grounded in provided context, and RetrievalEval for measuring information retrieval quality using standard IR metrics like precision, recall, and NDCG.
-
-**Multi-Agent Coordination Testing** addresses the unique challenges of systems where multiple agents work together. This includes handoff quality measurement, which evaluates how much relevant information is preserved when one agent passes control to another. The framework supports testing three primary coordination patterns: Linear (sequential agent execution), Supervisor (centralized coordination with specialized agents), and Swarm (distributed collaboration). Workflow testing validates end-to-end multi-agent processes to ensure the entire system maintains coherence and effectiveness.
-
-**Safety and Reliability Assessment** ensures your agents behave appropriately and handle edge cases gracefully. SafetyEval combines multiple safety checks including content filtering, bias detection, and harmful output classification. ReliabilityEval validates that agents use tools correctly and handle error conditions appropriately. The framework includes comprehensive adversarial testing capabilities that test resistance to real-world attack patterns like prompt injection, jailbreaks, and context manipulation attempts.
-
-### Multi-Agent Evaluation
+## Example: Multi-Agent Evaluation
 
 ```python
 from acp_evals.patterns import SupervisorPattern
 from acp_evals.benchmarks import HandoffBenchmark
 
-# Test multi-agent coordination
 pattern = SupervisorPattern(["researcher", "analyzer", "writer"])
 benchmark = HandoffBenchmark(pattern=pattern, endpoint="http://localhost:8000")
-
 results = await benchmark.run_batch(
     test_data="coordination_tasks.jsonl",
     parallel=True,
@@ -101,165 +164,59 @@ results = await benchmark.run_batch(
 )
 ```
 
-## Command Line Interface
+---
 
-The CLI provides complete evaluation workflows from discovery to production monitoring:
+## Production & Monitoring
 
-```bash
-# Agent discovery and health
-acp-evals discover                    # Find available ACP agents
-acp-evals check                       # Provider configuration health
+- **Trace recycling:** Convert real user interactions into eval datasets
+- **Continuous evaluation:** Automated, scheduled assessments for drift and regression
+- **OpenTelemetry export:** Integrate with Jaeger, Phoenix, and other dashboards
+- **CI/CD integration:**
+  ```bash
+  acp-evals test $AGENT_URL --comprehensive --export results.json
+  acp-evals report results.json --format markdown > report.md
+  ```
 
-# Quick testing and evaluation
-acp-evals test <agent-url> --comprehensive
-acp-evals run accuracy <agent> -i "input" -e "expected"
+---
 
-# Dataset management and generation
-acp-evals dataset list                # External benchmarks (TRAIL, GAIA, SWE-bench)
-acp-evals dataset create-suite -d TRAIL -d GAIA -e mixed_suite.jsonl
-acp-evals generate tests --scenario research --count 100
+## Extending ACP Evals
 
-# Multi-agent workflow testing
-acp-evals workflow test --pattern supervisor --agents agent1,agent2,agent3
-acp-evals workflow compare --agents agent1,agent2 --task "research task"
+- **Add custom evaluators:** [`python/src/acp_evals/evaluators/`](./python/src/acp_evals/evaluators/)
+- **New LLM providers:** [`python/src/acp_evals/providers/`](./python/src/acp_evals/providers/)
+- **Coordination patterns:** [`python/src/acp_evals/patterns/`](./python/src/acp_evals/patterns/)
+- **Benchmarks/datasets:** [`python/src/acp_evals/benchmarks/datasets/`](./python/src/acp_evals/benchmarks/datasets/)
 
-# Production integration
-acp-evals traces ingest production.json
-acp-evals traces recycle --output dataset.jsonl
-acp-evals report results.json --format summary
-```
+See [Contributing Guide](./python/CONTRIBUTING.md) for details.
 
-## Advanced Features
+---
 
-Beyond basic evaluation capabilities, ACP Evals provides sophisticated features for production deployment and continuous monitoring that transform it from a development tool into a comprehensive production monitoring system.
+## Community & Support
 
-**Production Integration and Monitoring** enables you to maintain agent quality after deployment. Trace recycling converts production telemetry data from real user interactions into evaluation datasets, allowing you to continuously validate agent performance using actual usage patterns. The continuous evaluation system runs automated assessments on scheduled intervals, detecting performance regressions and quality drift over time by comparing current results against established baselines. All evaluation metrics can be exported to OpenTelemetry-compatible monitoring systems like Jaeger or Phoenix for real-time dashboard visualization and alerting.
+- **Docs:** [API Reference](./python/docs/), [Examples](./python/examples/)
+- **Discussions:** [ACP Protocol](https://github.com/i-am-bee/beeai-platform/discussions/284)
+- **Contribute:** [CONTRIBUTING.md](./python/CONTRIBUTING.md)
+- **Part of [BeeAI](https://github.com/i-am-bee) / [Linux Foundation AI & Data](https://lfaidata.foundation/)**
 
-**Comprehensive Dataset and Benchmarking Support** provides access to established evaluation datasets and the ability to create custom test suites. The framework integrates with major external benchmarks including TRAIL for trace debugging, GAIA for multi-step reasoning, SWE-Bench for software engineering tasks, MMLU for broad knowledge assessment, and HumanEval for code generation. It also includes gold standard datasets designed specifically for production-realistic multi-step agent tasks. The synthetic data generation capabilities use LLMs to create high-quality test cases tailored to your specific use cases and domains.
+---
 
-**Security and Robustness Testing** protects against real-world threats and edge cases. The adversarial testing framework evaluates agent resistance to actual attack patterns observed in production systems, including sophisticated prompt injection attempts, jailbreak techniques, and context manipulation strategies. The edge case generation system creates synthetic scenarios that stress-test agent behavior under unusual or challenging conditions, helping identify potential failure modes before they occur in production.
+## References & Further Reading
 
-## Provider Support
+- [Agent Bricks | Databricks](https://www.databricks.com/product/artificial-intelligence/agent-bricks)
+- [Introducing Agent Bricks: Auto-Optimized Agents](https://www.databricks.com/blog/introducing-agent-bricks?utm_source=chatgpt.com)
+- [Databricks Launches Agent Bricks](https://www.databricks.com/company/newsroom/press-releases/databricks-launches-agent-bricks-new-approach-building-ai-agents?utm_source=chatgpt.com)
+- [Loop - Docs - Braintrust](https://www.braintrust.dev/docs/guides/loop)
+- [Visualize and interpret evaluations - Braintrust](https://www.braintrust.dev/docs/guides/evals/interpret?utm_source=chatgpt.com)
+- [ACP Protocol](https://agentcommunicationprotocol.dev)
+- [MCP: Model Context Protocol](https://www.anthropic.com/news/model-context-protocol)
+- [NLIP Specification](https://github.com/nlip-project/documents/blob/main/NLIP%5FSpecification.pdf)
+- [ACDP: Agent Communication & Discovery Protocol](https://github.com/zerocmd/acdp/blob/main/ACDP.md)
 
-| Provider | Models | Features |
-|----------|--------|----------|
-| **OpenAI** | GPT-4.1, GPT-4.1-mini, GPT-4.1-nano, o4-mini | Cost tracking, token optimization |
-| **Anthropic** | Claude-4-Opus, Claude-4-Sonnet | Native integration, cost analysis |  
-| **Ollama** | granite3.3:8b, qwen3:30b-a3b, custom models | Local deployment, privacy-first |
-| **Mock Mode** | Simulated responses for testing | CI/CD integration, rapid iteration |
-
-## ACP/BeeAI Integration
-
-**Native ACP Support:**
-- **[ACP Message Handling](./python/src/acp_evals/evaluators/common.py)** - Direct ACP SDK integration for agent communication
-- **[Multi-Agent Patterns](./python/src/acp_evals/patterns/)** - Built-in support for ACP coordination patterns
-- **[Event Stream Analysis](./python/examples/09_real_acp_agents.py)** - Real-time evaluation of agent interactions
-- **[BeeAI Framework](./python/examples/10_acp_agent_discovery.py)** - Seamless integration with BeeAI agent instances
-
-
-## Examples & Documentation
-
-| Resource | Description |
-|----------|-------------|
-| [Examples](./python/examples/) | 13 comprehensive usage examples |
-| [API Reference](./python/docs/) | Complete API documentation |
-| [CLI Reference](./python/src/acp_evals/cli/) | Command-line interface guide |
-| [Architecture](./python/docs/architecture.md) | Framework design and extension points |
-
-**Essential Examples:**
-- [00_minimal_example.py](./python/examples/00_minimal_example.py) - 3-line agent evaluation
-- [01_quickstart_accuracy.py](./python/examples/01_quickstart_accuracy.py) - Basic accuracy assessment  
-- [05_multi_agent_patterns.py](./python/examples/05_multi_agent_patterns.py) - Multi-agent coordination testing
-
-**Production Examples:**
-- [09_real_acp_agents.py](./python/examples/09_real_acp_agents.py) - Live ACP agent integration
-- [12_end_to_end_trace_pipeline.py](./python/examples/12_end_to_end_trace_pipeline.py) - Production trace recycling
-- [08_ci_cd_integration.py](./python/examples/08_ci_cd_integration.py) - CI/CD monitoring pipeline
-
-## Batch Evaluation & CI/CD
-
-**Batch Processing:**
-```python
-# Evaluate multiple test cases in parallel
-results = AccuracyEval(agent=my_agent).run_batch(
-    test_data="test_cases.jsonl",
-    parallel=True,
-    export="results.json"
-)
-print(f"Pass rate: {results.pass_rate}%, Score: {results.avg_score:.2f}")
-```
-
-**CI/CD Integration:**
-```python
-def test_agent_accuracy():
-    eval = AccuracyEval(agent=my_agent, mock_mode=CI_ENV)
-    result = eval.run(input="test", expected="expected")
-    assert result.score > 0.8, f"Score {result.score} below threshold"
-```
-
-**CLI Automation:**
-```bash
-# Run comprehensive evaluation in CI
-acp-evals test $AGENT_URL --comprehensive --export results.json
-acp-evals report results.json --format markdown > report.md
-```
-
-## Results & Debugging
-
-**Consistent Result Structure:**
-```python
-result = eval.run(input="test", expected="expected")
-
-print(f"Score: {result.score}")      # 0.0-1.0
-print(f"Passed: {result.passed}")    # Boolean  
-print(f"Tokens: {result.tokens}")    # Usage breakdown
-print(f"Latency: {result.latency_ms}ms")
-print(f"Details: {result.details}")  # Specific feedback
-```
-
-**Debugging:**
-```python
-if result.score < 0.7:
-    print(result.details.get("judge_reasoning"))
-    print(result.details.get("issues", []))
-```
-
-**Troubleshooting:**
-```bash
-# Provider issues
-acp-evals check --test-connection
-
-# Agent connectivity  
-curl http://localhost:8000/agents/my-agent/health
-
-# Performance optimization
-acp-evals test agent --comprehensive --parallel --batch-size 10
-```
-
-## Framework Architecture
-
-```bash
-python/src/acp_evals/
-├── api.py                   # 3-line developer API
-├── evaluators/              # Quality, performance, safety evaluators
-├── patterns/                # Multi-agent coordination (linear, supervisor, swarm)
-├── benchmarks/datasets/     # TRAIL, GAIA, SWE-bench integration + gold standard data
-├── providers/               # OpenAI, Anthropic, Ollama support
-├── evaluation/              # Continuous evaluation and synthetic data generation
-├── telemetry/               # OpenTelemetry export and production monitoring
-└── cli/                     # Complete command-line toolkit
-```
-
-**Extension Points:**
-- Add custom evaluators in `evaluators/`
-- Implement new LLM providers in `providers/`
-- Create coordination patterns in `patterns/`
-- Integrate external benchmarks in `benchmarks/datasets/`
-
-See [Contributing Guide](./python/CONTRIBUTING.md) for development setup and guidelines.
+---
 
 ## License
 
-Apache License 2.0 - see [LICENSE](./LICENSE) file.
+Apache License 2.0 – see [LICENSE](./LICENSE).
 
-Part of the [BeeAI](https://github.com/i-am-bee) project, an initiative of [Linux Foundation AI & Data](https://lfaidata.foundation/).
+---
+
+**_ACP Evals: The open, extensible backbone for agent reliability, benchmarking, and governance. Build, test, and ship agents with confidence._**
