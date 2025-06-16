@@ -169,6 +169,8 @@ class LLMJudge(Evaluator):
         for criterion, details in self.rubric.items():
             rubric_text += f"\n- {criterion} (weight: {details['weight']}): {details['criteria']}"
 
+        reference_text = f"Reference answer for comparison:\n{reference}\n" if reference else ""
+        
         prompt = f"""You are an expert evaluator assessing an AI agent's response quality.
 
 Task given to the agent:
@@ -177,7 +179,7 @@ Task given to the agent:
 Agent's response:
 {response}
 
-{f"Reference answer for comparison:\n{reference}\n" if reference else ""}
+{reference_text}
 
 Evaluation rubric:{rubric_text}
 
