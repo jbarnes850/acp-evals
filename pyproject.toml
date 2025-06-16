@@ -2,7 +2,7 @@
 name = "acp-evals"
 version = "0.1.2"
 description = "Comprehensive evaluation framework for Agent Communication Protocol (ACP) agents"
-readme = "../README.md"
+readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "Apache-2.0"}
 authors = [
@@ -51,10 +51,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/i-am-bee/acp-evals"
-Documentation = "https://github.com/i-am-bee/acp-evals/tree/main/docs"
-Repository = "https://github.com/i-am-bee/acp-evals"
-Issues = "https://github.com/i-am-bee/acp-evals/issues"
+Homepage = "https://github.com/jbarnes850/acp-evals"
+Documentation = "https://github.com/jbarnes850/acp-evals/tree/main/docs"
+Repository = "https://github.com/jbarnes850/acp-evals"
+Issues = "https://github.com/jbarnes850/acp-evals/issues"
 
 [project.scripts]
 acp-evals = "acp_evals.cli.main:cli"
@@ -82,4 +82,35 @@ ignore = ["E501"]
 [tool.pyright]
 include = ["src"]
 pythonVersion = "3.11"
-typeCheckingMode = "standard"
+typeCheckingMode = "strict"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+show_error_codes = true
+exclude = [
+    "build/",
+    "dist/",
+    "examples/",
+    "tests/",
+]
+
+[[tool.mypy.overrides]]
+module = [
+    "acp_sdk.*",
+    "tiktoken.*",
+    "opentelemetry.*",
+]
+ignore_missing_imports = true
