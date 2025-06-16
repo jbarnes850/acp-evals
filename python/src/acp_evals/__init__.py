@@ -12,7 +12,7 @@ Quick Start:
     >>> from acp_evals.evaluators import BleuScoreEvaluator, RetrievalEvaluator
 """
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 # Load configuration on import
 # Core framework classes
