@@ -1,12 +1,27 @@
+<p align="center">
+
 # ACP Evals
 
 **Production-ready evaluation framework for ACP agents and multi-agent systems**
 
-[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org)
-[![ACP Compatible](https://img.shields.io/badge/ACP-Compatible-green.svg)](https://agentcommunicationprotocol.dev)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+<a href="https://www.python.org">
+  <img src="https://img.shields.io/badge/Python-3.11+-blue.svg" alt="Python" />
+</a>
+<a href="https://agentcommunicationprotocol.dev">
+  <img src="https://img.shields.io/badge/ACP-Compatible-green.svg" alt="ACP Compatible" />
+</a>
+<a href="https://opensource.org/licenses/Apache-2.0">
+  <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License" />
+</a>
 
-[Documentation](./python/docs) • [Examples](./python/examples) • [CLI Reference](#command-line-interface) • [Contributing](./python/CONTRIBUTING.md)
+<br/>
+
+<a href="./python/docs">Documentation</a> • 
+<a href="./python/examples">Examples</a> • 
+<a href="#command-line-interface">CLI Reference</a> • 
+<a href="./python/CONTRIBUTING.md">Contributing</a>
+
+</p>
 
 Writing evals can be hard and time consuming, especially if you don't know where to start. 
 
