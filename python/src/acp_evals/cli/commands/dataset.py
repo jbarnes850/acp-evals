@@ -71,7 +71,7 @@ def local(path: str):
                 with open(file_path) as f:
                     data = json.load(f)
                     count = len(data) if isinstance(data, list) else len(data.get('tests', []))
-        except:
+        except (json.JSONDecodeError, FileNotFoundError, PermissionError, OSError):
             count = "?"
 
         # Determine type from filename

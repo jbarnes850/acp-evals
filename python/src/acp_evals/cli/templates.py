@@ -260,7 +260,34 @@ class ToolAgent:
     async def _calculator(self, expression: str) -> float:
         \"\"\"Calculator tool.\"\"\"
         # TODO: Implement calculator logic
-        return eval(expression)  # Simple example - use safe parser in production
+        import ast
+        import operator
+        
+        # Safe evaluation of mathematical expressions
+        supported_ops = {
+            ast.Add: operator.add,
+            ast.Sub: operator.sub,
+            ast.Mult: operator.mul,
+            ast.Div: operator.truediv,
+            ast.Pow: operator.pow,
+            ast.USub: operator.neg,
+        }
+        
+        def safe_eval(node):
+            if isinstance(node, ast.Constant):
+                return node.value
+            elif isinstance(node, ast.BinOp):
+                return supported_ops[type(node.op)](safe_eval(node.left), safe_eval(node.right))
+            elif isinstance(node, ast.UnaryOp):
+                return supported_ops[type(node.op)](safe_eval(node.operand))
+            else:
+                raise ValueError(f"Unsupported operation: {type(node)}")
+        
+        try:
+            tree = ast.parse(expression, mode='eval')
+            return float(safe_eval(tree.body))
+        except (ValueError, SyntaxError, KeyError):
+            return 0.0  # Safe fallback
 
     async def _search(self, query: str) -> List[Dict[str, str]]:
         \"\"\"Search tool.\"\"\"

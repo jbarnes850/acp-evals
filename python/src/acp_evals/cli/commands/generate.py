@@ -17,6 +17,32 @@ from ...providers.factory import ProviderFactory
 console = Console()
 
 
+def validate_and_sanitize_input(text: str, max_length: int = 10000) -> str:
+    """Validate and sanitize user input to prevent injection attacks."""
+    if not text or not isinstance(text, str):
+        return ""
+    
+    # Truncate to reasonable length
+    text = text[:max_length]
+    
+    # Remove potentially dangerous characters and patterns
+    dangerous_patterns = [
+        r'<script.*?>.*?</script>',
+        r'javascript:',
+        r'data:',
+        r'vbscript:',
+        r'eval\(',
+        r'exec\(',
+        r'import\s+',
+        r'__import__',
+    ]
+    
+    for pattern in dangerous_patterns:
+        text = re.sub(pattern, '', text, flags=re.IGNORECASE | re.DOTALL)
+    
+    return text.strip()
+
+
 def generate_test_with_llm(provider, prompt: str, model: str | None, diversity: float) -> dict:
     """Generate a single test case using an LLM."""
     async def _generate():
@@ -34,11 +60,20 @@ def generate_test_with_llm(provider, prompt: str, model: str | None, diversity: 
     # Try direct JSON parse first
     try:
         test_case = json.loads(content)
-    except:
+    except (json.JSONDecodeError, TypeError) as e:
         # Try to extract JSON from response
         json_match = re.search(r'\{.*\}', content, re.DOTALL)
         if json_match:
-            test_case = json.loads(json_match.group())
+            try:
+                test_case = json.loads(json_match.group())
+            except json.JSONDecodeError:
+                # Create structured data from response
+                lines = content.strip().split('\n')
+                test_case = {
+                    'input': lines[0] if lines else '',
+                    'expected': '\n'.join(lines[1:]) if len(lines) > 1 else '',
+                    'evaluation_criteria': []
+                }
         else:
             # Create structured data from response
             lines = content.strip().split('\n')
@@ -139,7 +174,9 @@ def tests(scenario: str, count: int, diversity: float, export: str | None, use_l
                         "Balance creativity with consistency."
                     )
 
-                    prompt = base_prompt + variation_prompt + "\n\nReturn as JSON with fields: input, expected, evaluation_criteria"
+                    # Sanitize and validate prompt to prevent injection
+                    safe_variation = validate_and_sanitize_input(variation_prompt)
+                    prompt = base_prompt + " " + safe_variation + "\n\nReturn as JSON with fields: input, expected, evaluation_criteria"
 
                     try:
                         # Generate test case using LLM
