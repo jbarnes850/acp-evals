@@ -25,19 +25,9 @@
 
 ---
 
-## Educational Introduction & Value Proposition
-
-Writing evals can be hard and time consuming, especially if you don't know where to start. 
-
-**ACP Evals** is an open-source, production-ready evaluation framework designed for developers building AI agents and multi-agent systems using the [Agent Communication Protocol (ACP)](https://github.com/i-am-bee/acp). It removes the guesswork from experimentation and deployment, providing systematic testing and monitoring capabilities that scale from simple accuracy checks to complex multi-agent coordination analysis.
-
-Agent evaluation involves sending test inputs to your agents and automatically scoring the outputs against expected results. Traditional evaluation tools focus on single AI models, but ACP Evals specializes in the unique challenges of agent systems: measuring how well agents use tools, preserve context across conversations, coordinate with other agents, and maintain performance under production workloads.
-
-You can start with a simple three-line evaluation to test basic functionality, then gradually access more sophisticated features like multi-agent workflow testing, production trace analysis, and continuous monitoring pipelines. Every evaluation automatically tracks token usage and costs across different LLM providers, helping you optimize both quality and efficiency as you scale.
+**ACP Evals** is an open-source, research-driven framework for evaluating AI agents and multi-agent systems—built to set the new standard for reliability, safety, and continuous improvement in agent workflows.
 
 ---
-
-## Why ACP Evals?
 
 **Agent evaluation is evolving.**
 
@@ -47,49 +37,87 @@ You can start with a simple three-line evaluation to test basic functionality, t
   - Production-grade reliability and safety
   - Continuous, in-context feedback for developers
 
-**ACP Evals** is built for this new era—drawing on the latest research ([Agent Bricks](https://www.databricks.com/product/artificial-intelligence/agent-bricks), [Loop](https://www.braintrust.dev/docs/guides/loop)), open protocols ([ACP](https://agentcommunicationprotocol.dev), [MCP](https://www.anthropic.com/news/model-context-protocol), [NLIP](https://github.com/nlip-project/documents/blob/main/NLIP%5FSpecification.pdf)), and real-world developer workflows. It's the open-source, extensible backbone for agent reliability, benchmarking, and governance.
+ACP Evals brings these capabilities to every developer, making advanced evaluation as easy as writing a unit test.
 
 ---
 
-## Inspired by Leading Research & Protocols
+## Quick Start:
 
-- **Agent Bricks (Databricks):**
-  - Auto-synthesized evals, continuous optimization, and Pareto-front cost/quality tradeoffs ([Agent Bricks](https://www.databricks.com/product/artificial-intelligence/agent-bricks), [Introducing Agent Bricks](https://www.databricks.com/blog/introducing-agent-bricks?utm_source=chatgpt.com), [Databricks Launches Agent Bricks](https://www.databricks.com/company/newsroom/press-releases/databricks-launches-agent-bricks-new-approach-building-ai-agents?utm_source=chatgpt.com))
-- **Loop (Braintrust):**
-  - Inline diff, conversational eval UX, and test-as-you-code feedback ([Loop Docs](https://www.braintrust.dev/docs/guides/loop), [Visualize and interpret evaluations](https://www.braintrust.dev/docs/guides/evals/interpret?utm_source=chatgpt.com))
-- **Protocol Foundations:**
-  - ACP, MCP, NLIP, and ACDP—standardizing agent communication, discovery, and evaluation ([ACP Discussion](https://github.com/i-am-bee/beeai-platform/discussions/284))
-
-**What's new in ACP Evals?**
-- Multi-agent, workflow-level metrics (e.g., MAEBE, TRAIL)
-- Production trace recycling and continuous monitoring
-- Extensible, developer-first CLI and API
-- Native ACP/BeeAI integration
-
----
-
-## Quick Start
-
-**Minimal Python Example**
-```python
-from acp_evals import evaluate, AccuracyEval
-
-result = evaluate(
-    AccuracyEval(agent="http://localhost:8000/agents/my-agent"),
-    input="What is the capital of France?", 
-    expected="Paris"
-)
-print(f"Score: {result.score:.2f}, Tokens: {result.tokens}")
-```
-
-**CLI Workflow**
+**Install ACP Evals:**
 ```bash
 pip install acp-evals
-acp-evals check
-acp-evals test http://localhost:8000/agents/my-agent --comprehensive
-acp-evals generate tests --scenario qa --count 50 --export tests.jsonl
-acp-evals workflow test --pattern supervisor --agents agent1,agent2,agent3
 ```
+
+**Configure your providers (OpenAI, Anthropic, etc):**
+```bash
+cp python/.env.example .env
+# Edit .env and add your API keys
+```
+
+**Check your setup:**
+```bash
+acp-evals check
+```
+
+**Discover available agents:**
+```bash
+acp-evals discover
+```
+
+**Run a quick test on your agent:**
+```bash
+acp-evals test http://localhost:8000/agents/my-agent
+```
+
+**Run a comprehensive evaluation suite:**
+```bash
+acp-evals test http://localhost:8000/agents/my-agent --comprehensive
+```
+
+**Generate synthetic test data:**
+```bash
+acp-evals generate tests --scenario qa --count 50 --export tests.jsonl
+```
+
+**Evaluate a multi-agent workflow:**
+```bash
+acp-evals workflow test --pattern supervisor --agents agent1,agent2,agent3 --task "Research and summarize AI trends"
+```
+
+**Get help for any command:**
+```bash
+acp-evals --help
+acp-evals <command> --help
+```
+
+---
+
+## How ACP Evals Fits Into the ACP Ecosystem
+
+ACP Evals is designed to integrate seamlessly with the Agent Communication Protocol (ACP) stack:
+
+- **Discover:** Find and register agents and tools across your environment.
+- **Run:** Evaluate agents using a variety of LLM providers and real-world scenarios.
+- **Compose:** Test multi-agent workflows, handoffs, and coordination patterns.
+- **Build:** Develop, extend, and benchmark agents in Python or TypeScript, leveraging ACP's modular architecture.
+
+This layered approach ensures that evaluation is a first-class part of the agent development lifecycle, from discovery to production.
+
+---
+
+## Practical Example: Real ACP Agent Evaluation
+
+See [`examples/09_real_acp_agents.py`](examples/09_real_acp_agents.py) for a full workflow that:
+- Discovers available ACP agents
+- Runs health checks and basic evaluations
+- Benchmarks accuracy, performance, and safety
+- Generates a comprehensive report for your agent ecosystem
+
+---
+
+## Troubleshooting
+
+If you run into issues, see [docs/troubleshooting.md](docs/troubleshooting.md) for solutions to common problems.
 
 ---
 
@@ -108,7 +136,7 @@ acp-evals workflow test --pattern supervisor --agents agent1,agent2,agent3
 
 ---
 
-## UX & Workflow Innovations
+## Core Workflow Integrations
 
 - **Auto-synthesized edge-case evals** from live logs (cf. Agent Bricks)
 - **Inline diff and conversational feedback** (cf. Loop/Braintrust)
