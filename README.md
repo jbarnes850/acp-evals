@@ -2,6 +2,7 @@
 
 **Open-Source, Research-Driven Evaluation Framework for AI agents built with the Agent Communication Protocol**
 
+[![CI](https://github.com/jbarnes850/acp-evals/actions/workflows/ci.yml/badge.svg)](https://github.com/jbarnes850/acp-evals/actions/workflows/ci.yml)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org)
 [![ACP Compatible](https://img.shields.io/badge/ACP-Compatible-green.svg)](https://agentcommunicationprotocol.dev)
 [![Apache License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
