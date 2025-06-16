@@ -1,2 +1,16 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Prevent macOS cruft from being committed
+.DS_Store export-ignore
+**/.DS_Store export-ignore
+Thumbs.db export-ignore
+**/Thumbs.db export-ignore
+
+# Ensure consistent line endings
+*.py text eol=lf
+*.md text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.json text eol=lf
+*.toml text eol=lf

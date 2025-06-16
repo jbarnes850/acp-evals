@@ -1,3 +1,0 @@
-"""
-ACP Evals test suite.
-"""

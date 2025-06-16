@@ -1,0 +1,99 @@
+{
+  "providers": {
+    "openai": {
+      "name": "OpenAI",
+      "models": {
+        "gpt-4.1": {
+          "input_cost_per_1k_tokens": 0.010,
+          "output_cost_per_1k_tokens": 0.030,
+          "max_tokens": 4096,
+          "context_window": 1000000,
+          "description": "Flagship model with superior performance, major gains in coding and instruction following"
+        },
+        "gpt-4.1-mini": {
+          "input_cost_per_1k_tokens": 0.0015,
+          "output_cost_per_1k_tokens": 0.006,
+          "max_tokens": 16384,
+          "context_window": 1000000,
+          "description": "Cost-effective option with good performance"
+        },
+        "gpt-4.1-nano": {
+          "input_cost_per_1k_tokens": 0.0005,
+          "output_cost_per_1k_tokens": 0.002,
+          "max_tokens": 4096,
+          "context_window": 1000000,
+          "description": "Fastest and cheapest model, ideal for classification or autocompletion"
+        }
+      }
+    },
+    "anthropic": {
+      "name": "Anthropic",
+      "models": {
+        "claude-4-opus": {
+          "input_cost_per_1k_tokens": 0.015,
+          "output_cost_per_1k_tokens": 0.075,
+          "max_tokens": 4096,
+          "context_window": 200000,
+          "description": "Most intelligent model, excelling in coding, agentic search, and creative writing"
+        },
+        "claude-4-sonnet": {
+          "input_cost_per_1k_tokens": 0.003,
+          "output_cost_per_1k_tokens": 0.015,
+          "max_tokens": 4096,
+          "context_window": 200000,
+          "description": "Mid-tier model with balanced performance and 2025 upgrade"
+        }
+      }
+    },
+    "ollama": {
+      "name": "Ollama (Local)",
+      "models": {
+        "granite3.3:8b": {
+          "input_cost_per_1k_tokens": 0.0,
+          "output_cost_per_1k_tokens": 0.0,
+          "max_tokens": 8192,
+          "context_window": 32768,
+          "local": true
+        },
+        "qwen3:30b-a3b": {
+          "input_cost_per_1k_tokens": 0.0,
+          "output_cost_per_1k_tokens": 0.0,
+          "max_tokens": 32768,
+          "context_window": 131072,
+          "local": true
+        }
+      }
+    }
+  },
+  "cost_optimization": {
+    "tiers": {
+      "development": {
+        "max_cost_per_eval": 0.01,
+        "recommended_models": ["gpt-4.1-mini", "claude-4-sonnet", "granite3.3:8b"]
+      },
+      "production": {
+        "max_cost_per_eval": 0.10,
+        "recommended_models": ["gpt-4.1", "claude-4-opus", "qwen3:30b-a3b"]
+      },
+      "research": {
+        "max_cost_per_eval": 1.00,
+        "recommended_models": ["gpt-4.1", "claude-4-opus", "gpt-4.1-nano"]
+      }
+    },
+    "pareto_optimization": {
+      "enabled": true,
+      "objectives": ["cost", "quality", "latency"],
+      "search_iterations": 50
+    }
+  },
+  "metadata": {
+    "last_updated": "2025-06-16",
+    "version": "1.0.0",
+    "source": "Official provider pricing as of June 2025",
+    "verification_date": "2025-06-16",
+    "pricing_sources": {
+      "openai": "https://openai.com/pricing - GPT-4.1 family pricing verified",
+      "anthropic": "https://www.anthropic.com/pricing - Claude 4 pricing verified"
+    }
+  }
+}
