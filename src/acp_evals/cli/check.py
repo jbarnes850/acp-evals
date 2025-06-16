@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+from typing import Any
 
 import click
 from rich import box
@@ -30,7 +31,7 @@ def check_env_file() -> Path | None:
     return None
 
 
-def check_provider_connectivity(provider_name: str) -> dict[str, any]:
+def check_provider_connectivity(provider_name: str) -> dict[str, Any]:
     """Test connectivity to a provider."""
     result = {"connected": False, "error": None, "model": None, "latency_ms": None}
 
