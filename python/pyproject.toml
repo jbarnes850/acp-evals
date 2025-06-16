@@ -57,7 +57,7 @@ Repository = "https://github.com/i-am-bee/acp-evals"
 Issues = "https://github.com/i-am-bee/acp-evals/issues"
 
 [project.scripts]
-acp-evals = "acp_evals.cli:cli"
+acp-evals = "acp_evals.cli.main:cli"
 
 [build-system]
 requires = ["hatchling"]
