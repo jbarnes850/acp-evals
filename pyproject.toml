@@ -77,7 +77,14 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP"]
-ignore = ["E501"]
+ignore = [
+    "E501",  # Line too long
+    "F401",  # Unused imports (common in __init__.py for public API)
+    "E402",  # Module level import not at top (sometimes needed for conditional imports)
+    "N803",  # Argument name should be lowercase (mathematical variables often use caps)
+    "N806",  # Variable in function should be lowercase (mathematical variables)
+    "E741",  # Ambiguous variable name (single letters common in math/algorithms)
+]
 
 [tool.pyright]
 include = ["src"]
