@@ -25,50 +25,53 @@ The framework implements a layered architecture that separates the developer API
 
 ## Getting Started
 
-The quickest way to understand ACP Evals is through the basic evaluation workflow. Install the framework, configure your LLM provider, and run your first evaluation to establish the fundamental pattern.
-
 ### Installation
 
 ```bash
-# Basic installation
+# Install from PyPI
 pip install acp-evals
 
-# Development installation with all providers
+# Development installation
 cd python/
 pip install -e ".[dev,all-providers]"
 ```
 
-### Provider Configuration
-
-Create a `.env` file in your project root:
+### Configuration
 
 ```bash
-# Copy the example configuration
+# Copy and configure environment
 cp .env.example .env
+# Add your API keys (OpenAI, Anthropic, or Ollama)
 
-# Add your API keys
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
-OLLAMA_BASE_URL=http://localhost:11434
+# Verify setup
+acp-evals check
 ```
 
-See [.env.example](./.env.example) for all configuration options.
+### Quick Start
 
-### Basic Evaluation
-
+**Three-line evaluation:**
 ```python
 from acp_evals import evaluate, AccuracyEval
 
-# Evaluate any ACP agent with three lines
 result = evaluate(
     AccuracyEval(agent="http://localhost:8000/agents/my-agent"),
     input="What is the capital of France?",
     expected="Paris"
 )
-print(f"Score: {result.score:.2f}, Cost: ${result.cost:.4f}")
+print(f"Score: {result.score:.2f}")
 ```
 
-This pattern extends to all evaluation types. Replace `AccuracyEval` with `PerformanceEval`, `SafetyEval`, or `ReliabilityEval` to measure different aspects of agent behavior. The `evaluate()` function handles provider selection, result formatting, and error management automatically.
+**CLI workflow:**
+```bash
+# Test any agent quickly
+acp-evals test http://localhost:8000/agents/my-agent --quick
+
+# Generate synthetic test data
+acp-evals generate tests --scenario qa --count 50
+
+# Run comprehensive evaluation
+acp-evals run accuracy my-agent -i "What is AI?" -e "Artificial Intelligence"
+```
 
 ## Core Evaluators
 
@@ -187,9 +190,37 @@ result = handoff_eval.run(
 )
 ```
 
-## Batch Evaluation and Automation
+## Command Line Interface
 
-Production agent systems require automated evaluation workflows that can process multiple test cases, generate comprehensive reports, and integrate with continuous integration systems.
+The CLI provides a complete evaluation workflow from discovery to reporting.
+
+### Core Commands
+
+```bash
+# Agent discovery and testing
+acp-evals discover                           # Find available agents
+acp-evals test <agent-url> --comprehensive   # Run full test suite
+
+# Direct evaluation
+acp-evals run accuracy <agent> -i "input" -e "expected"
+acp-evals run performance <agent> --track-tokens
+
+# Dataset management
+acp-evals dataset list                       # Show available datasets
+acp-evals dataset load GAIA --export tests.jsonl
+
+# Synthetic data generation
+acp-evals generate tests --scenario research --count 100
+acp-evals generate adversarial --severity high
+
+# Multi-agent workflows
+acp-evals workflow test --pattern linear
+acp-evals workflow compare --agents agent1,agent2
+
+# Production integration
+acp-evals traces ingest production.json
+acp-evals traces recycle --output dataset.jsonl
+```
 
 ### Batch Processing
 
@@ -205,24 +236,10 @@ results = AccuracyEval(agent=my_agent).run_batch(
 print(f"Pass rate: {results.pass_rate}%, Average score: {results.avg_score:.2f}")
 ```
 
-The JSONL format expects each line to contain a JSON object with `input` and `expected` fields:
-
-```jsonl
-{"input": "What is machine learning?", "expected": "Machine learning is a method of data analysis..."}
-{"input": "Explain neural networks", "expected": "Neural networks are computing systems inspired by..."}
-```
-
-### CI/CD Integration
-
-```python
-# Integrate with pytest or other testing frameworks
-def test_agent_accuracy():
-    eval = AccuracyEval(agent=my_agent, mock_mode=CI_ENV)
-    result = eval.run(
-        input="Test question for CI",
-        expected="Expected answer"
-    )
-    assert result.score > 0.8, f"Agent scored {result.score}, below threshold"
+```bash
+# Generate reports from results
+acp-evals report results.json --format summary
+acp-evals report results.json --format markdown > report.md
 ```
 
 ## Production Integration
@@ -383,17 +400,25 @@ class CustomEvaluator(Evaluator):
 
 The framework includes comprehensive examples that demonstrate real-world usage patterns. These examples serve as both learning resources and starting points for implementation.
 
-### Essential Examples
+### Getting Started Examples
 
 - **[00_minimal_example.py](./examples/00_minimal_example.py)**: Three-line evaluation setup
 - **[01_quickstart_accuracy.py](./examples/01_quickstart_accuracy.py)**: Basic accuracy assessment workflow
-- **[04_tool_using_agents.py](./examples/04_tool_using_agents.py)**: Tool usage and reliability evaluation
-- **[07_adversarial_testing.py](./examples/07_adversarial_testing.py)**: Security and robustness testing
-- **[12_end_to_end_trace_pipeline.py](./examples/12_end_to_end_trace_pipeline.py)**: Complete production evaluation workflow
+
+### CLI Workflow Examples
+
+Generate evaluation templates:
+```bash
+# Create starter templates
+acp-evals init simple --name MyAgent --interactive
+acp-evals init acp-agent --name ProductionAgent
+acp-evals init multi-agent --name TeamWorkflow
+```
 
 ### Production Examples
 
 - **[09_real_acp_agents.py](./examples/09_real_acp_agents.py)**: Integration with live ACP agents
+- **[12_end_to_end_trace_pipeline.py](./examples/12_end_to_end_trace_pipeline.py)**: Complete evaluation workflow
 - **[13_synthetic_data_generation_and_storage.py](./examples/13_synthetic_data_generation_and_storage.py)**: Dataset creation and management
 
 ## Troubleshooting
@@ -457,7 +482,7 @@ cd acp-evals/python
 pip install -e ".[dev,all-providers]"
 
 # Run tests to verify setup
-pytest
+python run_tests.py
 
 # Run linting and type checking
 ruff check src/

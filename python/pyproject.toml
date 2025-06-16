@@ -1,6 +1,6 @@
 [project]
 name = "acp-evals"
-version = "0.1.1"
+version = "0.1.2"
 description = "Comprehensive evaluation framework for Agent Communication Protocol (ACP) agents"
 readme = "../README.md"
 requires-python = ">=3.11"
@@ -57,7 +57,7 @@ Repository = "https://github.com/i-am-bee/acp-evals"
 Issues = "https://github.com/i-am-bee/acp-evals/issues"
 
 [project.scripts]
-acp-evals = "acp_evals.cli:cli"
+acp-evals = "acp_evals.cli.main:cli"
 
 [build-system]
 requires = ["hatchling"]
