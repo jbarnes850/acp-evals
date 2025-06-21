@@ -155,7 +155,8 @@ def display_agents(
     "-f",
     help="Filter agents by name pattern",
 )
-def discover(server: str, test_all: bool, export: str | None, filter: str | None) -> None:
+@click.pass_context
+def discover(ctx, server: str, test_all: bool, export: str | None, filter: str | None) -> None:
     """Discover and list available ACP agents.
 
     Examples:
@@ -164,8 +165,14 @@ def discover(server: str, test_all: bool, export: str | None, filter: str | None
         acp-evals discover --test-all
         acp-evals discover --filter "research*" --export agents.json
     """
-    console.print("\n[bold cyan]ACP Agent Discovery[/bold cyan]")
-    console.print(f"Server: [yellow]{server}[/yellow]\n")
+    # Get flags from context
+    quiet = ctx.obj.get('quiet', False)
+    verbose = ctx.obj.get('verbose', False)
+    debug = ctx.obj.get('debug', False)
+    
+    if not quiet:
+        console.print("\n[bold cyan]ACP Agent Discovery[/bold cyan]")
+        console.print(f"Server: [yellow]{server}[/yellow]\n")
 
     # Discover agents
     with console.status("Discovering agents..."):

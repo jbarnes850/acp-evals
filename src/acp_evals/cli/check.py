@@ -81,18 +81,26 @@ def check_provider_connectivity(provider_name: str) -> dict[str, Any]:
     type=click.Choice(["openai", "anthropic", "ollama"]),
     help="Show setup instructions for a specific provider",
 )
-def check_providers(test_connection: bool, show_setup: str | None):
+@click.pass_context
+def check_providers(ctx, test_connection: bool, show_setup: str | None):
     """Check LLM provider configuration and connectivity."""
+    
+    # Get flags from context
+    quiet = ctx.obj.get('quiet', False)
+    verbose = ctx.obj.get('verbose', False)
+    debug = ctx.obj.get('debug', False)
 
-    console.print("\n[bold]ACP Evals Provider Configuration Check[/bold]\n")
+    if not quiet:
+        console.print("\n[bold]ACP Evals Provider Configuration Check[/bold]\n")
 
     # Check for .env file
     env_path = check_env_file()
-    if env_path:
-        console.print(f"[green]Found .env file at:[/green] {env_path}")
-    else:
-        console.print("[yellow]No .env file found in current or parent directories[/yellow]")
-        console.print("  Create one from .env.example to configure providers\n")
+    if not quiet:
+        if env_path:
+            console.print(f"[green]Found .env file at:[/green] {env_path}")
+        else:
+            console.print("[yellow]No .env file found in current or parent directories[/yellow]")
+            console.print("  Create one from .env.example to configure providers\n")
 
     # Get provider configuration
     providers = check_provider_setup()
@@ -121,7 +129,8 @@ def check_providers(test_connection: bool, show_setup: str | None):
         # Test connection if requested
         connection_status = ""
         if test_connection and configured:
-            console.print(f"\nTesting {provider}...", style="dim")
+            if verbose:
+                console.print(f"\nTesting {provider}...", style="dim")
             test_result = check_provider_connectivity(provider)
 
             if test_result["connected"]:
@@ -131,11 +140,12 @@ def check_providers(test_connection: bool, show_setup: str | None):
 
         table.add_row(provider.title(), status, model, connection_status or "—")
 
-    console.print(table)
+    if not quiet:
+        console.print(table)
 
     # Show current evaluation provider
     current_provider = config.get("provider")
-    if current_provider:
+    if current_provider and not quiet:
         console.print(f"\n[bold]Current default provider:[/bold] {current_provider}")
 
         if current_provider == "mock":
@@ -144,7 +154,7 @@ def check_providers(test_connection: bool, show_setup: str | None):
             console.print("  [red]Warning: Current provider is not configured![/red]")
 
     # Show setup instructions if requested
-    if show_setup:
+    if show_setup and not quiet:
         console.print(f"\n[bold]Setup Instructions for {show_setup.title()}:[/bold]")
         console.print(
             Panel(format_provider_setup_help(show_setup), box=box.ROUNDED, padding=(1, 2))
@@ -153,27 +163,28 @@ def check_providers(test_connection: bool, show_setup: str | None):
     # Show summary and next steps
     configured_count = sum(1 for v in providers.values() if v)
 
-    if configured_count == 0:
-        console.print("\n[red]No providers configured![/red]")
-        console.print("To get started:")
-        console.print("  1. Copy .env.example to .env")
-        console.print("  2. Add your API keys")
-        console.print("  3. Run 'acp-evals check' again")
-        console.print("\nFor provider-specific setup: acp-evals check --show-setup <provider>")
+    if not quiet:
+        if configured_count == 0:
+            console.print("\n[red]No providers configured![/red]")
+            console.print("To get started:")
+            console.print("  1. Copy .env.example to .env")
+            console.print("  2. Add your API keys")
+            console.print("  3. Run 'acp-evals check' again")
+            console.print("\nFor provider-specific setup: acp-evals check --show-setup <provider>")
 
-    elif configured_count < len(providers):
-        console.print(
-            f"\n[yellow]{configured_count}/{len(providers)} providers configured[/yellow]"
-        )
-        console.print("For help setting up other providers:")
-        not_configured = [p for p, v in providers.items() if not v]
-        for provider in not_configured:
-            console.print(f"  acp-evals check --show-setup {provider}")
+        elif configured_count < len(providers):
+            console.print(
+                f"\n[yellow]{configured_count}/{len(providers)} providers configured[/yellow]"
+            )
+            console.print("For help setting up other providers:")
+            not_configured = [p for p, v in providers.items() if not v]
+            for provider in not_configured:
+                console.print(f"  acp-evals check --show-setup {provider}")
 
-    else:
-        console.print("\n[green]All providers configured![/green]")
-        if not test_connection:
-            console.print("Run 'acp-evals check --test-connection' to verify connectivity")
+        else:
+            console.print("\n[green]All providers configured![/green]")
+            if not test_connection:
+                console.print("Run 'acp-evals check --test-connection' to verify connectivity")
 
     # Check for common issues
     if env_path and configured_count > 0:
@@ -191,7 +202,7 @@ def check_providers(test_connection: bool, show_setup: str | None):
         ):
             issues.append("Anthropic API key appears to be the placeholder value from .env.example")
 
-        if issues:
+        if issues and not quiet:
             console.print("\n[yellow]Configuration warnings:[/yellow]")
             for issue in issues:
                 console.print(f"  - {issue}")

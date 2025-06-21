@@ -282,8 +282,9 @@ Pass Rate: [{"green" if summary["pass_rate"] >= 80 else "yellow" if summary["pas
     default=60.0,
     help="Pass rate threshold percentage (default: 60%)",
 )
+@click.pass_context
 def test(
-    agent: str, test_suite: str, export_path: str | None, mock: bool, pass_threshold: float
+    ctx, agent: str, test_suite: str, export_path: str | None, mock: bool, pass_threshold: float
 ) -> None:
     """Quick test of an ACP agent with predefined test suites.
 
@@ -293,23 +294,32 @@ def test(
         acp-evals test my-agent --comprehensive
         acp-evals test my-agent --adversarial --export results.json
     """
-    console.print("\n[bold cyan]ACP Agent Testing[/bold cyan]")
-    console.print(f"Agent: [yellow]{agent}[/yellow]")
-    console.print(f"Test Suite: [yellow]{test_suite}[/yellow]\n")
+    # Get flags from context
+    quiet = ctx.obj.get('quiet', False)
+    verbose = ctx.obj.get('verbose', False)
+    debug = ctx.obj.get('debug', False)
+    
+    if not quiet:
+        console.print("\n[bold cyan]ACP Agent Testing[/bold cyan]")
+        console.print(f"Agent: [yellow]{agent}[/yellow]")
+        console.print(f"Test Suite: [yellow]{test_suite}[/yellow]\n")
 
     # Check provider configuration
     if mock:
-        console.print("[yellow]Running in mock mode (no LLM calls)[/yellow]\n")
+        if not quiet:
+            console.print("[yellow]Running in mock mode (no LLM calls)[/yellow]\n")
         import os
 
         os.environ["MOCK_MODE"] = "true"
     else:
         try:
             provider = ProviderFactory.get_provider()
-            console.print(f"Using provider: [green]{provider.name}[/green]\n")
+            if not quiet:
+                console.print(f"Using provider: [green]{provider.name}[/green]\n")
         except Exception as e:
-            console.print(f"[red]Provider configuration error: {e}[/red]")
-            console.print("Run 'acp-evals check' to verify your configuration")
+            if not quiet:
+                console.print(f"[red]Provider configuration error: {e}[/red]")
+                console.print("Run 'acp-evals check' to verify your configuration")
             return
 
     # Select test suite
@@ -335,24 +345,32 @@ def test(
         )
 
         # Display results
-        display_results(summary)
+        if not quiet:
+            display_results(summary)
 
         # Exit code based on configurable pass rate threshold
         if summary["pass_rate"] < pass_threshold:
-            console.print(
-                f"[red]Test failed: Pass rate {summary['pass_rate']:.1f}% below threshold {pass_threshold}%[/red]"
-            )
+            if not quiet:
+                console.print(
+                    f"[red]Test failed: Pass rate {summary['pass_rate']:.1f}% below threshold {pass_threshold}%[/red]"
+                )
             exit(1)
         else:
-            console.print(
-                f"[green]Test passed: Pass rate {summary['pass_rate']:.1f}% meets threshold {pass_threshold}%[/green]"
-            )
+            if not quiet:
+                console.print(
+                    f"[green]Test passed: Pass rate {summary['pass_rate']:.1f}% meets threshold {pass_threshold}%[/green]"
+                )
 
     except KeyboardInterrupt:
-        console.print("\n[yellow]Test interrupted by user[/yellow]")
+        if not quiet:
+            console.print("\n[yellow]Test interrupted by user[/yellow]")
         exit(1)
     except Exception as e:
-        console.print(f"\n[red]Test failed: {e}[/red]")
+        if not quiet:
+            console.print(f"\n[red]Test failed: {e}[/red]")
+        if debug:
+            import traceback
+            console.print(f"[dim]{traceback.format_exc()}[/dim]")
         exit(1)
 
 

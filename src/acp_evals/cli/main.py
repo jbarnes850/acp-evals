@@ -22,9 +22,16 @@ from .commands.test import test
 from .commands.traces import traces
 from .commands.workflow import workflow
 
+# Import logging setup
+from ..utils.logging import setup_logging
+
 
 @click.group()
-def cli():
+@click.option('-v', '--verbose', is_flag=True, help='Show detailed output')
+@click.option('--debug', is_flag=True, help='Show debug output including stack traces')
+@click.option('-q', '--quiet', is_flag=True, help='Suppress non-essential output')
+@click.pass_context
+def cli(ctx, verbose, debug, quiet):
     """ACP Evals - Test and benchmark your ACP agents with production-grade evaluations.
 
     Quick start:
@@ -42,7 +49,37 @@ def cli():
         acp-evals --help                     # Show all commands
         acp-evals <command> --help           # Show command details
     """
-    pass
+    # Ensure context is available for all subcommands
+    ctx.ensure_object(dict)
+    
+    # Check for conflicting flags
+    if quiet and (verbose or debug):
+        raise click.UsageError("--quiet cannot be used with --verbose or --debug")
+    
+    # Determine log level based on flags
+    if debug:
+        log_level = "DEBUG"
+    elif verbose:
+        log_level = "INFO"
+    elif quiet:
+        log_level = "ERROR"
+    else:
+        log_level = "WARNING"  # Default level
+    
+    # Setup logging with appropriate level
+    setup_logging(level=log_level)
+    
+    # Store flags in context for access by subcommands
+    ctx.obj['verbose'] = verbose
+    ctx.obj['debug'] = debug
+    ctx.obj['quiet'] = quiet
+    ctx.obj['log_level'] = log_level
+    
+    # Configure console output based on flags
+    if quiet:
+        console.quiet = True
+    elif verbose or debug:
+        console.verbose = True
 
 
 # Register commands
@@ -65,7 +102,8 @@ cli.add_command(workflow)
 @click.option("--name", "-n", help="Name for your agent/evaluation")
 @click.option("--output", "-o", help="Output file path", default="agent_eval.py")
 @click.option("--interactive", "-i", is_flag=True, help="Interactive mode with prompts")
-def init(template, name, output, interactive):
+@click.pass_context
+def init(ctx, template, name, output, interactive):
     """Generate a starter evaluation template.
 
     Templates:
@@ -76,7 +114,9 @@ def init(template, name, output, interactive):
     - acp-agent: Real ACP protocol agent evaluation
     - multi-agent: Multi-agent coordination patterns
     """
-    console.print("[bold cyan]ACP Evaluations Template Generator[/bold cyan]\n")
+    # Skip intro message in quiet mode
+    if not ctx.obj.get('quiet'):
+        console.print("[bold cyan]ACP Evaluations Template Generator[/bold cyan]\n")
 
     # Load templates from external file for maintainability
     from .templates import TEMPLATES
@@ -169,27 +209,30 @@ def init(template, name, output, interactive):
     # Make executable
     os.chmod(output_path, 0o755)
 
-    # Success message
-    console.print(f"\n[green]Created evaluation template:[/green] [bold]{output}[/bold]")
-    console.print(f"\nTemplate type: [cyan]{template}[/cyan]")
-    console.print(f"Agent name: [cyan]{name}[/cyan]")
+    # Success message (respect quiet mode)
+    if not ctx.obj.get('quiet'):
+        console.print(f"\n[green]Created evaluation template:[/green] [bold]{output}[/bold]")
+        console.print(f"\nTemplate type: [cyan]{template}[/cyan]")
+        console.print(f"Agent name: [cyan]{name}[/cyan]")
 
-    console.print("\n[bold]Next steps:[/bold]")
-    console.print("1. Edit the file to implement your agent logic")
-    console.print("2. Update test cases with your specific scenarios")
-    console.print("3. Run the evaluation:")
-    console.print(f"   [dim]python {output}[/dim]")
+        console.print("\n[bold]Next steps:[/bold]")
+        console.print("1. Edit the file to implement your agent logic")
+        console.print("2. Update test cases with your specific scenarios")
+        console.print("3. Run the evaluation:")
+        console.print(f"   [dim]python {output}[/dim]")
 
-    if template == "simple":
-        console.print("\n[dim]Tip: Use -t comprehensive for a full evaluation suite[/dim]")
+        if template == "simple":
+            console.print("\n[dim]Tip: Use -t comprehensive for a full evaluation suite[/dim]")
 
 
 @cli.command()
-def list_rubrics():
+@click.pass_context
+def list_rubrics(ctx):
     """List available evaluation rubrics."""
     from acp_evals.api import AccuracyEval
 
-    console.print("[bold cyan]Available Evaluation Rubrics[/bold cyan]\n")
+    if not ctx.obj.get('quiet'):
+        console.print("[bold cyan]Available Evaluation Rubrics[/bold cyan]\n")
 
     for name, rubric in AccuracyEval.RUBRICS.items():
         console.print(f"[bold]{name}[/bold]")
@@ -207,7 +250,8 @@ def list_rubrics():
 @click.option(
     "--format", "-f", type=click.Choice(["summary", "detailed", "markdown"]), default="summary"
 )
-def report(results_file, format):
+@click.pass_context
+def report(ctx, results_file, format):
     """Generate a report from evaluation results."""
     import json
 
