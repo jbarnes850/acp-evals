@@ -351,6 +351,9 @@ def discover() -> List[Dict[str, Any]]:
     raise NotImplementedError("Agent discovery coming soon")
 
 
+# Import recipes for easy access
+from . import recipes
+
 # Export public API
 __all__ = [
     "test",
@@ -360,4 +363,5 @@ __all__ = [
     "TestOptions",
     "EvalResult",
     "BatchResult",
+    "recipes"
 ]
