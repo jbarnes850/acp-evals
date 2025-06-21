@@ -14,7 +14,19 @@
 
 ---
 
-ACP Evals helps you test AI agents systematically. It works with any agent that follows the [Agent Communication Protocol](https://agentcommunicationprotocol.dev).
+## Quick Start - Test Your Agent in 3 Lines
+
+```python
+from acp_evals import evaluate
+
+# Test any agent with just one line
+result = evaluate.accuracy("http://localhost:8000/agents/my-agent", 
+                          input="What is 2+2?", 
+                          expected="4")
+print(f"Score: {result.score}")  # Score: 1.0
+```
+
+ACP Evals helps you test AI agents systematically. It works with any agent that follows the [Agent Communication Protocol](https://agentcommunicationprotocol.dev) or even simple Python functions.
 
 ## What You Can Do
 
@@ -26,6 +38,7 @@ ACP Evals helps you test AI agents systematically. It works with any agent that 
 
 ## Key Features
 
+- **Zero Configuration**: Start testing immediately with sensible defaults
 - **LLM-as-Judge**: Uses advanced language models to evaluate agent responses
 - **Multi-Criteria Scoring**: Breaks down evaluations into specific criteria (accuracy, completeness, relevance, etc.)
 - **Token & Cost Tracking**: Monitor resource usage for every evaluation
@@ -36,7 +49,7 @@ ACP Evals helps you test AI agents systematically. It works with any agent that 
 ## Prerequisites
 
 - Python 3.11 or newer
-- An LLM API key (OpenAI, Anthropic, or Ollama)
+- An LLM API key (OpenAI, Anthropic, or Ollama) - or use mock mode for testing
 - ACP-compatible agents to test (or use the examples)
 
 ## Installation
@@ -57,34 +70,93 @@ pip install -e .
 
 ## Getting Started
 
-### 1. Set Up Your API Keys
+### Zero Configuration - Start Testing Immediately
+
+```python
+from acp_evals import evaluate
+
+# Test a function - no agent required
+def my_agent(message):
+    if "2+2" in message:
+        return "4"
+    return "I don't know"
+
+result = evaluate.accuracy(my_agent, input="What is 2+2?", expected="4")
+print(f"Score: {result.score}")
+```
+
+### Option 1: Test Without API Keys (Mock Mode)
+
+ACP Evals automatically falls back to mock mode when no API keys are configured:
 
 ```bash
+# Just install and run
+pip install acp-evals
+acp-evals test http://localhost:8000/agents/my-agent
+```
+
+### Option 2: Use Real LLMs for Evaluation
+
+```bash
+# Copy example configuration
 cp .env.example .env
-```
 
-Open `.env` and add your API key:
-```
+# Add your API key to .env
 OPENAI_API_KEY=your-key-here
-```
 
-### 2. Verify Everything Works
-
-```bash
+# Verify setup
 acp-evals check
 ```
 
-You should see:
-```
-Provider Status
-┌───────────┬────────────┬───────────────┬──────────────────┐
-│ Provider  │ Configured │ Model         │ Status           │
-├───────────┼────────────┼───────────────┼──────────────────┤
-│ OpenAI    │ Yes        │ gpt-4.1       │ Connected (2ms)  │
-└───────────┴────────────┴───────────────┴──────────────────┘
+### Simple Examples
+
+#### 1. Test Any Agent in One Line
+
+```python
+from acp_evals import evaluate
+
+# Works with URLs
+result = evaluate.accuracy(
+    "http://localhost:8000/agents/my-agent",
+    input="What is the capital of France?",
+    expected="Paris"
+)
+
+# Works with functions
+def chatbot(message):
+    return f"You said: {message}"
+
+result = evaluate.performance(chatbot, 
+                            input="Hello", 
+                            expected="A greeting response")
 ```
 
-### 3. Test Your First Agent
+#### 2. Run a Basic Test Suite
+
+```python
+from acp_evals import test_agent
+
+# Automatically runs accuracy and performance tests
+results = test_agent("http://localhost:8000/agents/my-agent")
+for test_type, result in results.items():
+    print(f"{test_type}: {result.score:.2f}")
+```
+
+#### 3. Progressive Complexity
+
+```python
+from acp_evals import AccuracyEval, EvalOptions
+
+# Add options as needed
+options = EvalOptions(
+    rubric="code_quality",  # Different evaluation criteria
+    threshold=0.9           # Higher pass threshold
+)
+
+eval = AccuracyEval("http://localhost:8000/agents/my-agent", options)
+```
+
+### Command Line Usage
 
 If you have an ACP agent running:
 ```bash

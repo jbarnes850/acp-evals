@@ -20,11 +20,13 @@ __version__ = "0.1.2"
 from acp_evals.api import (
     AccuracyEval,
     BatchResult,
+    EvalOptions,
     EvalResult,
     PerformanceEval,
     ReliabilityEval,
     SafetyEval,
     evaluate,
+    test_agent,
 )
 from acp_evals.core.base import (
     BenchmarkResult,
@@ -55,7 +57,9 @@ __all__ = [
     "SafetyEval",
     "EvalResult",
     "BatchResult",
+    "EvalOptions",
     "evaluate",
+    "test_agent",
     # Simulator
     "Simulator",
     "simulate",
