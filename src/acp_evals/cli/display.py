@@ -1,5 +1,5 @@
 """
-Enhanced display components for beautiful console output.
+Enhanced display components console output.
 
 This module provides visual components for displaying evaluation results
 in a clear, scannable format without emojis.

@@ -222,7 +222,7 @@ class evaluate:
     """Enhanced evaluation namespace with BeeAI-specific capabilities."""
     
     @staticmethod
-    def tool_usage(
+    async def tool_usage(
         agent: Union[str, Callable],
         task: str,
         expected_tools: List[str],
@@ -239,8 +239,14 @@ class evaluate:
         Returns:
             EvalResult with tool usage analysis
         """
-        # TODO: Implement tool usage evaluation
-        raise NotImplementedError("Tool usage evaluation coming soon")
+        from .evaluators.tool_usage import ToolUsageEval
+        
+        eval_obj = ToolUsageEval(
+            agent=agent,
+            expected_tools=expected_tools,
+            **kwargs
+        )
+        return await eval_obj.run(task)
     
     @staticmethod
     def reasoning(
@@ -284,6 +290,33 @@ class evaluate:
         """
         # TODO: Implement conversation evaluation
         raise NotImplementedError("Conversation evaluation coming soon")
+    
+    @staticmethod
+    async def performance(
+        agent: Union[str, Callable],
+        test_inputs: Union[str, List[str]],
+        num_iterations: int = 5,
+        **kwargs
+    ) -> EvalResult:
+        """
+        Evaluate agent performance (latency, memory, tokens).
+        
+        Args:
+            agent: Agent to evaluate
+            test_inputs: Input text or list of inputs
+            num_iterations: Number of test iterations
+            
+        Returns:
+            EvalResult with performance metrics
+        """
+        from .evaluators.performance import PerformanceEval
+        
+        eval_obj = PerformanceEval(
+            agent=agent,
+            num_iterations=num_iterations,
+            **kwargs
+        )
+        return await eval_obj.run(test_inputs)
     
     @staticmethod
     def comprehensive(

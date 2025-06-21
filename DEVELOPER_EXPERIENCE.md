@@ -192,12 +192,17 @@ Troubleshooting Steps:
 
 ### 🚧 In Progress (TODOs)
 - Agent discovery mechanism
-- Tool usage evaluation
+- Tool usage evaluation (API implemented, needs ACP client streaming support)
 - Multi-step reasoning evaluation
 - Conversation state testing
 - Streaming evaluation support
 - BeeAI recipe library
 - Comprehensive test suites
+
+### ✅ Recently Added
+- Performance evaluation with latency/memory tracking
+- Tool usage evaluation API (pending ACP enhancements)
+- Compatibility aliases (PerfEval, ReliabilityEval)
 
 ## Why This Architecture
 
