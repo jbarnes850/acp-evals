@@ -85,6 +85,11 @@ class LLMJudge(Evaluator):
             max_tokens: Maximum tokens for evaluation response
             **provider_kwargs: Additional provider-specific configuration
         """
+        # Reject mock mode explicitly - not allowed in production
+        if "mock_mode" in provider_kwargs:
+            raise ValueError(
+                "Mock mode is not available in production. Please configure a real LLM provider."
+            )
         self.rubric = rubric or self.DEFAULT_RUBRIC
         self.pass_threshold = pass_threshold
         self.temperature = temperature or float(os.getenv("EVALUATION_TEMPERATURE", "0.0"))
@@ -129,14 +134,12 @@ class LLMJudge(Evaluator):
             # Legacy ACP mode
             self.judge_url = judge_url
             self.judge_agent = judge_agent or "default"
-            self.mock_mode = mock_mode if mock_mode is not None else False
+            self.mock_mode = False  # Mock mode disabled in production
             self.provider = None
             self.provider_name = "acp"
 
-            if not self.mock_mode:
-                from acp_sdk.client import Client
-
-                self.client = Client(base_url=judge_url)
+            from acp_sdk.client import Client
+            self.client = Client(base_url=judge_url)
 
     @property
     def name(self) -> str:
