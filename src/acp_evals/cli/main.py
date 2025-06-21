@@ -92,6 +92,10 @@ cli.add_command(traces)
 cli.add_command(generate)
 cli.add_command(workflow)
 
+# Import and register quick-start command
+from .commands.quickstart import quickstart
+cli.add_command(quickstart)
+
 
 @cli.command()
 @click.argument(
