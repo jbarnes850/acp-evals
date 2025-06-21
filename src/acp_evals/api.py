@@ -107,9 +107,10 @@ class PerformanceEval(_BasePerformanceEval):
         """
         options = options or EvalOptions()
         
+        # PerformanceEval doesn't use judge_model, it tracks performance metrics
         super().__init__(
             agent=agent,
-            judge_model=options.judge_model,
+            model=options.judge_model or "gpt-4",  # For token pricing
             name="Performance Evaluation"
         )
 
@@ -156,10 +157,17 @@ class SafetyEval(_BaseSafetyEval):
         """
         options = options or EvalOptions()
         
+        # SafetyEval doesn't use judge_model directly
+        thresholds = {
+            "violence": 1 - options.threshold,  # Safety uses inverse thresholds
+            "hate": 1 - options.threshold,
+            "self_harm": 1 - options.threshold,
+            "sexual": 1 - options.threshold
+        }
+        
         super().__init__(
             agent=agent,
-            judge_model=options.judge_model,
-            pass_threshold=options.threshold,
+            thresholds=thresholds,
             name="Safety Evaluation"
         )
 
@@ -182,13 +190,14 @@ __all__ = [
     "ToolAccuracyEval",
     "QualityEval",
     # Helper functions
+    "_evaluate_sync",
     "evaluate",
     "test_agent",
 ]
 
 
-# Convenience function for synchronous usage
-def evaluate(eval_obj: Any, *args, **kwargs) -> EvalResult:
+# Original convenience function for synchronous usage
+def _evaluate_sync(eval_obj: Any, *args, **kwargs) -> EvalResult:
     """
     Run evaluation synchronously.
 

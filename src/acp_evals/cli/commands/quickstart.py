@@ -14,7 +14,7 @@ from rich.text import Text
 import subprocess
 import sys
 
-from ...core.config import config
+from ...core import config
 from ..display import create_evaluation_header
 
 console = Console()

@@ -16,14 +16,24 @@ from rich.panel import Panel
 
 from ..core.exceptions import AgentConnectionError, AgentTimeoutError
 from ..core.validation import InputValidator
-from ..cli.display import (
-    create_score_bar,
-    create_evaluation_header,
-    create_score_summary,
-    create_test_details_tree,
-    create_suggestions_panel,
-    console
-)
+# Import display components conditionally to avoid circular imports
+try:
+    from ..cli.display import (
+        create_score_bar,
+        create_evaluation_header,
+        create_score_summary,
+        create_test_details_tree,
+        create_suggestions_panel,
+        console as display_console
+    )
+    HAS_DISPLAY = True
+except ImportError:
+    HAS_DISPLAY = False
+    from rich.console import Console
+    display_console = Console()
+
+# Use display console if available, otherwise create new one
+console = display_console
 
 
 class EvalResult:
@@ -54,50 +64,61 @@ class EvalResult:
 
     def print_summary(self):
         """Print a summary of the result with enhanced visualization."""
-        # Create score bar
-        score_bar = create_score_bar(self.score)
-        
-        # Create result panel
-        status_text = "PASS" if self.passed else "FAIL"
-        status_color = "green" if self.passed else "red"
-        
-        # Build content lines
-        content_lines = [
-            f"Score: {score_bar} [{status_color}]{self.score:.2f}[/{status_color}]",
-            f"Status: [{status_color}]{status_text}[/{status_color}]"
-        ]
-        
-        # Add details if available
-        if self.details:
-            # Handle feedback separately
-            feedback = self.details.get("feedback", "")
-            if feedback:
-                content_lines.append(f"\nFeedback:\n{feedback}")
+        if HAS_DISPLAY:
+            # Use enhanced display components
+            # Create score bar
+            score_bar = create_score_bar(self.score)
             
-            # Handle scores breakdown
-            scores = self.details.get("scores", {})
-            if scores:
-                content_lines.append("\nCriteria Scores:")
-                for criterion, score in scores.items():
-                    criterion_bar = create_score_bar(score, width=10)
-                    content_lines.append(f"  {criterion}: {criterion_bar} {score:.2f}")
+            # Create result panel
+            status_text = "PASS" if self.passed else "FAIL"
+            status_color = "green" if self.passed else "red"
             
-            # Add other details
-            for key, value in self.details.items():
-                if key not in ["feedback", "scores", "latency_ms"]:
-                    content_lines.append(f"\n{key.replace('_', ' ').title()}: {value}")
-        
-        # Create and display panel
-        panel = Panel(
-            "\n".join(content_lines),
-            title=f"Evaluation Result - {self.name}",
-            border_style=status_color,
-            expand=False,
-            padding=(1, 2)
-        )
-        
-        console.print()
-        console.print(panel)
+            # Build content lines
+            content_lines = [
+                f"Score: {score_bar} [{status_color}]{self.score:.2f}[/{status_color}]",
+                f"Status: [{status_color}]{status_text}[/{status_color}]"
+            ]
+            
+            # Add details if available
+            if self.details:
+                # Handle feedback separately
+                feedback = self.details.get("feedback", "")
+                if feedback:
+                    content_lines.append(f"\nFeedback:\n{feedback}")
+                
+                # Handle scores breakdown
+                scores = self.details.get("scores", {})
+                if scores:
+                    content_lines.append("\nCriteria Scores:")
+                    for criterion, score in scores.items():
+                        criterion_bar = create_score_bar(score, width=10)
+                        content_lines.append(f"  {criterion}: {criterion_bar} {score:.2f}")
+                
+                # Add other details
+                for key, value in self.details.items():
+                    if key not in ["feedback", "scores", "latency_ms"]:
+                        content_lines.append(f"\n{key.replace('_', ' ').title()}: {value}")
+            
+            # Create and display panel
+            panel = Panel(
+                "\n".join(content_lines),
+                title=f"Evaluation Result - {self.name}",
+                border_style=status_color,
+                expand=False,
+                padding=(1, 2)
+            )
+            
+            console.print()
+            console.print(panel)
+        else:
+            # Fallback to simple display
+            status = "[green]PASSED[/green]" if self.passed else "[red]FAILED[/red]"
+            console.print(f"\n{status} {self.name}: {self.score:.2f}")
+            
+            if self.details:
+                console.print("\nDetails:")
+                for key, value in self.details.items():
+                    console.print(f"  - {key}: {value}")
 
 
 class BatchResult:
@@ -113,48 +134,63 @@ class BatchResult:
 
     def print_summary(self):
         """Print an enhanced summary of batch results."""
-        # Header
-        console.print()
-        console.print(create_evaluation_header("Batch Evaluation Results"))
-        console.print()
-        
-        # Overall score summary
-        overall_bar = create_score_bar(self.avg_score)
-        overall_color = "green" if self.pass_rate >= 80 else "yellow" if self.pass_rate >= 60 else "red"
-        
-        summary_text = [
-            f"Overall Score: {overall_bar} {self.avg_score:.2f}",
-            f"\nTests Run: {self.total}",
-            f"Passed: [green]{self.passed}[/green]",
-            f"Failed: [red]{self.failed}[/red]",
-            f"Pass Rate: [{overall_color}]{self.pass_rate:.1f}%[/{overall_color}]"
-        ]
-        
-        summary_panel = Panel(
-            "\n".join(summary_text),
-            title="Summary",
-            border_style=overall_color,
-            expand=False,
-            padding=(1, 2)
-        )
-        console.print(summary_panel)
-        console.print()
-        
-        # Individual test results
-        if self.results:
-            test_details = []
-            for result in self.results:
-                test_details.append({
-                    "name": result.name,
-                    "passed": result.passed,
-                    "score": result.score,
-                    "reason": result.details.get("feedback", "")[:100] + "..." 
-                             if len(result.details.get("feedback", "")) > 100 
-                             else result.details.get("feedback", "")
-                })
+        if HAS_DISPLAY:
+            # Use enhanced display components
+            # Header
+            console.print()
+            console.print(create_evaluation_header("Batch Evaluation Results"))
+            console.print()
             
-            details_panel = create_test_details_tree(test_details)
-            console.print(details_panel)
+            # Overall score summary
+            overall_bar = create_score_bar(self.avg_score)
+            overall_color = "green" if self.pass_rate >= 80 else "yellow" if self.pass_rate >= 60 else "red"
+            
+            summary_text = [
+                f"Overall Score: {overall_bar} {self.avg_score:.2f}",
+                f"\nTests Run: {self.total}",
+                f"Passed: [green]{self.passed}[/green]",
+                f"Failed: [red]{self.failed}[/red]",
+                f"Pass Rate: [{overall_color}]{self.pass_rate:.1f}%[/{overall_color}]"
+            ]
+            
+            summary_panel = Panel(
+                "\n".join(summary_text),
+                title="Summary",
+                border_style=overall_color,
+                expand=False,
+                padding=(1, 2)
+            )
+            console.print(summary_panel)
+            console.print()
+            
+            # Individual test results
+            if self.results:
+                test_details = []
+                for result in self.results:
+                    test_details.append({
+                        "name": result.name,
+                        "passed": result.passed,
+                        "score": result.score,
+                        "reason": result.details.get("feedback", "")[:100] + "..." 
+                                 if len(result.details.get("feedback", "")) > 100 
+                                 else result.details.get("feedback", "")
+                    })
+                
+                details_panel = create_test_details_tree(test_details)
+                console.print(details_panel)
+        else:
+            # Fallback to simple table display
+            table = Table(title="Batch Evaluation Results")
+            table.add_column("Metric", style="cyan")
+            table.add_column("Value", style="magenta")
+            
+            table.add_row("Total Tests", str(self.total))
+            table.add_row("Passed", f"[green]{self.passed}[/green]")
+            table.add_row("Failed", f"[red]{self.failed}[/red]")
+            table.add_row("Pass Rate", f"{self.pass_rate:.1f}%")
+            table.add_row("Average Score", f"{self.avg_score:.2f}")
+            
+            console.print(table)
 
     def export(self, path: str):
         """Export results to JSON file."""
