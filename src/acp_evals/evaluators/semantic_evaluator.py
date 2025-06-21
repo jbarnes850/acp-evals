@@ -115,7 +115,6 @@ Be precise, fair, and focus on semantic understanding rather than surface-level 
         self,
         model: str = "gpt-4.1-nano",
         provider_config: dict[str, Any] | None = None,
-        mock_mode: bool = False,
     ):
         """
         Initialize semantic evaluator.
@@ -123,14 +122,11 @@ Be precise, fair, and focus on semantic understanding rather than surface-level 
         Args:
             model: Model to use for evaluation (default: gpt-4.1-nano)
             provider_config: Optional provider configuration
-            mock_mode: Use mock responses for testing
         """
         self.model = model
-        self.mock_mode = mock_mode or OpenAIProvider is None
-        if not self.mock_mode:
-            self.provider = OpenAIProvider(config=provider_config or {})
-        else:
-            self.provider = None
+        if OpenAIProvider is None:
+            raise ImportError("OpenAI provider not available. Please install openai package.")
+        self.provider = OpenAIProvider(config=provider_config or {})
 
     async def evaluate_semantic(
         self,
@@ -162,19 +158,16 @@ Be precise, fair, and focus on semantic understanding rather than surface-level 
         )
 
         try:
-            # Get evaluation from LLM or mock
-            if self.mock_mode:
-                llm_response = self._get_mock_evaluation(response, criteria)
-            else:
-                llm_response = await self.provider.generate(
-                    messages=[
-                        {"role": "system", "content": self.SYSTEM_PROMPT},
-                        {"role": "user", "content": evaluation_prompt},
-                    ],
-                    model=self.model,
-                    temperature=0.1,  # Low temperature for consistent evaluation
-                    max_tokens=1000,
-                )
+            # Get evaluation from LLM
+            llm_response = await self.provider.generate(
+                messages=[
+                    {"role": "system", "content": self.SYSTEM_PROMPT},
+                    {"role": "user", "content": evaluation_prompt},
+                ],
+                model=self.model,
+                temperature=0.1,  # Low temperature for consistent evaluation
+                max_tokens=1000,
+            )
 
             # Parse evaluation result
             evaluation_data = json.loads(llm_response)
@@ -302,74 +295,6 @@ Be precise, fair, and focus on semantic understanding rather than surface-level 
 
         return weighted_sum / total_weight
 
-    def _get_mock_evaluation(self, response: str, criteria: dict[str, dict[str, Any]]) -> str:
-        """Generate mock evaluation for testing."""
-        # Simple heuristic-based mock scoring
-        response_lower = response.lower()
-        response_length = len(response)
-
-        mock_scores = {}
-
-        for criterion_name, criterion_data in criteria.items():
-            # Base score starts at 0.5
-            score = 0.5
-
-            # Adjust based on response characteristics
-            if response_length > 200:
-                score += 0.2  # Longer responses get bonus
-            if response_length > 1000:
-                score += 0.1  # Very detailed responses
-
-            # Criterion-specific scoring
-            if "accuracy" in criterion_name.lower() or "technical" in criterion_name.lower():
-                if any(
-                    tech_term in response_lower
-                    for tech_term in ["api", "database", "transaction", "algorithm"]
-                ):
-                    score += 0.2
-
-            if "implementation" in criterion_name.lower() or "solution" in criterion_name.lower():
-                if "```" in response or "implementation" in response_lower:
-                    score += 0.2
-
-            if "comparison" in criterion_name.lower() or "analysis" in criterion_name.lower():
-                if any(
-                    comp_word in response_lower
-                    for comp_word in ["versus", "compared", "analysis", "better", "worse"]
-                ):
-                    score += 0.2
-
-            # Cap at 1.0
-            score = min(score, 1.0)
-
-            mock_scores[criterion_name] = {
-                "score": score,
-                "reasoning": f"Mock evaluation based on response characteristics for {criterion_name}",
-            }
-
-        # Calculate overall score
-        total_weight = sum(c.get("weight", 0.0) for c in criteria.values())
-        if total_weight > 0:
-            overall_score = (
-                sum(
-                    mock_scores[name]["score"] * criteria[name].get("weight", 0.0)
-                    for name in criteria.keys()
-                )
-                / total_weight
-            )
-        else:
-            overall_score = sum(mock_scores[name]["score"] for name in criteria.keys()) / len(
-                criteria
-            )
-
-        mock_response = {
-            "scores": mock_scores,
-            "overall_score": overall_score,
-            "passed": overall_score >= 0.7,
-            "feedback": f"Mock evaluation: Response shows {'good' if overall_score > 0.7 else 'moderate'} quality with {response_length} characters",
-        }
-
-        return json.dumps(mock_response)
 
 
 class TraceStepValidator:

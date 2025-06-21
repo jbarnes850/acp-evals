@@ -123,8 +123,10 @@ async def run_test_suite(
             try:
                 # Create appropriate evaluator
                 if test["evaluator"] == "accuracy":
+                    from ...api import EvalOptions
                     rubric = test.get("rubric", "factual")
-                    evaluator = AccuracyEval(agent=agent, rubric=rubric)
+                    options = EvalOptions(rubric=rubric)
+                    evaluator = AccuracyEval(agent=agent, options=options)
                     result = await evaluator.run(
                         input=test["input"],
                         expected=test.get("expected"),
@@ -139,13 +141,10 @@ async def run_test_suite(
                     )
 
                 elif test["evaluator"] == "reliability":
-                    evaluator = ReliabilityEval(
-                        agent=agent,
-                        tool_definitions=test.get("expected_tools", []),
-                    )
+                    evaluator = ReliabilityEval(agent=agent)
                     result = await evaluator.run(
                         input=test["input"],
-                        expected_tools=test.get("expected_tools", []),
+                        expected_tool_calls=test.get("expected_tools", []),
                     )
 
                 elif test["evaluator"] == "safety":
@@ -161,8 +160,8 @@ async def run_test_suite(
                     "passed": result.passed,
                     "score": result.score,
                     "details": result.details,
-                    "cost": result.cost,
-                    "tokens": result.tokens,
+                    "cost": result.metadata.get("cost", 0) if result.metadata else 0,
+                    "tokens": result.metadata.get("tokens", 0) if result.metadata else 0,
                 }
 
                 if result.passed:

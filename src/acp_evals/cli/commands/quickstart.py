@@ -46,41 +46,37 @@ def quickstart(ctx):
     
     if not providers:
         console.print("[yellow]No LLM providers configured.[/yellow]")
-        console.print("You can either:")
-        console.print("  1. Use mock mode (no API keys required)")
-        console.print("  2. Configure an LLM provider")
+        console.print("You must configure an LLM provider to use ACP-Evals.")
+        console.print("This tool requires real LLM evaluations for accurate results.")
         console.print()
         
-        use_mock = Confirm.ask("Would you like to start in mock mode?", default=True)
+        # Help configure a provider
+        console.print("\nAvailable providers:")
+        console.print("  1. OpenAI (recommended)")
+        console.print("  2. Anthropic") 
+        console.print("  3. Ollama (local)")
         
-        if not use_mock:
-            # Help configure a provider
-            console.print("\nAvailable providers:")
-            console.print("  1. OpenAI (recommended)")
-            console.print("  2. Anthropic") 
-            console.print("  3. Ollama (local)")
+        choice = Prompt.ask("\nWhich provider would you like to configure?", 
+                          choices=["1", "2", "3"], default="1")
+        
+        if choice == "1":
+            api_key = Prompt.ask("Enter your OpenAI API key", password=True)
+            # Create or update .env file
+            env_path = Path(".env")
+            with open(env_path, "a") as f:
+                f.write(f"\nOPENAI_API_KEY={api_key}\n")
+            console.print("[green]OpenAI configured successfully![/green]")
             
-            choice = Prompt.ask("\nWhich provider would you like to configure?", 
-                              choices=["1", "2", "3"], default="1")
+        elif choice == "2":
+            api_key = Prompt.ask("Enter your Anthropic API key", password=True)
+            with open(".env", "a") as f:
+                f.write(f"\nANTHROPIC_API_KEY={api_key}\n")
+            console.print("[green]Anthropic configured successfully![/green]")
             
-            if choice == "1":
-                api_key = Prompt.ask("Enter your OpenAI API key", password=True)
-                # Create or update .env file
-                env_path = Path(".env")
-                with open(env_path, "a") as f:
-                    f.write(f"\nOPENAI_API_KEY={api_key}\n")
-                console.print("[green]OpenAI configured successfully![/green]")
-                
-            elif choice == "2":
-                api_key = Prompt.ask("Enter your Anthropic API key", password=True)
-                with open(".env", "a") as f:
-                    f.write(f"\nANTHROPIC_API_KEY={api_key}\n")
-                console.print("[green]Anthropic configured successfully![/green]")
-                
-            else:
-                console.print("\n[cyan]For Ollama, make sure it's running locally:[/cyan]")
-                console.print("  ollama serve")
-                console.print("\nNo API key needed for Ollama.")
+        else:
+            console.print("\n[cyan]For Ollama, make sure it's running locally:[/cyan]")
+            console.print("  ollama serve")
+            console.print("\nNo API key needed for Ollama.")
     
     # Step 2: Choose what to test
     console.print("\n[bold]What would you like to test?[/bold]")

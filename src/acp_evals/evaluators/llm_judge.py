@@ -29,8 +29,7 @@ class LLMJudge(Evaluator):
     Based on Anthropic's findings that single LLM calls with
     comprehensive rubrics are more consistent than multiple calls.
 
-    Supports multiple LLM providers (OpenAI, Anthropic, Azure, Ollama)
-    with automatic fallback to mock mode for testing.
+    Supports multiple LLM providers (OpenAI, Anthropic, Azure, Ollama).
     """
 
     DEFAULT_RUBRIC = {
@@ -67,7 +66,6 @@ class LLMJudge(Evaluator):
         # Common parameters
         rubric: dict[str, dict[str, Any]] | None = None,
         pass_threshold: float = 0.7,
-        mock_mode: bool | None = None,
         # LLM parameters
         temperature: float = 0.0,
         max_tokens: int = 1000,
@@ -83,7 +81,6 @@ class LLMJudge(Evaluator):
             model: Model to use (uses provider default if not specified)
             rubric: Custom evaluation rubric (uses default if None)
             pass_threshold: Minimum score to pass (0.0 to 1.0)
-            mock_mode: Force mock mode (auto-detected if None)
             temperature: LLM temperature (0.0 for consistent evaluation)
             max_tokens: Maximum tokens for evaluation response
             **provider_kwargs: Additional provider-specific configuration
@@ -106,15 +103,10 @@ class LLMJudge(Evaluator):
                 if not provider:
                     provider = ProviderFactory.get_default_provider()
                     if not provider:
-                        if mock_mode is False:
-                            raise ValueError(
-                                "No LLM provider configured. Please set up API keys in .env file "
-                                "or pass provider configuration."
-                            )
-                        # No provider and mock_mode not explicitly False - use mock
-                        self.provider = None
-                        self.provider_name = "mock"
-                        self.mock_mode = True
+                        raise ValueError(
+                            "No LLM provider configured. Please set up API keys in .env file "
+                            "or pass provider configuration. Mock mode is not available in production."
+                        )
                     else:
                         # Provider found
                         if model:
@@ -131,14 +123,8 @@ class LLMJudge(Evaluator):
                     self.mock_mode = False
 
             except Exception as e:
-                if mock_mode is False:
-                    # User explicitly wants real LLM, so fail
-                    raise
-                # Fall back to mock mode
-                print(f"Warning: {str(e)}. Falling back to mock evaluation mode.")
-                self.provider = None
-                self.provider_name = "mock"
-                self.mock_mode = True
+                # Always fail on provider initialization errors - no mock fallback
+                raise ProviderError(f"Failed to initialize LLM provider: {str(e)}")
         else:
             # Legacy ACP mode
             self.judge_url = judge_url
@@ -202,33 +188,6 @@ Important: Return ONLY the JSON object, no other text."""
 
         return prompt
 
-    def _mock_evaluate(
-        self, task: str, response: str, reference: str | None = None
-    ) -> EvaluationResult:
-        """Simple mock evaluation for testing."""
-        scores = {}
-        for criterion, details in self.rubric.items():
-            # Simple scoring logic for testing
-            if reference and response:
-                if str(reference).lower() in str(response).lower():
-                    scores[criterion] = 1.0
-                elif response.lower() != "i don't know":
-                    scores[criterion] = 0.5
-                else:
-                    scores[criterion] = 0.2
-            else:
-                scores[criterion] = 0.5
-
-        # Calculate weighted score
-        total_weight = sum(d["weight"] for d in self.rubric.values())
-        overall_score = sum(scores[c] * self.rubric[c]["weight"] / total_weight for c in scores)
-
-        return EvaluationResult(
-            score=overall_score,
-            passed=overall_score >= self.pass_threshold,
-            breakdown=scores,
-            feedback="Mock evaluation (no LLM provider configured)",
-        )
 
     async def evaluate(
         self,
@@ -264,9 +223,9 @@ Important: Return ONLY the JSON object, no other text."""
             logger.error(f"Invalid evaluation input: {e}")
             raise
 
-        # Use mock evaluation if in mock mode
+        # No mock mode - all evaluations must use real LLMs
         if self.mock_mode:
-            return self._mock_evaluate(task, response, reference)
+            raise ProviderError("Mock mode is not available in production. Please configure a real LLM provider.")
 
         # Build evaluation prompt
         eval_prompt = self._build_evaluation_prompt(task, response, reference)

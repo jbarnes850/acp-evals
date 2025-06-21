@@ -134,8 +134,6 @@ class ReliabilityEval(_BaseReliabilityEval):
         
         super().__init__(
             agent=agent,
-            judge_model=options.judge_model,
-            pass_threshold=options.threshold,
             name="Reliability Evaluation"
         )
 
