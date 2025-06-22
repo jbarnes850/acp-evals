@@ -10,17 +10,17 @@ import time
 def calculator_agent(input_text: str) -> str:
     """
     A calculator agent that performs mathematical operations.
-    
+
     Args:
         input_text: Mathematical expression or query
-    
+
     Returns:
         str: The result of the calculation
     """
     time.sleep(0.05)  # Simulate fast processing
-    
+
     input_lower = input_text.lower()
-    
+
     # Handle specific calculations
     if "25% of 80" in input_lower or "25 percent of 80" in input_lower:
         return "20"
@@ -36,31 +36,31 @@ def calculator_agent(input_text: str) -> str:
             # Simple evaluation for basic math
             result = eval(input_text.replace("^", "**"), {"__builtins__": {}}, {})
             return str(result)
-        except:
+        except Exception:
             return f"I can help you calculate: {input_text}"
 
 
 def research_agent(input_text: str) -> str:
     """
     A research agent that simulates using search and summarize tools.
-    
+
     Args:
         input_text: Research query
-    
+
     Returns:
         str: Research results with tool usage indicators
     """
     time.sleep(0.2)  # Simulate research time
-    
+
     input_lower = input_text.lower()
     tools_used = []
-    
+
     # Detect tool usage
     if "search" in input_lower or "find" in input_lower or "latest" in input_lower:
         tools_used.append("search")
     if "summarize" in input_lower or "summary" in input_lower:
         tools_used.append("summarize")
-    
+
     # Generate response
     if "ai news" in input_lower:
         response = (
@@ -74,11 +74,11 @@ def research_agent(input_text: str) -> str:
         )
     else:
         response = f"Research findings for '{input_text}': This topic requires detailed analysis."
-    
+
     # Add tool usage indicators for reliability detection
     if tools_used:
         response += f" [Tools used: {', '.join(tools_used)}]"
-    
+
     return response
 
 
