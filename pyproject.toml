@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "Apache-2.0"}
 authors = [
-    {name = "ACP Evals Contributors", email = "acp-evals@example.com"}
+    {name = "Jarrod Barnes", email = "jbarnes850@gmail.com"}
 ]
 keywords = ["acp", "agents", "evaluation", "benchmarks", "metrics", "ai", "multi-agent", "performance", "quality"]
 classifiers = [

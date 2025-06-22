@@ -1,290 +1,109 @@
 """
-Simple, developer-friendly evaluation API for ACP agents.
+ACP-Evals API: Simple, powerful agent evaluation.
 
-This module provides easy-to-use evaluation classes that handle complexity internally,
-allowing developers to evaluate their agents with minimal code.
+Professional developer tools focused on the 3 core evaluation types.
 """
 
-import asyncio
-from dataclasses import dataclass
-from typing import Any, Optional, Dict, Union, Callable
-
-# Import evaluators
+from typing import Optional, Union, Dict, Any, List
 from .evaluators.accuracy import AccuracyEval as _BaseAccuracyEval
-
-# Import common components
-from .evaluators.common import BatchResult, EvalResult
 from .evaluators.performance import PerformanceEval as _BasePerformanceEval
-
-# Re-export quality evaluators
-from .evaluators.quality.quality import (
-    CompletenessEval,
-    GroundednessEval,
-    QualityEval,
-    TaskAdherenceEval,
-    ToolAccuracyEval,
-)
 from .evaluators.reliability import ReliabilityEval as _BaseReliabilityEval
-from .evaluators.safety import SafetyEval as _BaseSafetyEval
-
-
-@dataclass
-class EvalOptions:
-    """Configuration options for evaluations."""
-    rubric: Optional[str] = None
-    threshold: float = 0.7
-    judge_model: Optional[str] = None
-    binary_mode: bool = False
-    max_retries: int = 0
-    timeout: Optional[float] = None
+from .evaluators.common import EvalResult
 
 
 class AccuracyEval(_BaseAccuracyEval):
-    """Evaluate agent accuracy with minimal configuration."""
+    """
+    Evaluate agent accuracy against expected outputs.
     
+    Simple to start:
+        eval = AccuracyEval("http://localhost:8000/agent")
+        result = await eval.run("What is 2+2?", "4")
+        
+    Professional features:
+        eval = AccuracyEval(
+            agent_url,
+            rubric="semantic",
+            judge_model="gpt-4",
+            pass_threshold=0.8
+        )
+    """
     def __init__(
-        self, 
-        agent: Union[str, Callable], 
-        options: Optional[EvalOptions] = None
+        self,
+        agent: Union[str, Any],
+        rubric: str = "factual",
+        judge_model: Optional[str] = None,
+        pass_threshold: float = 0.7,
+        **kwargs
     ):
-        """
-        Initialize accuracy evaluator.
-        
-        Args:
-            agent: Agent URL or callable function
-            options: Optional configuration settings
-        """
-        options = options or EvalOptions()
-        
-        # Use sensible defaults
         super().__init__(
             agent=agent,
-            judge_model=options.judge_model,
-            rubric=options.rubric or "factual",
-            pass_threshold=options.threshold,
-            binary_mode=options.binary_mode,
-            name="Accuracy Evaluation"
-        )
-    
-    async def run(
-        self,
-        input: str,
-        expected: str,
-        print_results: bool = True,
-        **kwargs
-    ) -> EvalResult:
-        """
-        Run evaluation with minimal parameters.
-        
-        Args:
-            input: Test input
-            expected: Expected output
-            print_results: Whether to display results
-            **kwargs: Additional parameters for advanced usage
-        """
-        return await super().run(
-            input=input,
-            expected=expected,
-            print_results=print_results,
+            rubric=rubric,
+            judge_model=judge_model,
+            pass_threshold=pass_threshold,
             **kwargs
         )
 
 
 class PerformanceEval(_BasePerformanceEval):
-    """Evaluate agent performance with minimal configuration."""
+    """
+    Evaluate agent performance: latency, throughput, resource usage.
     
+    Simple to start:
+        eval = PerformanceEval("http://localhost:8000/agent")
+        result = await eval.run("Test prompt")
+        
+    Professional features:
+        eval = PerformanceEval(
+            agent_url,
+            num_iterations=10,
+            track_memory=True,
+            warmup_runs=2
+        )
+    """
     def __init__(
         self,
-        agent: Union[str, Callable],
-        options: Optional[EvalOptions] = None
+        agent: Union[str, Any],
+        num_iterations: int = 5,
+        track_memory: bool = False,
+        warmup_runs: int = 1,
+        **kwargs
     ):
-        """
-        Initialize performance evaluator.
-        
-        Args:
-            agent: Agent URL or callable function
-            options: Optional configuration settings
-        """
-        options = options or EvalOptions()
-        
-        # PerformanceEval doesn't use judge_model, it tracks performance metrics
         super().__init__(
             agent=agent,
-            model=options.judge_model or "gpt-4",  # For token pricing
-            name="Performance Evaluation"
+            num_iterations=num_iterations,
+            track_memory=track_memory,
+            warmup_runs=warmup_runs,
+            **kwargs
         )
 
 
 class ReliabilityEval(_BaseReliabilityEval):
-    """Evaluate agent reliability with minimal configuration."""
+    """
+    Evaluate agent reliability: consistency, error handling, recovery.
     
+    Simple to start:
+        eval = ReliabilityEval("http://localhost:8000/agent")
+        result = await eval.run("Test prompt")
+        
+    Professional features:
+        eval = ReliabilityEval(
+            agent_url,
+            tool_definitions=["search", "summarize"],
+            test_error_handling=True
+        )
+    """
     def __init__(
         self,
-        agent: Union[str, Callable],
-        options: Optional[EvalOptions] = None
+        agent: Union[str, Any],
+        tool_definitions: Optional[List[str]] = None,
+        **kwargs
     ):
-        """
-        Initialize reliability evaluator.
-        
-        Args:
-            agent: Agent URL or callable function
-            options: Optional configuration settings
-        """
-        options = options or EvalOptions()
-        
         super().__init__(
             agent=agent,
-            name="Reliability Evaluation"
+            tool_definitions=tool_definitions,
+            **kwargs
         )
 
 
-class SafetyEval(_BaseSafetyEval):
-    """Evaluate agent safety with minimal configuration."""
-    
-    def __init__(
-        self,
-        agent: Union[str, Callable],
-        options: Optional[EvalOptions] = None
-    ):
-        """
-        Initialize safety evaluator.
-        
-        Args:
-            agent: Agent URL or callable function
-            options: Optional configuration settings
-        """
-        options = options or EvalOptions()
-        
-        # SafetyEval doesn't use judge_model directly
-        thresholds = {
-            "violence": 1 - options.threshold,  # Safety uses inverse thresholds
-            "hate": 1 - options.threshold,
-            "self_harm": 1 - options.threshold,
-            "sexual": 1 - options.threshold
-        }
-        
-        super().__init__(
-            agent=agent,
-            thresholds=thresholds,
-            name="Safety Evaluation"
-        )
-
-
-# Export all evaluators
-__all__ = [
-    # Common
-    "EvalResult",
-    "BatchResult",
-    "EvalOptions",
-    # Core evaluators
-    "AccuracyEval",
-    "PerformanceEval",
-    "ReliabilityEval",
-    "SafetyEval",
-    # Quality evaluators
-    "GroundednessEval",
-    "CompletenessEval",
-    "TaskAdherenceEval",
-    "ToolAccuracyEval",
-    "QualityEval",
-    # Helper functions
-    "_evaluate_sync",
-    "evaluate",
-    "test_agent",
-]
-
-
-# Original convenience function for synchronous usage
-def _evaluate_sync(eval_obj: Any, *args, **kwargs) -> EvalResult:
-    """
-    Run evaluation synchronously.
-
-    Example:
-        result = evaluate(
-            AccuracyEval(agent="http://localhost:8000/agents/my-agent"),
-            input="What is 2+2?",
-            expected="4",
-            print_results=True
-        )
-    """
-    return asyncio.run(eval_obj.run(*args, **kwargs))
-
-
-def test_agent(agent: Union[str, Callable]) -> Dict[str, EvalResult]:
-    """
-    Run a basic test suite on an agent.
-    
-    Args:
-        agent: Agent URL or callable function
-        
-    Returns:
-        Dictionary of evaluation results
-    """
-    results = {}
-    
-    # Basic accuracy test
-    accuracy = AccuracyEval(agent)
-    results["accuracy"] = evaluate(
-        accuracy,
-        input="What is the capital of France?",
-        expected="Paris"
-    )
-    
-    # Basic performance test
-    performance = PerformanceEval(agent)
-    results["performance"] = evaluate(
-        performance,
-        input="Hello, how are you?",
-        expected="A friendly greeting response"
-    )
-    
-    return results
-
-
-# Namespace for cleaner API
-class evaluate:
-    """Namespace for simple evaluation functions."""
-    
-    @staticmethod
-    def accuracy(
-        agent: Union[str, Callable],
-        input: str,
-        expected: str,
-        **kwargs
-    ) -> EvalResult:
-        """Quick accuracy evaluation."""
-        eval_obj = AccuracyEval(agent)
-        return asyncio.run(eval_obj.run(input, expected, **kwargs))
-    
-    @staticmethod
-    def performance(
-        agent: Union[str, Callable],
-        input: str,
-        expected: str,
-        **kwargs
-    ) -> EvalResult:
-        """Quick performance evaluation."""
-        eval_obj = PerformanceEval(agent)
-        return asyncio.run(eval_obj.run(input, expected, **kwargs))
-    
-    @staticmethod
-    def safety(
-        agent: Union[str, Callable],
-        input: str,
-        expected: str,
-        **kwargs
-    ) -> EvalResult:
-        """Quick safety evaluation."""
-        eval_obj = SafetyEval(agent)
-        return asyncio.run(eval_obj.run(input, expected, **kwargs))
-    
-    @staticmethod
-    def reliability(
-        agent: Union[str, Callable],
-        input: str,
-        expected_tool_calls: list,
-        **kwargs
-    ) -> EvalResult:
-        """Quick reliability evaluation."""
-        eval_obj = ReliabilityEval(agent)
-        return asyncio.run(eval_obj.run(input, expected_tool_calls, **kwargs))
+# Export the simple, focused API
+__all__ = ["AccuracyEval", "PerformanceEval", "ReliabilityEval", "EvalResult"]

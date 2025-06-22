@@ -14,13 +14,9 @@ console = Console()
 
 # Import commands
 from .check import check_providers
-from .commands.dataset import dataset
 from .commands.discover import discover
-from .commands.generate import generate
 from .commands.run import run
 from .commands.test import test
-from .commands.traces import traces
-from .commands.workflow import workflow
 
 # Import logging setup
 from ..utils.logging import setup_logging
@@ -39,11 +35,6 @@ def cli(ctx, verbose, debug, quiet):
         acp-evals run accuracy <agent> -i "What is AI?" -e "Artificial Intelligence"
         acp-evals discover                   # Find available agents
         acp-evals check                      # Verify configuration
-
-    Evaluation workflow:
-        acp-evals dataset list               # View available datasets
-        acp-evals generate tests -e tests.jsonl  # Generate test data
-        acp-evals workflow test -p linear    # Test multi-agent workflows
 
     Get help:
         acp-evals --help                     # Show all commands
@@ -87,10 +78,6 @@ cli.add_command(check_providers, name="check")
 cli.add_command(test)
 cli.add_command(run)
 cli.add_command(discover)
-cli.add_command(dataset)
-cli.add_command(traces)
-cli.add_command(generate)
-cli.add_command(workflow)
 
 # Import and register quick-start command
 from .commands.quickstart import quickstart

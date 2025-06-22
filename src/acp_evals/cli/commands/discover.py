@@ -10,7 +10,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
 from ...api import AccuracyEval
-from ...client.acp_client import ACPEvaluationClient
+from acp_sdk.client import Client
 
 console = Console()
 
@@ -18,8 +18,8 @@ console = Console()
 async def discover_agents(server_url: str) -> list[dict[str, Any]]:
     """Discover available agents from an ACP server."""
     try:
-        client = ACPEvaluationClient(base_url=server_url)
-        agents = await client.list_agents()
+        client = Client(base_url=server_url)
+        agents = await client.agent_list()
 
         # Convert to dict format
         agent_list = []

@@ -9,374 +9,336 @@ This template shows how to evaluate a basic agent.
 \"\"\"
 
 import asyncio
-from acp_evals import AccuracyEval, evaluate
+from acp_evals import AccuracyEval
 
-# Define your agent
-async def {agent_function}(input_text: str) -> str:
-    \"\"\"Your agent implementation.\"\"\"
-    # TODO: Implement your agent logic here
-    return f"Response to: {input_text}"
+# Your agent (can be URL, callable, or agent instance)
+AGENT = "{agent_url}"
 
-# Simple evaluation
-def test_basic():
-    result = evaluate(
-        AccuracyEval(agent={agent_function}),
-        input="What is 2+2?",
-        expected="4",
+async def evaluate_agent():
+    \"\"\"Run a simple accuracy evaluation.\"\"\"
+    
+    # Create evaluator
+    eval = AccuracyEval(
+        agent=AGENT,
+        rubric="factual"  # or "research_quality", "code_quality"
+    )
+    
+    # Single evaluation
+    result = await eval.run(
+        input="What is the capital of France?",
+        expected="Paris",
         print_results=True
     )
-    assert result.passed, f"Test failed with score {{result.score}}"
+    
+    print(f"\\nScore: {{result.score}}")
+    print(f"Passed: {{result.passed}}")
+    print(f"Cost: ${{result.cost:.4f}}")
 
-# Batch evaluation
-async def test_batch():
-    eval = AccuracyEval(agent={agent_function}, rubric="factual")
-
+    # Batch evaluation
     test_cases = [
         {{"input": "What is 2+2?", "expected": "4"}},
-        {{"input": "What is the capital of France?", "expected": "Paris"}},
-        # Add more test cases
+        {{"input": "Name the largest planet", "expected": "Jupiter"}},
+        {{"input": "What language is this code written in?", "expected": "Python"}}
     ]
-
-    batch_result = await eval.run_batch(
+    
+    batch_results = await eval.run_batch(
         test_cases=test_cases,
-        print_results=True,
-        export="results.json"
+        print_results=True
     )
-
-    print(f"\\nPass rate: {{batch_result.pass_rate:.1f}}%")
-    print(f"Average score: {{batch_result.avg_score:.2f}}")
+    
+    print(f"\\nBatch Results:")
+    print(f"Pass rate: {{batch_results.pass_rate:.1f}}%")
+    print(f"Average score: {{batch_results.avg_score:.2f}}")
 
 if __name__ == "__main__":
-    print("Running basic test...")
-    test_basic()
-
-    print("\\nRunning batch test...")
-    asyncio.run(test_batch())
+    asyncio.run(evaluate_agent())
 """,
+    
     "comprehensive": """#!/usr/bin/env python3
 \"\"\"
 Comprehensive evaluation suite for {agent_name}.
 
-This template includes accuracy, performance, and reliability testing.
+Tests accuracy, performance, and reliability.
 \"\"\"
 
 import asyncio
 from acp_evals import AccuracyEval, PerformanceEval, ReliabilityEval
 
-class {agent_class}:
-    \"\"\"Your agent implementation.\"\"\"
+# Your agent
+AGENT = "{agent_url}"
 
-    def __init__(self):
-        # TODO: Initialize your agent
-        pass
-
-    async def run(self, input_text: str) -> str:
-        \"\"\"Process input and return response.\"\"\"
-        # TODO: Implement your agent logic
-        return f"Response to: {input_text}"
-
-async def evaluate_agent():
-    \"\"\"Run comprehensive evaluation suite.\"\"\"
-    agent = {agent_class}()
-
+async def run_comprehensive_evaluation():
+    \"\"\"Run all three evaluation types.\"\"\"
+    
+    print("=== Comprehensive Agent Evaluation ===\\n")
+    
     # 1. Accuracy Evaluation
-    print("=== Accuracy Evaluation ===")
-    accuracy_eval = AccuracyEval(
-        agent=agent,
-        rubric={rubric_choice}
+    print("1. Testing Accuracy...")
+    accuracy = AccuracyEval(
+        agent=AGENT,
+        rubric="factual",
+        pass_threshold=0.8
     )
-
-    accuracy_result = await accuracy_eval.run(
-        input="{sample_input}",
-        expected="{sample_expected}",
+    
+    accuracy_result = await accuracy.run(
+        input="Explain the theory of relativity in simple terms",
+        expected="A scientific theory about space, time, and gravity by Einstein",
         print_results=True
     )
-
+    
     # 2. Performance Evaluation
-    print("\\n=== Performance Evaluation ===")
-    perf_eval = PerformanceEval(agent=agent)
-
-    perf_result = await perf_eval.run(
-        input="{sample_input}",
-        track_tokens=True,
-        track_latency=True,
-        print_results=True
+    print("\\n2. Testing Performance...")
+    performance = PerformanceEval(
+        agent=AGENT,
+        num_iterations=5,
+        warmup_runs=1
     )
-
+    
+    perf_result = await performance.run(
+        input_text="What is the meaning of life?",
+        expected=None  # Performance doesn't need expected output
+    )
+    
+    print(f"Average latency: {{perf_result.details.get('avg_latency_ms', 0):.0f}}ms")
+    print(f"Throughput: {{perf_result.details.get('throughput_rps', 0):.2f}} req/s")
+    
     # 3. Reliability Evaluation
-    print("\\n=== Reliability Evaluation ===")
-    reliability_eval = ReliabilityEval(
-        agent=agent,
-        tool_definitions=["search", "calculate", "database"]  # Update with your tools
+    print("\\n3. Testing Reliability...")
+    reliability = ReliabilityEval(
+        agent=AGENT,
+        tool_definitions=["search", "calculate", "summarize"]
     )
-
-    reliability_result = await reliability_eval.run(
-        input="{sample_input}",
-        expected_tools=["search"],  # Update with expected tools
-        print_results=True
+    
+    reliability_result = await reliability.run(
+        input="Search for information about Mars and calculate its distance from Earth",
+        expected_tools=["search", "calculate"]
     )
-
-    # 4. Batch Testing
-    print("\\n=== Batch Testing ===")
-    test_cases = [
-        {{"input": "{sample_input}", "expected": "{sample_expected}"}},
-        # Add more test cases here
-    ]
-
-    batch_result = await accuracy_eval.run_batch(
-        test_cases=test_cases,
-        parallel=True,
-        print_results=True,
-        export="evaluation_results.json"
+    
+    print(f"Reliability score: {{reliability_result.score:.2f}}")
+    print(f"Tool coverage: {{reliability_result.details.get('tool_coverage', 0):.0%}}")
+    
+    # Summary
+    print("\\n=== Evaluation Summary ===")
+    print(f"Accuracy: {{accuracy_result.score:.2f}} ({'PASS' if accuracy_result.passed else 'FAIL'}})")
+    print(f"Performance: {{perf_result.score:.2f}} ({'PASS' if perf_result.passed else 'FAIL'}})")
+    print(f"Reliability: {{reliability_result.score:.2f}} ({'PASS' if reliability_result.passed else 'FAIL'}})")
+    
+    overall = (accuracy_result.score + perf_result.score + reliability_result.score) / 3
+    print(f"\\nOverall Score: {{overall:.2f}}")
+    
+    # Cost tracking
+    total_cost = (
+        accuracy_result.metadata.get('cost', 0) +
+        perf_result.metadata.get('cost', 0) +
+        reliability_result.metadata.get('cost', 0)
     )
-
-    return {{
-        "accuracy": accuracy_result,
-        "performance": perf_result,
-        "reliability": reliability_result,
-        "batch": batch_result
-    }}
+    print(f"Total Cost: ${{total_cost:.4f}}")
 
 if __name__ == "__main__":
-    results = asyncio.run(evaluate_agent())
-    print("\\nEvaluation complete!")
+    asyncio.run(run_comprehensive_evaluation())
 """,
+    
     "research": """#!/usr/bin/env python3
 \"\"\"
-Research agent evaluation template.
+Research quality evaluation for {agent_name}.
 
-Specialized for evaluating agents that do research, analysis, and information synthesis.
+Tests complex reasoning and research capabilities.
 \"\"\"
 
 import asyncio
-from acp_evals import AccuracyEval, PerformanceEval
+from acp_evals import AccuracyEval
 
-class ResearchAgent:
-    \"\"\"Research agent that searches and synthesizes information.\"\"\"
+AGENT = "{agent_url}"
 
-    async def run(self, query: str) -> str:
-        \"\"\"Research a topic and return comprehensive analysis.\"\"\"
-        # TODO: Implement your research logic
-        # This could include:
-        # - Web search
-        # - Document analysis
-        # - Information synthesis
-        # - Source citation
+# Research-focused test cases
+RESEARCH_TASKS = [
+    {{
+        "input": "Compare and contrast supervised vs unsupervised learning",
+        "expected": "Explanation covering labeled data, training approaches, and use cases"
+    }},
+    {{
+        "input": "What are the main challenges in quantum computing?",
+        "expected": "Discussion of decoherence, error rates, and scalability"
+    }},
+    {{
+        "input": "Analyze the environmental impact of large language models",
+        "expected": "Analysis of energy consumption, carbon footprint, and mitigation strategies"
+    }}
+]
 
-        return f\"\"\"
-## Research Results for: {{query}}
-
-### Summary
-[Your research summary here]
-
-### Key Findings
-1. Finding 1
-2. Finding 2
-3. Finding 3
-
-### Sources
-- Source 1
-- Source 2
-\"\"\"
-
-async def evaluate_research_agent():
-    agent = ResearchAgent()
-
+async def evaluate_research_quality():
+    \"\"\"Evaluate agent's research and analysis capabilities.\"\"\"
+    
+    print("=== Research Quality Evaluation ===\\n")
+    
     # Use research quality rubric
     eval = AccuracyEval(
-        agent=agent,
+        agent=AGENT,
         rubric="research_quality",
-        pass_threshold=0.75
+        judge_model="gpt-4",  # Use best model for judging
+        pass_threshold=0.7
     )
-
-    # Test cases for research evaluation
-    test_cases = [
-        {{
-            "input": "What are the latest developments in quantum computing?",
-            "expected": {{
-                "topics": ["quantum supremacy", "error correction", "hardware advances"],
-                "depth": "comprehensive",
-                "sources": "multiple credible sources"
-            }}
-        }},
-        {{
-            "input": "Compare transformer vs RNN architectures for NLP",
-            "expected": {{
-                "comparison_aspects": ["performance", "training time", "context window"],
-                "balanced": True,
-                "technical_accuracy": "high"
-            }}
-        }}
-    ]
-
-    # Run evaluation
-    results = await eval.run_batch(
-        test_cases=test_cases,
-        print_results=True,
-        export="research_eval_results.json"
-    )
-
-    # Performance testing for research tasks
-    perf_eval = PerformanceEval(agent=agent)
-
-    perf_result = await perf_eval.run(
-        input="Research the environmental impact of electric vehicles",
-        track_latency=True,
+    
+    # Test individual research tasks
+    for i, task in enumerate(RESEARCH_TASKS, 1):
+        print(f"\\nTask {{i}}: {{task['input'][:50]}}...")
+        
+        result = await eval.run(
+            input=task["input"],
+            expected=task["expected"],
+            print_results=False
+        )
+        
+        print(f"Score: {{result.score:.2f}}")
+        print(f"Key strengths: {{result.details.get('strengths', 'N/A')}}")
+        print(f"Areas for improvement: {{result.details.get('improvements', 'N/A')}}")
+    
+    # Batch evaluation for overall assessment
+    print("\\n=== Overall Research Performance ===")
+    batch_results = await eval.run_batch(
+        test_cases=RESEARCH_TASKS,
+        parallel=True,
         print_results=True
     )
-
-    print(f"\\nResearch Quality Score: {{results.avg_score:.2f}}")
-    print(f"Average Response Time: {{perf_result.details['latency_ms']:.0f}}ms")
+    
+    # Detailed analysis
+    print(f"\\nDetailed Scoring:")
+    print(f"- Accuracy: {{batch_results.score_breakdown.get('accuracy', 0):.2f}}")
+    print(f"- Completeness: {{batch_results.score_breakdown.get('completeness', 0):.2f}}")
+    print(f"- Reasoning: {{batch_results.score_breakdown.get('reasoning', 0):.2f}}")
+    print(f"- Clarity: {{batch_results.score_breakdown.get('clarity', 0):.2f}}")
+    
+    # Recommendations
+    if batch_results.avg_score < 0.6:
+        print("\\nRecommendation: Agent needs improvement in research tasks")
+    elif batch_results.avg_score < 0.8:
+        print("\\nRecommendation: Agent shows good research capabilities")
+    else:
+        print("\\nRecommendation: Agent demonstrates excellent research skills")
 
 if __name__ == "__main__":
-    asyncio.run(evaluate_research_agent())
+    asyncio.run(evaluate_research_quality())
 """,
+    
     "tool": """#!/usr/bin/env python3
 \"\"\"
-Tool-using agent evaluation template.
+Tool usage evaluation for {agent_name}.
 
-For agents that use external tools like calculators, APIs, databases, etc.
+Tests how well the agent uses available tools.
 \"\"\"
 
 import asyncio
-from typing import Dict, Any, List
-from acp_evals import AccuracyEval, ReliabilityEval, PerformanceEval
+from acp_evals import ReliabilityEval
 
-class ToolAgent:
-    \"\"\"Agent that uses various tools to complete tasks.\"\"\"
+AGENT = "{agent_url}"
 
-    def __init__(self):
-        self.tools = {{
-            "calculator": self._calculator,
-            "search": self._search,
-            "database": self._database,
-            # Add your tools here
-        }}
-        self.tool_calls = []
+# Define available tools
+AVAILABLE_TOOLS = [
+    "search",      # Web search
+    "calculate",   # Mathematical calculations
+    "code",        # Code execution
+    "database",    # Database queries
+    "api_call",    # External API calls
+]
 
-    async def _calculator(self, expression: str) -> float:
-        \"\"\"Calculator tool.\"\"\"
-        # TODO: Implement calculator logic
-        import ast
-        import operator
+# Test scenarios requiring specific tools
+TOOL_SCENARIOS = [
+    {{
+        "input": "Search for the current Bitcoin price and calculate the value of 0.5 BTC",
+        "expected_tools": ["search", "calculate"],
+        "description": "Multi-tool task"
+    }},
+    {{
+        "input": "Write and execute a Python function to find prime numbers up to 100",
+        "expected_tools": ["code"],
+        "description": "Code execution"
+    }},
+    {{
+        "input": "Query the user database for active users in the last 30 days",
+        "expected_tools": ["database"],
+        "description": "Database operation"
+    }},
+    {{
+        "input": "Get weather data from OpenWeatherMap API for New York",
+        "expected_tools": ["api_call"],
+        "description": "External API usage"
+    }}
+]
 
-        # Safe evaluation of mathematical expressions
-        supported_ops = {
-            ast.Add: operator.add,
-            ast.Sub: operator.sub,
-            ast.Mult: operator.mul,
-            ast.Div: operator.truediv,
-            ast.Pow: operator.pow,
-            ast.USub: operator.neg,
-        }
-
-        def safe_eval(node):
-            if isinstance(node, ast.Constant):
-                return node.value
-            elif isinstance(node, ast.BinOp):
-                return supported_ops[type(node.op)](safe_eval(node.left), safe_eval(node.right))
-            elif isinstance(node, ast.UnaryOp):
-                return supported_ops[type(node.op)](safe_eval(node.operand))
-            else:
-                raise ValueError(f"Unsupported operation: {type(node)}")
-
-        try:
-            tree = ast.parse(expression, mode='eval')
-            return float(safe_eval(tree.body))
-        except (ValueError, SyntaxError, KeyError):
-            return 0.0  # Safe fallback
-
-    async def _search(self, query: str) -> List[Dict[str, str]]:
-        \"\"\"Search tool.\"\"\"
-        # TODO: Implement search logic
-        return [{{"title": "Result 1", "snippet": "..."}}]
-
-    async def _database(self, query: str) -> List[Dict[str, Any]]:
-        \"\"\"Database tool.\"\"\"
-        # TODO: Implement database logic
-        return []
-
-    async def run(self, input_text: str) -> str:
-        \"\"\"Process input using appropriate tools.\"\"\"
-        self.tool_calls = []  # Reset for tracking
-
-        # TODO: Implement tool selection and usage logic
-        # Example:
-        if "calculate" in input_text.lower():
-            result = await self.tools["calculator"]("2+2")
-            self.tool_calls.append(("calculator", "2+2"))
-            return f"The result is {{result}}"
-
-        return "I need to use tools to answer this."
-
-async def evaluate_tool_agent():
-    agent = ToolAgent()
-
-    # 1. Tool Usage Reliability
-    print("=== Tool Usage Evaluation ===")
-    reliability_eval = ReliabilityEval(
-        agent=agent,
-        tool_definitions=list(agent.tools.keys())
+async def evaluate_tool_usage():
+    \"\"\"Evaluate how well the agent uses tools.\"\"\"
+    
+    print("=== Tool Usage Evaluation ===\\n")
+    print(f"Available tools: {{', '.join(AVAILABLE_TOOLS)}}\\n")
+    
+    # Create reliability evaluator
+    eval = ReliabilityEval(
+        agent=AGENT,
+        tool_definitions=AVAILABLE_TOOLS
     )
-
-    tool_test_cases = [
-        {{
-            "input": "Calculate 25 * 4 + sqrt(16)",
-            "expected_tools": ["calculator"],
-            "expected_calls": 3
-        }},
-        {{
-            "input": "Search for information about climate change",
-            "expected_tools": ["search"],
-            "expected_calls": 1
-        }}
-    ]
-
-    for test in tool_test_cases:
-        agent.tool_calls = []
-        result = await reliability_eval.run(
-            input=test["input"],
-            expected_tools=test["expected_tools"],
-            print_results=True
+    
+    # Test each scenario
+    results = []
+    for scenario in TOOL_SCENARIOS:
+        print(f"\\nTesting: {{scenario['description']}}")
+        print(f"Task: {{scenario['input'][:60]}}...")
+        print(f"Expected tools: {{', '.join(scenario['expected_tools'])}}")
+        
+        result = await eval.run(
+            input=scenario["input"],
+            expected_tools=scenario["expected_tools"],
+            test_error_handling=True
         )
-
-        actual_tools = [call[0] for call in agent.tool_calls]
-        print(f"Expected tools: {{test['expected_tools']}}")
-        print(f"Actually used: {{list(set(actual_tools))}}")
-        print(f"Tool calls: {{len(agent.tool_calls)}}\\n")
-
-    # 2. Accuracy with Tools
-    print("=== Accuracy Evaluation ===")
-    accuracy_eval = AccuracyEval(
-        agent=agent,
-        rubric={{
-            "correctness": {{"weight": 0.5, "criteria": "Are results correct?"}},
-            "tool_usage": {{"weight": 0.3, "criteria": "Are tools used appropriately?"}},
-            "efficiency": {{"weight": 0.2, "criteria": "Are tools used efficiently?"}}
-        }}
+        
+        results.append(result)
+        
+        # Display results
+        tools_used = result.details.get("tools_used", [])
+        print(f"Tools used: {{', '.join(tools_used) if tools_used else 'None'}}")
+        print(f"Coverage: {{result.details.get('tool_coverage', 0):.0%}}")
+        print(f"Score: {{result.score:.2f}}")
+        
+        # Check for issues
+        if unexpected := result.details.get("unexpected_tools", []):
+            print(f"⚠️  Unexpected tools used: {{', '.join(unexpected)}}")
+    
+    # Overall assessment
+    print("\\n=== Tool Usage Summary ===")
+    avg_score = sum(r.score for r in results) / len(results)
+    print(f"Average score: {{avg_score:.2f}}")
+    
+    # Tool usage statistics
+    all_tools_used = set()
+    for r in results:
+        all_tools_used.update(r.details.get("tools_used", []))
+    
+    print(f"\\nUnique tools used: {{len(all_tools_used)}}/{{len(AVAILABLE_TOOLS)}}")
+    print(f"Tools utilized: {{', '.join(sorted(all_tools_used))}}")
+    
+    unused_tools = set(AVAILABLE_TOOLS) - all_tools_used
+    if unused_tools:
+        print(f"Unused tools: {{', '.join(sorted(unused_tools))}}")
+    
+    # Error handling
+    error_handling_passed = all(
+        r.details.get("error_handling", {{}}).get("passed", True) 
+        for r in results
     )
-
-    accuracy_result = await accuracy_eval.run(
-        input="What is 100 * 50?",
-        expected="5000",
-        print_results=True
-    )
-
-    print(f"\\nOverall tool agent score: {{accuracy_result.score:.2f}}")
+    print(f"\\nError handling: {{'PASS' if error_handling_passed else 'FAIL'}}")
 
 if __name__ == "__main__":
-    asyncio.run(evaluate_tool_agent())
+    asyncio.run(evaluate_tool_usage())
 """,
+    
     "acp-agent": """#!/usr/bin/env python3
 \"\"\"
-Real ACP agent evaluation example.
+ACP agent evaluation example.
 
 Shows how to evaluate agents running on the ACP protocol.
 \"\"\"
 
 import asyncio
 from acp_evals import AccuracyEval, PerformanceEval
-from acp_evals.client import ACPEvaluationClient
 
 # ACP Agent URL - replace with your agent
 AGENT_URL = "{agent_url}"
@@ -397,27 +359,7 @@ async def evaluate_acp_agent():
         print_results=True
     )
 
-    # Option 2: Using ACP client for advanced features
-    print("\\n=== ACP Client Evaluation ===")
-    client = ACPEvaluationClient(base_url="{base_url}")
-
-    # Discover available agents
-    agents = await client.list_agents()
-    print(f"Available agents: {{[a.name for a in agents]}}")
-
-    # Run with event tracking
-    if agents:
-        agent_name = agents[0].name
-        run, events, metrics = await client.run_with_tracking(
-            agent_name=agent_name,
-            input="Explain how agents collaborate in ACP",
-        )
-
-        print(f"\\nRun ID: {{run.id}}")
-        print(f"Events collected: {{len(events)}}")
-        print(f"Metrics: {{metrics}}")
-
-    # Option 3: Batch evaluation with real scenarios
+    # Option 2: Batch evaluation with real scenarios
     print("\\n=== Batch Evaluation ===")
     acp_test_cases = [
         {{
@@ -425,12 +367,12 @@ async def evaluate_acp_agent():
             "expected": "Agent Communication Protocol"
         }},
         {{
-            "input": "How do agents discover each other?",
-            "expected": "Through the ACP discovery protocol"
+            "input": "How do agents communicate in ACP?",
+            "expected": "Through standardized message formats and endpoints"
         }},
         {{
-            "input": "What message format does ACP use?",
-            "expected": "JSON-RPC"
+            "input": "What are the benefits of using ACP?",
+            "expected": "Interoperability, standardization, and scalability"
         }}
     ]
 
@@ -447,150 +389,5 @@ async def evaluate_acp_agent():
 if __name__ == "__main__":
     # Run the evaluation
     asyncio.run(evaluate_acp_agent())
-""",
-    "multi-agent": """#!/usr/bin/env python3
-\"\"\"
-Multi-agent coordination evaluation.
-
-Tests how well multiple agents work together in different patterns.
-\"\"\"
-
-import asyncio
-from acp_evals.patterns import LinearPattern, SupervisorPattern, SwarmPattern
-from acp_evals.benchmarks import HandoffQualityBenchmark
-from acp_evals.metrics import HandoffQualityMetric
-
-# Define your agents
-AGENTS = {{
-    "researcher": "{researcher_url}",
-    "analyst": "{analyst_url}",
-    "writer": "{writer_url}"
-}}
-
-async def evaluate_linear_pattern():
-    \"\"\"Test sequential agent coordination.\"\"\"
-    print("=== Linear Pattern Evaluation ===")
-
-    # Create linear workflow
-    pattern = LinearPattern([
-        AGENTS["researcher"],
-        AGENTS["analyst"],
-        AGENTS["writer"]
-    ])
-
-    # Run handoff benchmark
-    benchmark = HandoffQualityBenchmark(
-        pattern=pattern,
-        endpoint=""  # Using direct URLs
-    )
-
-    result = await benchmark.evaluate_single(
-        task="Research the latest developments in quantum computing and write a summary",
-        expected_handoffs=[
-            "researcher->analyst",
-            "analyst->writer"
-        ]
-    )
-
-    print(f"Handoff Score: {{result.score:.2f}}")
-    print(f"Information Preserved: {{result.details.get('preservation_score', 0):.2f}}")
-    print(f"Handoffs Completed: {{result.details.get('handoffs_completed', [])}}")
-
-async def evaluate_supervisor_pattern():
-    \"\"\"Test centralized coordination.\"\"\"
-    print("\\n=== Supervisor Pattern Evaluation ===")
-
-    # Supervisor coordinates workers
-    pattern = SupervisorPattern(
-        supervisor=AGENTS["analyst"],  # Analyst as supervisor
-        workers=[AGENTS["researcher"], AGENTS["writer"]]
-    )
-
-    # Create custom evaluation
-    from acp_evals import AccuracyEval
-
-    # Test supervisor's ability to coordinate
-    supervisor_eval = AccuracyEval(
-        agent=pattern,  # Pattern acts as agent
-        rubric={{
-            "task_decomposition": {{
-                "weight": 0.3,
-                "criteria": "Does the supervisor break down tasks effectively?"
-            }},
-            "coordination": {{
-                "weight": 0.4,
-                "criteria": "Are workers coordinated efficiently?"
-            }},
-            "result_synthesis": {{
-                "weight": 0.3,
-                "criteria": "Is the final output well-synthesized?"
-            }}
-        }}
-    )
-
-    result = await supervisor_eval.run(
-        input="Create a comprehensive report on AI safety, delegating research and writing tasks",
-        expected="A well-coordinated report with research and writing properly delegated"
-    )
-
-    print(f"Coordination Score: {{result.score:.2f}}")
-    print(f"Supervisor Effectiveness: {{result.details}}")
-
-async def evaluate_swarm_pattern():
-    \"\"\"Test distributed collaboration.\"\"\"
-    print("\\n=== Swarm Pattern Evaluation ===")
-
-    # All agents collaborate
-    pattern = SwarmPattern(list(AGENTS.values()))
-
-    # Test emergent behavior
-    swarm_tasks = [
-        "Collaboratively solve: What are the implications of AGI for society?",
-        "Work together to design a sustainable city of the future",
-        "Jointly create a business plan for a Mars colony"
-    ]
-
-    for task in swarm_tasks:
-        result = await pattern.run(task)
-        print(f"\\nTask: {{task[:50]}}...")
-        print(f"Agents participated: {{result.metadata.get('agents_used', 'Unknown')}}")
-        print(f"Consensus reached: {{result.metadata.get('consensus', False)}}")
-
-async def compare_patterns():
-    \"\"\"Compare different coordination patterns.\"\"\"
-    print("\\n=== Pattern Comparison ===")
-
-    from acp_evals.benchmarks.multi_agent import PatternComparisonBenchmark
-
-    comparison = PatternComparisonBenchmark(
-        agents=AGENTS,
-        patterns=["linear", "supervisor", "swarm"]
-    )
-
-    # Run comparison on multiple tasks
-    comparison_tasks = [
-        "Research and analyze market trends",
-        "Create a technical documentation",
-        "Solve a complex problem requiring multiple perspectives"
-    ]
-
-    results = await comparison.run_comparison(
-        tasks=comparison_tasks,
-        metrics=["efficiency", "quality", "coordination"]
-    )
-
-    # Display comparison table
-    print("\\nPattern Performance Comparison:")
-    print("Pattern     | Efficiency | Quality | Coordination")
-    print("----------- | ---------- | ------- | ------------")
-    for pattern, scores in results.items():
-        print(f"{{pattern:<11}} | {{scores['efficiency']:.2f}}      | {{scores['quality']:.2f}}   | {{scores['coordination']:.2f}}")
-
-if __name__ == "__main__":
-    # Run all pattern evaluations
-    asyncio.run(evaluate_linear_pattern())
-    asyncio.run(evaluate_supervisor_pattern())
-    asyncio.run(evaluate_swarm_pattern())
-    asyncio.run(compare_patterns())
-""",
+"""
 }

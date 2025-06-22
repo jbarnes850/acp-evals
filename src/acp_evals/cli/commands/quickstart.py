@@ -149,7 +149,8 @@ print(f"Passed: {{result.passed}}")
         script = """#!/usr/bin/env python3
 \"\"\"Complete example to get you started.\"\"\"
 
-from acp_evals import evaluate, test_agent, AccuracyEval, EvalOptions
+import asyncio
+from acp_evals import AccuracyEval, PerformanceEval, ReliabilityEval
 
 # Example 1: Simple function agent
 def calculator_agent(message):
@@ -162,30 +163,30 @@ def calculator_agent(message):
         return "Hello! I'm a helpful assistant."
     return "I'm not sure about that."
 
-# Test with one line
-print("Test 1: Basic accuracy")
-result = evaluate.accuracy(
-    calculator_agent,
-    input="What is 2+2?",
-    expected="4"
-)
-print(f"Score: {result.score}")
+async def main():
+    # Test 1: Basic accuracy test
+    print("Test 1: Basic accuracy")
+    eval = AccuracyEval(calculator_agent)
+    result = await eval.run(
+        input="What is 2+2?",
+        expected="4"
+    )
+    print(f"Score: {result.score}")
 
-# Run a test suite
-print("\\nTest 2: Full test suite")
-results = test_agent(calculator_agent)
-for test_type, result in results.items():
-    print(f"{test_type}: {result.score:.2f}")
+    # Test 2: Performance evaluation
+    print("\\nTest 2: Performance")
+    perf = PerformanceEval(calculator_agent)
+    result = await perf.run("What is the capital of France?")
+    print(f"Latency: {result.details.get('latency_ms', 0):.2f}ms")
 
-# Advanced: Use options for more control
-print("\\nTest 3: With options")
-options = EvalOptions(
-    rubric="factual",
-    threshold=0.8
-)
-eval = AccuracyEval(calculator_agent, options)
-result = evaluate(eval, input="What is the capital of France?", expected="Paris")
-print(f"Score: {result.score}")
+    # Test 3: Reliability check
+    print("\\nTest 3: Reliability")
+    reliable = ReliabilityEval(calculator_agent)
+    result = await reliable.run("Hello!")
+    print(f"Consistency: {result.score:.2f}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
 """
     
     # Step 3: Save the script

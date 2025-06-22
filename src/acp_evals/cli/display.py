@@ -148,7 +148,7 @@ def create_metrics_table(metrics: Dict[str, Any]) -> Table:
     return table
 
 
-def create_cost_breakdown(cost_data: Dict[str, float]) -> Panel:
+def create_cost_breakdown(cost_data: Dict[str, Any]) -> Panel:
     """Create a visual cost breakdown."""
     lines = []
     
@@ -158,18 +158,20 @@ def create_cost_breakdown(cost_data: Dict[str, float]) -> Panel:
     # Token usage
     if "tokens" in cost_data:
         tokens = cost_data["tokens"]
-        lines.append("Token Usage:")
-        lines.append(f"  • Input:  {tokens.get('input', 0):,}")
-        lines.append(f"  • Output: {tokens.get('output', 0):,}")
-        lines.append(f"  • Total:  {tokens.get('total', 0):,}")
+        if isinstance(tokens, dict):
+            lines.append("Token Usage:")
+            lines.append(f"  • Input:  {tokens.get('input', 0):,}")
+            lines.append(f"  • Output: {tokens.get('output', 0):,}")
+            lines.append(f"  • Total:  {tokens.get('total', 0):,}")
     
     # Cost projections
     if "projections" in cost_data:
         lines.append("\nProjected Costs:")
         proj = cost_data["projections"]
-        lines.append(f"  • Hourly:   ${proj.get('hourly', 0):.2f}")
-        lines.append(f"  • Daily:    ${proj.get('daily', 0):.2f}")
-        lines.append(f"  • Monthly:  ${proj.get('monthly', 0):.2f}")
+        if isinstance(proj, dict):
+            lines.append(f"  • Hourly:   ${proj.get('hourly', 0):.2f}")
+            lines.append(f"  • Daily:    ${proj.get('daily', 0):.2f}")
+            lines.append(f"  • Monthly:  ${proj.get('monthly', 0):.2f}")
     
     return Panel(
         "\n".join(lines),
@@ -184,7 +186,7 @@ def create_live_progress(task_name: str) -> Progress:
     """Create a live progress display for running evaluations."""
     return Progress(
         SpinnerColumn(),
-        TextColumn("[bold blue]{task.description}"),
+        TextColumn(f"[bold blue]{task_name}"),
         BarColumn(complete_style="green", finished_style="bright_green"),
         TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
         TextColumn("•"),
