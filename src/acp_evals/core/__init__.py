@@ -5,8 +5,6 @@ Base classes, exceptions, validation, and configuration.
 """
 
 from acp_evals.core.base import (
-    BenchmarkResult,
-    BenchmarkTask,
     MetricResult,
     TokenUsage,
 )
@@ -34,8 +32,6 @@ __all__ = [
     # Base classes
     "MetricResult",
     "TokenUsage",
-    "BenchmarkResult",
-    "BenchmarkTask",
     # Exceptions
     "EvaluationError",
     "ConfigurationError",

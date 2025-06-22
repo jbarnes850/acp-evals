@@ -1,96 +1,93 @@
-# LLM Provider Configuration Guide
+# LLM Provider Guide
 
-ACP Evals supports multiple LLM providers for evaluation. This guide covers detailed setup and configuration for each provider.
+ACP Evals provides a unified interface for multiple LLM providers with automatic detection and simple configuration.
 
 ## Overview
 
-The framework uses a provider abstraction layer that allows you to:
-- Switch between providers without changing code
-- Automatically detect configured providers
-- Fall back to mock mode for testing
-- Track costs across different providers
+The provider system offers:
+- **Auto-detection**: Automatically detects configured providers based on environment variables
+- **Unified interface**: Same API across all providers
+- **Built-in cost tracking**: Automatic token usage and cost calculation
+- **Zero configuration**: Works out of the box once API keys are set
 
-## Supported Providers (June 2025)
+## Supported Providers
 
 ### OpenAI
 
-**Latest Models:**
-- `gpt-4.1` - Latest GPT-4.1 with improved coding and reasoning
-- `gpt-4.1-nano` - Smaller, faster variant 
-- `o3` - Advanced reasoning model (200K context)
-- `o3-mini` - Fast reasoning (200K context)
-- `o4-mini` - Cost-efficient reasoning
+**Supported Models:**
+- `gpt-4.1` - Latest model (default)
+- `gpt-4.1-nano` - Cost-efficient variant
+- `o3` - Advanced reasoning model
+- `o3-mini` - Smaller reasoning model
+- `o4-mini` - Fastest model
 
 **Setup:**
-
-1. Get your API key from [OpenAI Platform](https://platform.openai.com/api-keys)
-
-2. Add to `.env`:
 ```bash
+# Add to .env file
 OPENAI_API_KEY=sk-proj-...your-key...
-OPENAI_MODEL=gpt-4.1
+```
+
+**Optional Configuration:**
+```bash
+OPENAI_MODEL=gpt-4.1          # Default model
+OPENAI_API_BASE=...           # Custom endpoint
 ```
 
 **Pricing (per 1K tokens):**
-- `gpt-4.1`: $0.01/$0.03 (input/output)
-- `o3`: $0.015/$0.075
-- `o4-mini`: $0.002/$0.010
+- `gpt-4.1`: $0.01 input / $0.03 output
+- `gpt-4.1-nano`: $0.005 input / $0.015 output
+- `o3`: $0.015 input / $0.075 output
+- `o3-mini`: $0.003 input / $0.015 output
+- `o4-mini`: $0.002 input / $0.010 output
 
-### Anthropic  
+### Anthropic
 
-**Latest Models:**
-- `claude-4-opus` - Best for complex, long-running tasks (32K output)
-- `claude-4-sonnet` - Excellent coding performance (64K output)
+**Supported Models:**
+- `claude-3-opus-20240229` - Most capable model for complex reasoning (default)
+- `claude-3-sonnet-20240229` - Balanced intelligence and speed
+- `claude-3-haiku-20240307` - Fastest model for quick responses
 
 **Setup:**
-
-1. Get your API key from [Anthropic Console](https://console.anthropic.com/)
-
-2. Add to `.env`:
 ```bash
+# Add to .env file
 ANTHROPIC_API_KEY=sk-ant-api03-...your-key...
-ANTHROPIC_MODEL=claude-4-sonnet
+```
+
+**Optional Configuration:**
+```bash
+ANTHROPIC_MODEL=claude-3-opus-20240229    # Default model
 ```
 
 **Pricing (per 1K tokens):**
-- `claude-4-opus`: $0.015/$0.075 (input/output)
-- `claude-4-sonnet`: $0.003/$0.015
+- `claude-3-opus-20240229`: $0.015 input / $0.075 output
+- `claude-3-sonnet-20240229`: $0.003 input / $0.015 output
+- `claude-3-haiku-20240307`: $0.0008 input / $0.004 output
 
-**Special Features:**
-- Both models support extended thinking mode
-- Tool use during reasoning
-- Excellent instruction following
-
-### Ollama (Local LLMs)
+### Ollama (Local)
 
 **Recommended Models:**
-- `qwen3:235b-a22b` - Flagship model, competes with GPT-4
-- `qwen3:30b-a3b` - Best balance for local inference
-- `qwen3:4b` - Lightweight but powerful
-- `llama3.3:70b` - Meta's latest, excellent performance
-- `phi-4` - Microsoft's reasoning model
+- `qwen3:8b` - Good balance for local inference (default)
+- `qwen3:4b` - Faster inference option
+- `devstral:latest` - Development-focused model
+- `gemma3:12b` - Google's model
 
 **Setup:**
-
-1. Install Ollama:
 ```bash
-# macOS
-brew install ollama
+# Install Ollama
+brew install ollama               # macOS
+curl -fsSL https://ollama.ai/install.sh | sh  # Linux
 
-# Linux
-curl -fsSL https://ollama.ai/install.sh | sh
+# Pull models
+ollama pull qwen3:8b
+
+# Start server
+ollama serve
 ```
 
-2. Pull models:
+**Optional Configuration:**
 ```bash
-ollama pull qwen3:30b-a3b
-ollama pull llama3.3:70b
-```
-
-3. Add to `.env`:
-```bash
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=qwen3:30b-a3b
+OLLAMA_BASE_URL=http://localhost:11434    # Default URL
+OLLAMA_MODEL=qwen3:8b                    # Default model
 ```
 
 **Benefits:**
@@ -99,133 +96,202 @@ OLLAMA_MODEL=qwen3:30b-a3b
 - No rate limits
 - Offline capability
 
-## Provider Selection
+## Usage
 
-### Automatic Detection
+### Automatic Provider Selection
 
-The framework automatically detects available providers:
+The framework automatically detects and uses the first available provider:
 
 ```python
-# Uses EVALUATION_PROVIDER from .env
+from acp_evals import AccuracyEval
+
+# Uses auto-detected provider (OpenAI → Anthropic → Ollama)
 eval = AccuracyEval(agent=my_agent)
-
-# Auto-detects first available provider
-# Priority: OpenAI → Anthropic → Ollama → Mock
+result = await eval.run(input="What is 2+2?", expected="4")
 ```
 
-### Explicit Selection
+### Explicit Provider Selection
 
 ```python
-# Use specific provider
+# Force specific provider via judge_model
 eval = AccuracyEval(
     agent=my_agent,
-    judge_model="gpt-4.1"  # Forces OpenAI
+    judge_model="claude-4-sonnet"  # Uses Anthropic
 )
 
 eval = AccuracyEval(
-    agent=my_agent,
-    judge_model="claude-4-sonnet"  # Forces Anthropic
+    agent=my_agent, 
+    judge_model="gpt-4.1"          # Uses OpenAI
 )
 ```
 
-### Provider Configuration
+### Direct Provider Usage
 
 ```python
-# With custom configuration
 from acp_evals.providers import ProviderFactory
 
-provider = ProviderFactory.create(
-    "openai",
-    model="o3",
-    temperature=0.0,
-    max_tokens=2000
-)
+# Create provider directly
+provider = ProviderFactory.create("openai", model="gpt-4.1")
+response = await provider.complete("Hello world")
+
+print(f"Response: {response.content}")
+print(f"Cost: ${response.cost:.4f}")
+print(f"Tokens: {response.usage}")
 ```
 
-## Mock Provider
-
-For testing without API calls:
-
-```python
-# Enable mock mode
-eval = AccuracyEval(
-    agent=my_agent,
-    mock_mode=True
-)
-
-# Or via environment
-MOCK_MODE=true
-```
-
-Mock mode provides:
-- Consistent test results
-- No API costs
-- Fast execution
-- Offline testing
-
-## Cost Management
-
-### Tracking Costs
-
-All evaluations track token usage and costs:
-
-```python
-result = await eval.run(input="...", expected="...")
-print(f"Evaluation cost: ${result.details.get('cost', 0):.4f}")
-```
-
-### Cost Alerts
-
-Set up cost alerts in `.env`:
+### Environment-Based Configuration
 
 ```bash
-ENABLE_COST_TRACKING=true
-COST_ALERT_THRESHOLD=1.00  # Alert when cost exceeds $1.00
-```
+# Set default provider
+EVALUATION_PROVIDER=anthropic
 
-### Provider Comparison
-
-| Provider | Model | Input $/1K | Output $/1K | Context | Best For |
-|----------|-------|------------|-------------|---------|----------|
-| OpenAI | gpt-4.1 | $0.01 | $0.03 | 128K | General evaluation |
-| OpenAI | o3 | $0.015 | $0.075 | 200K | Complex reasoning |
-| Anthropic | claude-4-sonnet | $0.003 | $0.015 | 200K | Code evaluation |
-| Ollama | qwen3:30b | $0 | $0 | 32K | Local testing |
-
-## Advanced Configuration
-
-### Timeout Settings
-
-```bash
-# Evaluation timeout (seconds)
+# Set evaluation parameters
+EVALUATION_TEMPERATURE=0.0
+EVALUATION_MAX_TOKENS=1000
 EVALUATION_TIMEOUT=30
-
-# Batch timeout
-BATCH_TIMEOUT_SECONDS=300
 ```
 
-### Rate Limiting
+## Provider Detection
 
-The framework handles rate limits automatically:
-- Exponential backoff
-- Retry with jitter
-- Provider-specific handling
-
-### Custom Endpoints
-
-For enterprise or custom deployments:
+Check which providers are configured:
 
 ```python
-# Custom OpenAI-compatible endpoint
-OPENAI_API_BASE=https://your-endpoint.com/v1
+from acp_evals.providers import ProviderFactory
 
-# Ollama on different host
-OLLAMA_BASE_URL=http://gpu-server:11434
+# Check available providers
+available = ProviderFactory.detect_available_providers()
+print(available)
+# {'openai': True, 'anthropic': False, 'ollama': True}
+
+# Get default provider
+default = ProviderFactory.get_default_provider()
+print(default)  # 'openai'
 ```
 
-## Provider Roadmap
+## Error Handling
 
-Coming soon:
-- Google Gemini support
-- Custom model endpoints
-- Multi-provider evaluation (compare models)
+The framework provides helpful error messages:
+
+```python
+from acp_evals.core.exceptions import ProviderNotConfiguredError
+
+try:
+    provider = ProviderFactory.create("openai")
+except ProviderNotConfiguredError as e:
+    print(e)  # Shows setup instructions
+```
+
+## Cost Tracking
+
+All providers automatically track token usage and costs:
+
+```python
+eval = AccuracyEval(agent=my_agent, judge_model="gpt-4.1")
+result = await eval.run(input="Test", expected="Answer")
+
+# Access cost information
+if hasattr(result, 'metadata') and result.metadata:
+    cost = result.metadata.get('cost', 0)
+    print(f"Evaluation cost: ${cost:.4f}")
+```
+
+## Implementation Details
+
+### Base Provider Interface
+
+All providers implement the same interface:
+
+```python
+from acp_evals.providers.base import LLMProvider, LLMResponse
+
+class MyProvider(LLMProvider):
+    @property
+    def name(self) -> str:
+        return "my_provider"
+    
+    async def complete(self, prompt: str, **kwargs) -> LLMResponse:
+        # Implementation
+        return LLMResponse(
+            content="response",
+            model=self.model,
+            usage={"total_tokens": 100},
+            cost=0.001
+        )
+    
+    @classmethod
+    def get_required_env_vars(cls) -> list[str]:
+        return ["MY_API_KEY"]
+```
+
+### Provider Factory
+
+The factory handles provider creation and auto-detection:
+
+```python
+from acp_evals.providers import ProviderFactory
+
+# Registry of available providers
+ProviderFactory.PROVIDERS = {
+    "openai": OpenAIProvider,
+    "anthropic": AnthropicProvider, 
+    "ollama": OllamaProvider,
+}
+
+# Auto-detection priority
+priority = ["openai", "anthropic", "ollama"]
+```
+
+### Configuration Loading
+
+Configuration is loaded from environment variables:
+
+```python
+from acp_evals.core.config import get_provider_config
+
+config = get_provider_config()
+# Returns provider settings from environment
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Provider not found**: Check API key environment variables
+2. **Connection errors**: Verify API endpoints and network connectivity
+3. **Rate limits**: Framework handles retries automatically
+4. **Ollama connection**: Ensure `ollama serve` is running
+
+### Debugging
+
+```python
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
+# Shows detailed provider communication
+eval = AccuracyEval(agent=my_agent)
+```
+
+### Health Checks
+
+```python
+# Check provider connectivity
+provider = ProviderFactory.create("ollama")
+if hasattr(provider, 'check_connection'):
+    connected = await provider.check_connection()
+    print(f"Ollama connected: {connected}")
+```
+
+## Best Practices
+
+1. **Use environment variables** for API keys instead of hardcoding
+2. **Set EVALUATION_PROVIDER** to avoid auto-detection overhead
+3. **Monitor costs** with built-in tracking
+4. **Use Ollama for development** to avoid API costs
+5. **Handle provider errors** gracefully in production
+
+## Migration Notes
+
+- **Mock mode removed**: No longer supported, use real providers or local Ollama
+- **Simplified interface**: Provider creation is now automatic
+- **Environment-first**: Configuration primarily through environment variables
+- **Built-in validation**: Providers validate configuration on initialization

@@ -240,7 +240,17 @@ class ReliabilityEval(BaseEval):
         )
 
         if print_results:
-            result.print_summary()
+            # Use rich display components for comprehensive reliability evaluation details
+            from ..cli.display import display_single_evaluation_result
+
+            display_single_evaluation_result(
+                evaluation_type="reliability",
+                agent_identifier=str(self.agent),
+                input_text=input,
+                result=result,
+                show_details=True,
+                show_performance=True,
+            )
 
         return result
 

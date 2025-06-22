@@ -68,3 +68,9 @@ def check_provider_setup() -> dict:
     }
 
     return providers
+
+
+def get_available_providers() -> list[str]:
+    """Get list of available and configured providers."""
+    setup = check_provider_setup()
+    return [provider for provider, available in setup.items() if available]

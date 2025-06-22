@@ -1,354 +1,163 @@
 #!/usr/bin/env python3
 """
-Validation script for ACP Evals implementation.
+Simple validation script for ACP Evals simplified framework.
 
-This script verifies that the implementation matches the proposal
-and includes all required features.
+This script validates the basic functionality of the 3 core evaluators.
 """
 
-import importlib
-import inspect
+import asyncio
 import sys
 from pathlib import Path
 
 
-class ImplementationValidator:
-    """Validates the ACP Evals implementation against requirements."""
+class SimpleACPAgent:
+    """Mock ACP agent for testing purposes."""
 
-    def __init__(self):
-        self.errors: list[str] = []
-        self.warnings: list[str] = []
-        self.successes: list[str] = []
+    def __init__(self, name="test-agent"):
+        self.name = name
+        self.call_count = 0
 
-    def validate_all(self):
-        """Run all validation checks."""
-        print("🔍 Validating ACP Evals Implementation...\n")
+    async def run(self, input_text: str, **kwargs) -> str:
+        """Mock agent response."""
+        self.call_count += 1
+        return f"Mock response to: {input_text[:50]}..."
 
-        # Check module structure
-        self.validate_module_structure()
 
-        # Check base classes
-        self.validate_base_classes()
+async def validate_accuracy_eval():
+    """Test AccuracyEval functionality."""
+    print("Testing AccuracyEval...")
 
-        # Check metrics implementation
-        self.validate_metrics()
+    try:
+        from acp_evals import AccuracyEval
 
-        # Check benchmarks
-        self.validate_benchmarks()
+        # Test with mock agent
+        agent = SimpleACPAgent()
+        eval = AccuracyEval(agent=agent, name="Accuracy Test")
 
-        # Check evaluators
-        self.validate_evaluators()
+        result = await eval.run(input="What is 2+2?", expected="4")
 
-        # Check patterns
-        self.validate_patterns()
-
-        # Check integration components
-        self.validate_integration()
-
-        # Report results
-        self.report_results()
-
-    def validate_module_structure(self):
-        """Validate the module structure matches the proposal."""
-        print("📁 Checking module structure...")
-
-        required_modules = [
-            "acp_evals",
-            "acp_evals.base",
-            "acp_evals.metrics",
-            "acp_evals.metrics.token_usage",
-            "acp_evals.metrics.context",
-            "acp_evals.metrics.cost",
-            "acp_evals.metrics.handoff_quality",
-            "acp_evals.benchmarks",
-            "acp_evals.benchmarks.context_scaling",
-            "acp_evals.benchmarks.multi_agent",
-            "acp_evals.evaluators",
-            "acp_evals.evaluators.llm_judge",
-            "acp_evals.patterns",
-            "acp_evals.patterns.linear",
-            "acp_evals.patterns.supervisor",
-            "acp_evals.patterns.swarm",
-            "acp_evals.client",
-            "acp_evals.telemetry",
-        ]
-
-        for module_name in required_modules:
-            try:
-                importlib.import_module(module_name)
-                self.successes.append(f"✓ Module {module_name} found")
-            except ImportError as e:
-                self.errors.append(f"✗ Missing module: {module_name} - {e}")
-
-    def validate_base_classes(self):
-        """Validate base classes are properly implemented."""
-        print("\n🏗️  Checking base classes...")
-
-        try:
-            from acp_evals.core.base import (
-                Benchmark,  # noqa: F401
-                BenchmarkResult,  # noqa: F401
-                BenchmarkTask,  # noqa: F401
-                Evaluator,  # noqa: F401
-                EvaluatorResult,  # noqa: F401
-                Metric,
-                MetricResult,
-            )
-
-            # Check Metric abstract class
-            if not inspect.isabstract(Metric):
-                self.warnings.append("⚠️  Metric should be abstract")
-
-            # Check required methods
-            metric_methods = ["calculate", "name", "description"]
-            for method in metric_methods:
-                if not hasattr(Metric, method):
-                    self.errors.append(f"✗ Metric missing method: {method}")
-                else:
-                    self.successes.append(f"✓ Metric.{method} found")
-
-            # Check MetricResult dataclass
-            metric_result_fields = ["name", "value", "unit", "breakdown", "metadata"]
-            for field in metric_result_fields:
-                if not hasattr(MetricResult, field):
-                    self.errors.append(f"✗ MetricResult missing field: {field}")
-                else:
-                    self.successes.append(f"✓ MetricResult.{field} found")
-
-        except ImportError as e:
-            self.errors.append(f"✗ Failed to import base classes: {e}")
-
-    def validate_metrics(self):
-        """Validate metric implementations."""
-        print("\n📊 Checking metrics...")
-
-        metrics_to_check = [
-            ("token_usage", "TokenUsageMetric", ["track_context_usage"]),
-            ("context", "ContextMetric", ["window_size"]),
-            ("cost", "CostMetric", ["pricing_model"]),
-            ("handoff_quality", "HandoffQualityMetric", ["track_decisions", "track_constraints"]),
-        ]
-
-        for module_name, class_name, expected_attrs in metrics_to_check:
-            try:
-                module = importlib.import_module(f"acp_evals.metrics.{module_name}")
-                cls = getattr(module, class_name)
-
-                # Check it inherits from Metric
-                from acp_evals.core.base import Metric
-
-                if not issubclass(cls, Metric):
-                    self.errors.append(f"✗ {class_name} doesn't inherit from Metric")
-                else:
-                    self.successes.append(f"✓ {class_name} properly inherits from Metric")
-
-                # Check expected attributes
-                instance = cls()
-                for attr in expected_attrs:
-                    if not hasattr(instance, attr):
-                        self.warnings.append(f"⚠️  {class_name} missing attribute: {attr}")
-
-            except Exception as e:
-                self.errors.append(f"✗ Error checking {class_name}: {e}")
-
-    def validate_benchmarks(self):
-        """Validate benchmark implementations."""
-        print("\n🎯 Checking benchmarks...")
-
-        # Check ContextScalingBenchmark
-        try:
-            from acp_evals.benchmarks.context_scaling import ContextScalingBenchmark
-
-            benchmark = ContextScalingBenchmark()
-
-            # Check required attributes
-            required_attrs = ["distractor_domains", "context_levels", "tasks"]
-            for attr in required_attrs:
-                if not hasattr(benchmark, attr):
-                    self.errors.append(f"✗ ContextScalingBenchmark missing: {attr}")
-                else:
-                    self.successes.append(f"✓ ContextScalingBenchmark.{attr} found")
-
-            # Check tau-bench compatibility
-            if hasattr(benchmark, "_generate_distractors"):
-                self.successes.append("✓ Distractor generation implemented")
-            else:
-                self.warnings.append("⚠️  Missing distractor generation")
-
-        except Exception as e:
-            self.errors.append(f"✗ Error checking ContextScalingBenchmark: {e}")
-
-        # Check multi-agent benchmarks
-        try:
-            self.successes.append("✓ Multi-agent benchmarks found")
-
-        except Exception as e:
-            self.errors.append(f"✗ Error checking multi-agent benchmarks: {e}")
-
-    def validate_evaluators(self):
-        """Validate evaluator implementations."""
-        print("\n⚖️  Checking evaluators...")
-
-        try:
-            from acp_evals.evaluators.llm_judge import LLMJudge
-
-            judge = LLMJudge()
-
-            # Check default rubric
-            if hasattr(judge, "DEFAULT_RUBRIC"):
-                rubric = judge.DEFAULT_RUBRIC
-                expected_criteria = [
-                    "factual_accuracy",
-                    "completeness",
-                    "clarity",
-                    "relevance",
-                    "efficiency",
-                ]
-
-                for criterion in expected_criteria:
-                    if criterion not in rubric:
-                        self.warnings.append(f"⚠️  Missing rubric criterion: {criterion}")
-                    else:
-                        self.successes.append(f"✓ Rubric includes {criterion}")
-
-                # Check weights sum to 1.0
-                total_weight = sum(c["weight"] for c in rubric.values())
-                if abs(total_weight - 1.0) > 0.01:
-                    self.errors.append(f"✗ Rubric weights sum to {total_weight}, not 1.0")
-                else:
-                    self.successes.append("✓ Rubric weights properly normalized")
-
-        except Exception as e:
-            self.errors.append(f"✗ Error checking LLMJudge: {e}")
-
-    def validate_patterns(self):
-        """Validate multi-agent patterns."""
-        print("\n🔀 Checking multi-agent patterns...")
-
-        patterns_to_check = ["LinearPattern", "SupervisorPattern", "SwarmPattern"]
-
-        for pattern_name in patterns_to_check:
-            try:
-                if pattern_name == "LinearPattern":
-                    from acp_evals.patterns.linear import LinearPattern as Pattern
-                elif pattern_name == "SupervisorPattern":
-                    from acp_evals.patterns.supervisor import SupervisorPattern as Pattern
-                else:
-                    from acp_evals.patterns.swarm import SwarmPattern as Pattern
-
-                # Check execute method
-                if hasattr(Pattern, "execute"):
-                    self.successes.append(f"✓ {pattern_name}.execute found")
-                else:
-                    self.errors.append(f"✗ {pattern_name} missing execute method")
-
-            except Exception as e:
-                self.errors.append(f"✗ Error checking {pattern_name}: {e}")
-
-    def validate_integration(self):
-        """Validate integration components."""
-        print("\n🔌 Checking integration components...")
-
-        # Check OpenTelemetry integration
-        try:
-            from acp_evals.telemetry.otel_exporter import OTelExporter
-
-            exporter = OTelExporter()
-            required_methods = ["export_run", "export_benchmark", "shutdown"]
-
-            for method in required_methods:
-                if hasattr(exporter, method):
-                    self.successes.append(f"✓ OTelExporter.{method} found")
-                else:
-                    self.errors.append(f"✗ OTelExporter missing: {method}")
-
-        except Exception as e:
-            self.errors.append(f"✗ Error checking OTelExporter: {e}")
-
-        # Check ACP client
-        try:
-            from acp_evals.client.acp_client import ACPEvalClient
-
-            # Check for evaluation methods
-            if hasattr(ACPEvalClient, "evaluate_agent"):
-                self.successes.append("✓ ACPEvalClient.evaluate_agent found")
-            else:
-                self.errors.append("✗ ACPEvalClient missing evaluate_agent")
-
-        except Exception as e:
-            self.errors.append(f"✗ Error checking ACPEvalClient: {e}")
-
-    def check_research_alignment(self):
-        """Check alignment with research insights."""
-        print("\n📚 Checking research alignment...")
-
-        # Token-first metrics (Anthropic)
-        try:
-            from acp_evals.metrics.token_usage import TokenUsageMetric
-
-            metric = TokenUsageMetric()
-
-            # Should track efficiency
-            if hasattr(metric, "calculate"):
-                self.successes.append("✓ Token-first metrics implemented")
-
-        except Exception:
-            self.errors.append("✗ Missing token-first metrics")
-
-        # Context preservation (Cognition)
-        try:
-            self.successes.append("✓ Context preservation metrics implemented")
-        except Exception:
-            self.errors.append("✗ Missing context preservation metrics")
-
-        # Architecture patterns (LangChain)
-        try:
-            self.successes.append("✓ Multiple architecture patterns implemented")
-        except Exception:
-            self.errors.append("✗ Missing architecture patterns")
-
-    def report_results(self):
-        """Report validation results."""
-        print("\n" + "=" * 60)
-        print("📋 VALIDATION SUMMARY")
-        print("=" * 60)
-
-        print(f"\n✅ Successes: {len(self.successes)}")
-        if self.successes and len(self.successes) <= 20:
-            for success in self.successes[:5]:
-                print(f"   {success}")
-            if len(self.successes) > 5:
-                print(f"   ... and {len(self.successes) - 5} more")
-
-        print(f"\n⚠️  Warnings: {len(self.warnings)}")
-        for warning in self.warnings:
-            print(f"   {warning}")
-
-        print(f"\n❌ Errors: {len(self.errors)}")
-        for error in self.errors:
-            print(f"   {error}")
-
-        print("\n" + "=" * 60)
-
-        if not self.errors:
-            print("✅ Implementation validated successfully!")
-            return 0
+        if result and hasattr(result, "score"):
+            print("  AccuracyEval: PASS")
+            return True
         else:
-            print("❌ Validation failed with errors.")
-            return 1
+            print("  AccuracyEval: FAIL - Invalid result format")
+            return False
+
+    except Exception as e:
+        print(f"  AccuracyEval: FAIL - {e}")
+        return False
 
 
-def main():
-    """Run validation."""
+async def validate_performance_eval():
+    """Test PerformanceEval functionality."""
+    print("Testing PerformanceEval...")
+
+    try:
+        from acp_evals import PerformanceEval
+
+        # Test with mock agent
+        agent = SimpleACPAgent()
+        eval = PerformanceEval(agent=agent, name="Performance Test")
+
+        result = await eval.run(input_text="Test performance")
+
+        if result and hasattr(result, "details"):
+            print("  PerformanceEval: PASS")
+            return True
+        else:
+            print("  PerformanceEval: FAIL - Invalid result format")
+            return False
+
+    except Exception as e:
+        print(f"  PerformanceEval: FAIL - {e}")
+        return False
+
+
+async def validate_reliability_eval():
+    """Test ReliabilityEval functionality."""
+    print("Testing ReliabilityEval...")
+
+    try:
+        from acp_evals import ReliabilityEval
+
+        # Test with mock agent
+        agent = SimpleACPAgent()
+        eval = ReliabilityEval(agent=agent, name="Reliability Test")
+
+        result = await eval.run(input="Test reliability")
+
+        if result and hasattr(result, "score"):
+            print("  ReliabilityEval: PASS")
+            return True
+        else:
+            print("  ReliabilityEval: FAIL - Invalid result format")
+            return False
+
+    except Exception as e:
+        print(f"  ReliabilityEval: FAIL - {e}")
+        return False
+
+
+def validate_imports():
+    """Test that all core imports work."""
+    print("Testing core imports...")
+
+    try:
+        from acp_evals import (
+            AccuracyEval,
+            EvalResult,
+            MetricResult,
+            PerformanceEval,
+            ReliabilityEval,
+            TokenUsage,
+        )
+
+        print("  Core imports: PASS")
+        return True
+
+    except Exception as e:
+        print(f"  Core imports: FAIL - {e}")
+        return False
+
+
+async def main():
+    """Run validation tests."""
+    print("=" * 50)
+    print("ACP EVALS SIMPLIFIED FRAMEWORK VALIDATION")
+    print("=" * 50)
+
     # Add src to path
-    sys.path.insert(0, str(Path(__file__).parent / "src"))
+    project_root = Path(__file__).parent.parent
+    sys.path.insert(0, str(project_root / "src"))
 
-    validator = ImplementationValidator()
-    validator.validate_all()
-    validator.check_research_alignment()
+    # Run validation tests
+    results = []
 
-    return validator.report_results()
+    # Test imports
+    results.append(validate_imports())
+
+    # Test evaluators
+    results.append(await validate_accuracy_eval())
+    results.append(await validate_performance_eval())
+    results.append(await validate_reliability_eval())
+
+    # Summary
+    print("\n" + "=" * 50)
+    print("VALIDATION SUMMARY")
+    print("=" * 50)
+
+    passed = sum(results)
+    total = len(results)
+
+    print(f"Tests passed: {passed}/{total}")
+
+    if passed == total:
+        print("Validation: PASSED")
+        return 0
+    else:
+        print("Validation: FAILED")
+        return 1
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(asyncio.run(main()))

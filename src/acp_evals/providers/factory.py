@@ -97,3 +97,17 @@ class ProviderFactory:
                 return provider
 
         return None
+
+    @classmethod
+    def get_provider(cls, provider: str | None = None, **kwargs) -> LLMProvider:
+        """
+        Get a provider instance (alias for create method).
+
+        Args:
+            provider: Provider name (uses EVALUATION_PROVIDER env var if not provided)
+            **kwargs: Provider-specific configuration
+
+        Returns:
+            LLMProvider instance
+        """
+        return cls.create(provider, **kwargs)

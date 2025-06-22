@@ -110,20 +110,22 @@ Finetuned evaluators trained on specific datasets show catastrophic performance 
 #### 2. Distribution Shift Sensitivity
 Performance degrades rapidly when input distribution changes from training data.
 
-**Mitigation:** Implement continuous monitoring and retraining pipelines. Use TRAIL-based failure pattern extraction:
+**Mitigation:** Implement continuous monitoring and retraining pipelines:
 
 ```python
-from acp_evals.benchmarks.datasets import TrailFailureExtractor
+# Monitor distribution shift
+from acp_evals.metrics import calculate_distribution_shift
 
-# Extract failure patterns for retraining
-extractor = TrailFailureExtractor()
-patterns = extractor.extract_failure_patterns(limit=1000)
-
-# Generate synthetic training data based on failures
-for pattern in patterns:
-    if pattern.frequency > 0.1:  # Common failures
-        scenario = extractor.generate_failure_scenario(pattern)
-        # Add to retraining dataset
+# Track model performance over time
+performance_history = []
+for batch in evaluation_batches:
+    metrics = evaluate_classifier(batch)
+    performance_history.append(metrics)
+    
+    # Check for performance degradation
+    if metrics.accuracy < baseline_accuracy * 0.9:
+        print("Warning: Significant performance drop detected")
+        # Trigger retraining pipeline
 ```
 
 ## Performance Benchmarks and Expectations

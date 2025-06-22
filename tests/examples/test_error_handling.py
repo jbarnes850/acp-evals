@@ -8,6 +8,8 @@ import os
 import sys
 from pathlib import Path
 
+import pytest
+
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -162,8 +164,8 @@ async def test_cost_tracking():
 
 
 async def test_mock_fallback():
-    """Test automatic fallback to mock mode."""
-    print("\n=== Test: Mock Mode Fallback ===")
+    """Test behavior when no API keys are available."""
+    print("\n=== Test: No API Keys Available ===")
 
     # Remove all API keys
     keys_to_remove = ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]
@@ -173,17 +175,13 @@ async def test_mock_fallback():
         original_keys[key] = os.environ.pop(key, None)
 
     try:
-        # This should fall back to mock mode
-        eval = AccuracyEval(
-            agent=lambda x: f"Response to: {x}"
-            # No provider specified, no mock_mode specified
-        )
+        # This should raise an error without API keys
+        with pytest.raises(ProviderNotConfiguredError) as exc_info:
+            eval = AccuracyEval(agent=lambda x: f"Response to: {x}")
+            await eval.run(input="Test input", expected="Test output")
 
-        result = await eval.run(input="Test input", expected="Test output")
-
-        print("✓ Automatically fell back to mock mode")
-        print(f"  Score: {result.score:.2f}")
-        print(f"  Feedback: {result.details['feedback']}")
+        print("✓ Correctly raised ProviderNotConfiguredError")
+        print(f"  Error: {exc_info.value}")
 
     finally:
         # Restore keys

@@ -1,63 +1,104 @@
 """
-Simple, developer-friendly evaluation API for ACP agents.
+ACP-Evals API: Simple, powerful agent evaluation.
 
-This module provides easy-to-use evaluation classes that handle complexity internally,
-allowing developers to evaluate their agents with minimal code.
+Professional developer tools focused on the 3 core evaluation types.
 """
 
-import asyncio
-from typing import Any
+from typing import Any, Optional, Union
 
-# Import evaluators
-from .evaluators.accuracy import AccuracyEval
-
-# Import common components
-from .evaluators.common import BatchResult, EvalResult
-from .evaluators.performance import PerformanceEval
-
-# Re-export quality evaluators
-from .evaluators.quality.quality import (
-    CompletenessEval,
-    GroundednessEval,
-    QualityEval,
-    TaskAdherenceEval,
-    ToolAccuracyEval,
-)
-from .evaluators.reliability import ReliabilityEval
-from .evaluators.safety import SafetyEval
-
-# Export all evaluators
-__all__ = [
-    # Common
-    "EvalResult",
-    "BatchResult",
-    # Core evaluators
-    "AccuracyEval",
-    "PerformanceEval",
-    "ReliabilityEval",
-    "SafetyEval",
-    # Quality evaluators
-    "GroundednessEval",
-    "CompletenessEval",
-    "TaskAdherenceEval",
-    "ToolAccuracyEval",
-    "QualityEval",
-    # Helper function
-    "evaluate",
-]
+from .evaluators.accuracy import AccuracyEval as _BaseAccuracyEval
+from .evaluators.common import EvalResult
+from .evaluators.performance import PerformanceEval as _BasePerformanceEval
+from .evaluators.reliability import ReliabilityEval as _BaseReliabilityEval
 
 
-# Convenience function for synchronous usage
-def evaluate(eval_obj: Any, *args, **kwargs) -> EvalResult:
+class AccuracyEval(_BaseAccuracyEval):
     """
-    Run evaluation synchronously.
+    Evaluate agent accuracy against expected outputs.
 
-    Example:
-        result = evaluate(
-            AccuracyEval(agent="http://localhost:8000/agents/my-agent"),
-            input="What is 2+2?",
-            expected="4",
-            print_results=True
+    Simple to start:
+        eval = AccuracyEval("http://localhost:8000/agent")
+        result = await eval.run("What is 2+2?", "4")
+
+    Professional features:
+        eval = AccuracyEval(
+            agent_url,
+            rubric="semantic",
+            judge_model="gpt-4",
+            pass_threshold=0.8
         )
     """
-    return asyncio.run(eval_obj.run(*args, **kwargs))
+
+    def __init__(
+        self,
+        agent: str | Any,
+        rubric: str = "factual",
+        judge_model: str | None = None,
+        pass_threshold: float = 0.7,
+        **kwargs,
+    ):
+        super().__init__(
+            agent=agent,
+            rubric=rubric,
+            judge_model=judge_model,
+            pass_threshold=pass_threshold,
+            **kwargs,
+        )
+
+
+class PerformanceEval(_BasePerformanceEval):
+    """
+    Evaluate agent performance: latency, throughput, resource usage.
+
+    Simple to start:
+        eval = PerformanceEval("http://localhost:8000/agent")
+        result = await eval.run("Test prompt")
+
+    Professional features:
+        eval = PerformanceEval(
+            agent_url,
+            num_iterations=10,
+            track_memory=True,
+            warmup_runs=2
+        )
+    """
+
+    def __init__(
+        self,
+        agent: str | Any,
+        num_iterations: int = 5,
+        track_memory: bool = False,
+        warmup_runs: int = 1,
+        **kwargs,
+    ):
+        super().__init__(
+            agent=agent,
+            num_iterations=num_iterations,
+            track_memory=track_memory,
+            warmup_runs=warmup_runs,
+            **kwargs,
+        )
+
+
+class ReliabilityEval(_BaseReliabilityEval):
+    """
+    Evaluate agent reliability: consistency, error handling, recovery.
+
+    Simple to start:
+        eval = ReliabilityEval("http://localhost:8000/agent")
+        result = await eval.run("Test prompt")
+
+    Professional features:
+        eval = ReliabilityEval(
+            agent_url,
+            tool_definitions=["search", "summarize"],
+            test_error_handling=True
+        )
+    """
+
+    def __init__(self, agent: str | Any, tool_definitions: list[str] | None = None, **kwargs):
+        super().__init__(agent=agent, tool_definitions=tool_definitions, **kwargs)
+
+
+# Export the simple, focused API
+__all__ = ["AccuracyEval", "PerformanceEval", "ReliabilityEval", "EvalResult"]
