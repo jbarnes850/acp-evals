@@ -126,8 +126,10 @@ async def run_test_suite(
                     rubric = test.get("rubric", "factual")
                     expected_output = test.get("expected")
                     if not expected_output:
-                        raise ValueError(f"Test '{test['name']}' requires 'expected' field for accuracy evaluation")
-                    
+                        raise ValueError(
+                            f"Test '{test['name']}' requires 'expected' field for accuracy evaluation"
+                        )
+
                     evaluator = AccuracyEval(agent=agent, rubric=rubric)
                     result = await evaluator.run(
                         input=test["input"],
@@ -137,8 +139,7 @@ async def run_test_suite(
                 elif test["evaluator"] == "performance":
                     evaluator = PerformanceEval(agent=agent, track_tokens=True)
                     result = await evaluator.run(
-                        input_text=test["input"],
-                        expected=test.get("expected")
+                        input_text=test["input"], expected=test.get("expected")
                     )
 
                 elif test["evaluator"] == "reliability":
@@ -147,7 +148,6 @@ async def run_test_suite(
                         input=test["input"],
                         expected_tools=test.get("expected_tools", []),
                     )
-
 
                 # Collect results
                 test_result = {
@@ -200,7 +200,7 @@ def display_results(summary: dict[str, Any]) -> None:
     """Display test results using rich display components."""
     # Import the rich display components
     from ...cli.display import display_evaluation_report
-    
+
     # Convert test results to display format
     display_data = {
         "scores": {"overall": summary["pass_rate"] / 100.0},
@@ -209,7 +209,7 @@ def display_results(summary: dict[str, Any]) -> None:
                 "name": result["name"],
                 "passed": result["passed"],
                 "score": result.get("score", 0.0),
-                "reason": result.get("error", "") if not result["passed"] else "Test passed"
+                "reason": result.get("error", "") if not result["passed"] else "Test passed",
             }
             for result in summary["results"]
         ],
@@ -218,24 +218,21 @@ def display_results(summary: dict[str, Any]) -> None:
             "passed": summary["passed"],
             "failed": summary["failed"],
             "pass_rate": f"{summary['pass_rate']:.1f}%",
-            "suite_name": summary["suite"]
-        }
+            "suite_name": summary["suite"],
+        },
     }
-    
+
     # Calculate cost if available
     total_cost = sum(result.get("cost", 0) for result in summary["results"])
     if total_cost > 0:
         display_data["cost_data"] = {
             "total": total_cost,
-            "average_per_test": total_cost / summary["total"] if summary["total"] > 0 else 0
+            "average_per_test": total_cost / summary["total"] if summary["total"] > 0 else 0,
         }
-    
+
     # Display using rich components
     display_evaluation_report(
-        display_data, 
-        show_details=True, 
-        show_suggestions=False, 
-        show_costs=total_cost > 0
+        display_data, show_details=True, show_suggestions=False, show_costs=total_cost > 0
     )
 
 
@@ -274,9 +271,7 @@ def display_results(summary: dict[str, Any]) -> None:
     help="Pass rate threshold percentage (default: 60%)",
 )
 @click.pass_context
-def test(
-    ctx, agent: str, test_suite: str, export_path: str | None, pass_threshold: float
-) -> None:
+def test(ctx, agent: str, test_suite: str, export_path: str | None, pass_threshold: float) -> None:
     """Quick test of an ACP agent with predefined test suites.
 
 
@@ -286,10 +281,10 @@ def test(
         acp-evals test my-agent --adversarial --export results.json
     """
     # Get flags from context
-    quiet = ctx.obj.get('quiet', False)
-    verbose = ctx.obj.get('verbose', False)
-    debug = ctx.obj.get('debug', False)
-    
+    quiet = ctx.obj.get("quiet", False)
+    ctx.obj.get("verbose", False)
+    debug = ctx.obj.get("debug", False)
+
     if not quiet:
         console.print("\n[bold cyan]ACP Agent Testing[/bold cyan]")
         console.print(f"Agent: [yellow]{agent}[/yellow]")
@@ -354,6 +349,7 @@ def test(
             console.print(f"\n[red]Test failed: {e}[/red]")
         if debug:
             import traceback
+
             console.print(f"[dim]{traceback.format_exc()}[/dim]")
         exit(1)
 

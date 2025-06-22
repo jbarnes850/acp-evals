@@ -7,6 +7,7 @@ import asyncio
 import os
 import sys
 from pathlib import Path
+
 import pytest
 
 # Add parent directory to path
@@ -176,9 +177,7 @@ async def test_mock_fallback():
     try:
         # This should raise an error without API keys
         with pytest.raises(ProviderNotConfiguredError) as exc_info:
-            eval = AccuracyEval(
-                agent=lambda x: f"Response to: {x}"
-            )
+            eval = AccuracyEval(agent=lambda x: f"Response to: {x}")
             await eval.run(input="Test input", expected="Test output")
 
         print("✓ Correctly raised ProviderNotConfiguredError")

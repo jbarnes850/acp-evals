@@ -9,19 +9,21 @@ compatible with BeeAI framework and other ACP clients.
 import asyncio
 import logging
 import uuid
+from collections.abc import Callable
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Optional
 
 try:
-    from acp_sdk.server import ACPServer, ACPServerConfig, ACPServerAgent
     from acp_sdk import models as acp_models
+    from acp_sdk.server import ACPServer, ACPServerAgent, ACPServerConfig
+
     ACP_SDK_AVAILABLE = True
 except ImportError:
     ACP_SDK_AVAILABLE = False
     # Fallback implementation
+    import uvicorn
     from fastapi import FastAPI, HTTPException
     from pydantic import BaseModel
-    import uvicorn
 
 logger = logging.getLogger(__name__)
 
@@ -34,38 +36,38 @@ if ACP_SDK_AVAILABLE:
         def __init__(self, port: int = 8001, host: str = "localhost"):
             self.config = ACPServerConfig(port=port, host=host)
             self.server = ACPServer(config=self.config)
-            self.agents: Dict[str, Callable] = {}
+            self.agents: dict[str, Callable] = {}
 
         def register_agent(
             self,
             agent_function: Callable,
             name: str,
             description: str = "Evaluation agent",
-            tags: Optional[List[str]] = None,
-            **metadata
+            tags: list[str] | None = None,
+            **metadata,
         ):
             """Register an agent function with the ACP server."""
             self.agents[name] = agent_function
-            
+
             # Wrap the function for ACP compatibility
             async def acp_agent_wrapper(inputs):
                 """Wrapper to make agent function ACP-compatible."""
                 if isinstance(inputs, list) and inputs:
                     # Extract text from first message
                     first_input = inputs[0]
-                    if hasattr(first_input, 'parts') and first_input.parts:
+                    if hasattr(first_input, "parts") and first_input.parts:
                         text = first_input.parts[0].content
                     else:
                         text = str(first_input)
                 else:
                     text = str(inputs)
-                
+
                 # Call the agent function
                 if asyncio.iscoroutinefunction(agent_function):
                     response = await agent_function(text)
                 else:
                     response = agent_function(text)
-                
+
                 # Return ACP-compatible response
                 return acp_models.MessagePart(content=str(response), role="assistant")
 
@@ -78,7 +80,7 @@ if ACP_SDK_AVAILABLE:
                 programming_language="Python",
                 natural_languages=["English"],
                 framework="ACP-Evals",
-                **metadata
+                **metadata,
             )
 
         def serve(self):
@@ -92,7 +94,7 @@ else:
         name: str
         description: str
         version: str = "1.0.0"
-        tags: List[str] = []
+        tags: list[str] = []
         framework: str = "ACP-Evals"
 
     class MessageModel(BaseModel):
@@ -100,8 +102,8 @@ else:
         role: str = "user"
 
     class RunRequestModel(BaseModel):
-        input: List[MessageModel]
-        session_id: Optional[str] = None
+        input: list[MessageModel]
+        session_id: str | None = None
 
     class ACPEvaluationServer:
         """Fallback ACP server implementation."""
@@ -110,13 +112,13 @@ else:
             self.port = port
             self.host = host
             self.app = FastAPI(title="ACP Evaluation Server")
-            self.agents: Dict[str, dict] = {}
-            self.agent_functions: Dict[str, Callable] = {}
+            self.agents: dict[str, dict] = {}
+            self.agent_functions: dict[str, Callable] = {}
             self._setup_routes()
 
         def _setup_routes(self):
             """Setup FastAPI routes for ACP compatibility."""
-            
+
             @self.app.get("/agents")
             async def list_agents():
                 """List all available agents."""
@@ -152,7 +154,7 @@ else:
                     return {
                         "output": [{"content": str(response), "role": "assistant"}],
                         "session_id": request.session_id or str(uuid.uuid4()),
-                        "status": "completed"
+                        "status": "completed",
                     }
 
                 except Exception as e:
@@ -164,8 +166,8 @@ else:
             agent_function: Callable,
             name: str,
             description: str = "Evaluation agent",
-            tags: Optional[List[str]] = None,
-            **metadata
+            tags: list[str] | None = None,
+            **metadata,
         ):
             """Register an agent function."""
             self.agent_functions[name] = agent_function
@@ -177,7 +179,7 @@ else:
                 "framework": "ACP-Evals",
                 "created_at": datetime.now().isoformat(),
                 "url": f"http://{self.host}:{self.port}/agents/{name}",
-                **metadata
+                **metadata,
             }
 
         def serve(self):
@@ -197,17 +199,13 @@ def serve_agent(
     description: str = "ACP Evaluation Agent",
     port: int = 8001,
     host: str = "localhost",
-    tags: Optional[List[str]] = None,
-    **metadata
+    tags: list[str] | None = None,
+    **metadata,
 ):
     """Serve a single agent via ACP protocol."""
     server = create_server(port=port, host=host)
     server.register_agent(
-        agent_function=agent_function,
-        name=name,
-        description=description,
-        tags=tags,
-        **metadata
+        agent_function=agent_function, name=name, description=description, tags=tags, **metadata
     )
     server.serve()
 
@@ -231,5 +229,5 @@ if __name__ == "__main__":
         name="example_agent",
         description="A simple example agent for testing ACP evaluations",
         tags=["example", "test"],
-        version="1.0.0"
+        version="1.0.0",
     )

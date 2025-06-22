@@ -10,8 +10,8 @@ import pytest
 from acp_sdk import Event, Message, MessagePart, Run
 
 from acp_evals.core.base import (
-    BenchmarkTask,
     AgentInfo,
+    BenchmarkTask,
 )
 
 # Event loop is now handled by pytest-asyncio's default configuration

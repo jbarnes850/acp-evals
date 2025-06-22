@@ -25,13 +25,12 @@ def setup_logging(
 
     # Console handler with custom formatter
     console_handler = logging.StreamHandler(sys.stderr)
-    
+
     # Different formatters based on log level
     if level == "DEBUG":
         # Include timestamp and module name in debug mode
         console_formatter = logging.Formatter(
-            "%(asctime)s [%(levelname)s] %(name)s:%(lineno)d - %(message)s",
-            datefmt="%H:%M:%S"
+            "%(asctime)s [%(levelname)s] %(name)s:%(lineno)d - %(message)s", datefmt="%H:%M:%S"
         )
     elif level == "INFO":
         # Verbose mode - include module name
@@ -39,7 +38,7 @@ def setup_logging(
     else:
         # Default/Quiet mode - minimal output
         console_formatter = logging.Formatter("[%(levelname)s] %(message)s")
-    
+
     console_handler.setFormatter(console_formatter)
     handlers.append(console_handler)
 

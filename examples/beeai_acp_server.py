@@ -13,7 +13,7 @@ Requirements:
 import asyncio
 import logging
 import sys
-from typing import Dict, Any
+from typing import Any
 
 # Check if BeeAI framework is installed
 try:
@@ -39,10 +39,10 @@ logger = logging.getLogger(__name__)
 def calculate(expression: str) -> StringToolOutput:
     """
     Calculate a mathematical expression.
-    
+
     Args:
         expression: Mathematical expression to evaluate (e.g., "2 + 2")
-    
+
     Returns:
         The result of the calculation
     """
@@ -58,10 +58,10 @@ def calculate(expression: str) -> StringToolOutput:
 def get_weather(location: str) -> StringToolOutput:
     """
     Get weather information for a location (mock implementation).
-    
+
     Args:
         location: The location to get weather for
-    
+
     Returns:
         Weather information for the location
     """
@@ -70,9 +70,9 @@ def get_weather(location: str) -> StringToolOutput:
         "Paris": "Sunny, 22°C, light breeze",
         "London": "Cloudy, 18°C, chance of rain",
         "New York": "Clear, 25°C, humid",
-        "Tokyo": "Rainy, 20°C, heavy precipitation"
+        "Tokyo": "Rainy, 20°C, heavy precipitation",
     }
-    
+
     weather = weather_data.get(location, f"Weather data not available for {location}")
     return StringToolOutput(result=f"Weather in {location}: {weather}")
 
@@ -81,10 +81,10 @@ def get_weather(location: str) -> StringToolOutput:
 def search(query: str) -> StringToolOutput:
     """
     Search for information (mock implementation).
-    
+
     Args:
         query: The search query
-    
+
     Returns:
         Search results
     """
@@ -93,22 +93,24 @@ def search(query: str) -> StringToolOutput:
         "capital of France": "The capital of France is Paris, known for the Eiffel Tower and Louvre Museum.",
         "largest planet": "Jupiter is the largest planet in our solar system, with a diameter of about 142,984 km.",
         "Python programming": "Python is a high-level, interpreted programming language known for its simplicity.",
-        "BeeAI framework": "BeeAI is a framework for building production-ready AI agents in Python and TypeScript."
+        "BeeAI framework": "BeeAI is a framework for building production-ready AI agents in Python and TypeScript.",
     }
-    
+
     # Simple keyword matching
     for key, value in results.items():
         if key.lower() in query.lower():
             return StringToolOutput(result=value)
-    
-    return StringToolOutput(result=f"No specific results found for '{query}'. This is a mock search implementation.")
+
+    return StringToolOutput(
+        result=f"No specific results found for '{query}'. This is a mock search implementation."
+    )
 
 
 def create_agent() -> ToolCallingAgent:
     """Create a BeeAI agent with tools."""
     # Initialize the LLM
     llm = ChatModel.from_name("ollama:granite3.3:8b")
-    
+
     # Create the agent with tools
     agent = ToolCallingAgent(
         llm=llm,
@@ -117,40 +119,33 @@ def create_agent() -> ToolCallingAgent:
         meta=AgentMeta(
             name="demo_agent",
             description="A demonstration agent with calculation, weather, and search capabilities",
-            tools=["calculate", "get_weather", "search"]
-        )
+            tools=["calculate", "get_weather", "search"],
+        ),
     )
-    
+
     return agent
 
 
 def main():
     """Run the ACP server with the BeeAI agent."""
     logger.info("Starting BeeAI ACP Server...")
-    
+
     # Create the agent
     agent = create_agent()
-    
+
     # Create and configure the ACP server
-    server = ACPServer(
-        config=ACPServerConfig(
-            port=8001,
-            host="127.0.0.1"
-        )
-    )
-    
+    server = ACPServer(config=ACPServerConfig(port=8001, host="127.0.0.1"))
+
     # Register the agent
-    server.register(
-        agent,
-        name="demo_agent",
-        tags=["demo", "testing", "acp-evals"]
-    )
-    
+    server.register(agent, name="demo_agent", tags=["demo", "testing", "acp-evals"])
+
     logger.info("ACP Server running on http://127.0.0.1:8001")
     logger.info("Agent 'demo_agent' is available at: http://127.0.0.1:8001/agents/demo_agent")
     logger.info("\nYou can now test this agent with acp-evals!")
-    logger.info("Example: acp-evals run accuracy http://127.0.0.1:8001/agents/demo_agent -i 'What is 15 + 27?' -e '42'")
-    
+    logger.info(
+        "Example: acp-evals run accuracy http://127.0.0.1:8001/agents/demo_agent -i 'What is 15 + 27?' -e '42'"
+    )
+
     # Start serving
     server.serve()
 

@@ -49,27 +49,29 @@ def run_basic_validation():
     print("Running Basic Framework Validation\n")
 
     project_root = Path(__file__).parent.parent
-    
+
     try:
         # Try to import the simplified API
         import sys
+
         sys.path.insert(0, str(project_root / "src"))
-        
+
         from acp_evals import AccuracyEval, PerformanceEval, ReliabilityEval
+
         print("Core evaluators imported successfully")
-        
+
         # Try to create evaluator instances with mock callable
         def mock_agent():
             return "Mock response"
-            
+
         AccuracyEval(mock_agent)
         PerformanceEval(mock_agent)
         ReliabilityEval(mock_agent)
         print("Evaluator instances created successfully")
-        
+
         print("Basic validation PASSED")
         return 0
-        
+
     except Exception as e:
         print(f"Basic validation FAILED: {e}")
         return 1

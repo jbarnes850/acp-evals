@@ -243,13 +243,14 @@ class AccuracyEval(BaseEval):
         if print_results:
             # Use rich display components for comprehensive LLM evaluation details
             from ..cli.display import display_single_evaluation_result
+
             display_single_evaluation_result(
                 evaluation_type="accuracy",
                 agent_identifier=str(self.agent),
                 input_text=input,
                 result=result,
                 show_details=True,
-                show_performance=True
+                show_performance=True,
             )
 
         return result
@@ -344,18 +345,18 @@ class AccuracyEval(BaseEval):
         if print_results:
             # Use rich display components for batch results
             from ..cli.display import display_evaluation_report
-            
+
             # Convert batch results to display format
             display_data = {
                 "scores": {"overall": batch_result.avg_score},
                 "test_results": [
                     {
-                        "name": f"Test {i+1}",
+                        "name": f"Test {i + 1}",
                         "passed": result.passed,
                         "score": result.score,
-                        "reason": result.details.get("feedback", "")[:100] + "..." 
-                                 if len(result.details.get("feedback", "")) > 100 
-                                 else result.details.get("feedback", "")
+                        "reason": result.details.get("feedback", "")[:100] + "..."
+                        if len(result.details.get("feedback", "")) > 100
+                        else result.details.get("feedback", ""),
                     }
                     for i, result in enumerate(batch_result.results)
                 ],
@@ -364,11 +365,13 @@ class AccuracyEval(BaseEval):
                     "passed": batch_result.passed,
                     "failed": batch_result.failed,
                     "pass_rate": f"{batch_result.pass_rate:.1f}%",
-                    "average_score": batch_result.avg_score
-                }
+                    "average_score": batch_result.avg_score,
+                },
             }
-            
-            display_evaluation_report(display_data, show_details=True, show_suggestions=False, show_costs=False)
+
+            display_evaluation_report(
+                display_data, show_details=True, show_suggestions=False, show_costs=False
+            )
 
         if export:
             batch_result.export(export)

@@ -13,19 +13,18 @@ from rich.prompt import Confirm, Prompt
 console = Console()
 
 # Import commands
+# Import logging setup
+from ..utils.logging import setup_logging
 from .check import check_providers
 from .commands.discover import discover
 from .commands.run import run
 from .commands.test import test
 
-# Import logging setup
-from ..utils.logging import setup_logging
-
 
 @click.group()
-@click.option('-v', '--verbose', is_flag=True, help='Show detailed output')
-@click.option('--debug', is_flag=True, help='Show debug output including stack traces')
-@click.option('-q', '--quiet', is_flag=True, help='Suppress non-essential output')
+@click.option("-v", "--verbose", is_flag=True, help="Show detailed output")
+@click.option("--debug", is_flag=True, help="Show debug output including stack traces")
+@click.option("-q", "--quiet", is_flag=True, help="Suppress non-essential output")
 @click.pass_context
 def cli(ctx, verbose, debug, quiet):
     """ACP Evals - Test and benchmark your ACP agents with production-grade evaluations.
@@ -43,11 +42,11 @@ def cli(ctx, verbose, debug, quiet):
     """
     # Ensure context is available for all subcommands
     ctx.ensure_object(dict)
-    
+
     # Check for conflicting flags
     if quiet and (verbose or debug):
         raise click.UsageError("--quiet cannot be used with --verbose or --debug")
-    
+
     # Determine log level based on flags
     if debug:
         log_level = "DEBUG"
@@ -57,16 +56,16 @@ def cli(ctx, verbose, debug, quiet):
         log_level = "ERROR"
     else:
         log_level = "WARNING"  # Default level
-    
+
     # Setup logging with appropriate level
     setup_logging(level=log_level)
-    
+
     # Store flags in context for access by subcommands
-    ctx.obj['verbose'] = verbose
-    ctx.obj['debug'] = debug
-    ctx.obj['quiet'] = quiet
-    ctx.obj['log_level'] = log_level
-    
+    ctx.obj["verbose"] = verbose
+    ctx.obj["debug"] = debug
+    ctx.obj["quiet"] = quiet
+    ctx.obj["log_level"] = log_level
+
     # Configure console output based on flags
     if quiet:
         console.quiet = True
@@ -82,10 +81,12 @@ cli.add_command(discover)
 
 # Import and register quick-start command
 from .commands.quickstart import quickstart
+
 cli.add_command(quickstart)
 
 # Import and register comprehensive evaluation command
 from .commands.comprehensive import comprehensive
+
 cli.add_command(comprehensive)
 
 
@@ -111,7 +112,7 @@ def init(ctx, template, name, output, interactive):
     - multi-agent: Multi-agent coordination patterns
     """
     # Skip intro message in quiet mode
-    if not ctx.obj.get('quiet'):
+    if not ctx.obj.get("quiet"):
         console.print("[bold cyan]ACP Evaluations Template Generator[/bold cyan]\n")
 
     # Load templates from external file for maintainability
@@ -206,7 +207,7 @@ def init(ctx, template, name, output, interactive):
     os.chmod(output_path, 0o755)
 
     # Success message (respect quiet mode)
-    if not ctx.obj.get('quiet'):
+    if not ctx.obj.get("quiet"):
         console.print(f"\n[green]Created evaluation template:[/green] [bold]{output}[/bold]")
         console.print(f"\nTemplate type: [cyan]{template}[/cyan]")
         console.print(f"Agent name: [cyan]{name}[/cyan]")
@@ -227,7 +228,7 @@ def list_rubrics(ctx):
     """List available evaluation rubrics."""
     from acp_evals.api import AccuracyEval
 
-    if not ctx.obj.get('quiet'):
+    if not ctx.obj.get("quiet"):
         console.print("[bold cyan]Available Evaluation Rubrics[/bold cyan]\n")
 
     for name, rubric in AccuracyEval.RUBRICS.items():

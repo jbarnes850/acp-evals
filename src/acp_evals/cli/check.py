@@ -84,11 +84,11 @@ def check_provider_connectivity(provider_name: str) -> dict[str, Any]:
 @click.pass_context
 def check_providers(ctx, test_connection: bool, show_setup: str | None):
     """Check LLM provider configuration and connectivity."""
-    
+
     # Get flags from context
-    quiet = ctx.obj.get('quiet', False)
-    verbose = ctx.obj.get('verbose', False)
-    debug = ctx.obj.get('debug', False)
+    quiet = ctx.obj.get("quiet", False)
+    verbose = ctx.obj.get("verbose", False)
+    ctx.obj.get("debug", False)
 
     if not quiet:
         console.print("\n[bold]ACP Evals Provider Configuration Check[/bold]\n")

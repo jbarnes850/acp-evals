@@ -5,14 +5,15 @@ This command provides an interactive setup experience to get users
 evaluating their agents as quickly as possible.
 """
 
-import click
-from pathlib import Path
-from rich.console import Console
-from rich.prompt import Prompt, Confirm
-from rich.panel import Panel
-from rich.text import Text
 import subprocess
 import sys
+from pathlib import Path
+
+import click
+from rich.console import Console
+from rich.panel import Panel
+from rich.prompt import Confirm, Prompt
+from rich.text import Text
 
 from ...core import config
 from ..display import create_evaluation_header
@@ -24,41 +25,44 @@ console = Console()
 @click.pass_context
 def quickstart(ctx):
     """Interactive setup wizard for getting started quickly."""
-    
+
     # Check quiet mode
     if ctx.obj.get("quiet"):
         return
-    
+
     # Welcome message
     console.print()
     console.print(create_evaluation_header("ACP Evals Quick Start Wizard"))
     console.print()
-    
-    console.print(Panel(
-        "Welcome! This wizard will help you get started with ACP Evals in just a few steps.",
-        style="cyan",
-        padding=(1, 2)
-    ))
+
+    console.print(
+        Panel(
+            "Welcome! This wizard will help you get started with ACP Evals in just a few steps.",
+            style="cyan",
+            padding=(1, 2),
+        )
+    )
     console.print()
-    
+
     # Step 1: Check if API keys are configured
     providers = config.get_available_providers()
-    
+
     if not providers:
         console.print("[yellow]No LLM providers configured.[/yellow]")
         console.print("You must configure an LLM provider to use ACP-Evals.")
         console.print("This tool requires real LLM evaluations for accurate results.")
         console.print()
-        
+
         # Help configure a provider
         console.print("\nAvailable providers:")
         console.print("  1. OpenAI (recommended)")
-        console.print("  2. Anthropic") 
+        console.print("  2. Anthropic")
         console.print("  3. Ollama (local)")
-        
-        choice = Prompt.ask("\nWhich provider would you like to configure?", 
-                          choices=["1", "2", "3"], default="1")
-        
+
+        choice = Prompt.ask(
+            "\nWhich provider would you like to configure?", choices=["1", "2", "3"], default="1"
+        )
+
         if choice == "1":
             api_key = Prompt.ask("Enter your OpenAI API key", password=True)
             # Create or update .env file
@@ -66,31 +70,32 @@ def quickstart(ctx):
             with open(env_path, "a") as f:
                 f.write(f"\nOPENAI_API_KEY={api_key}\n")
             console.print("[green]OpenAI configured successfully![/green]")
-            
+
         elif choice == "2":
             api_key = Prompt.ask("Enter your Anthropic API key", password=True)
             with open(".env", "a") as f:
                 f.write(f"\nANTHROPIC_API_KEY={api_key}\n")
             console.print("[green]Anthropic configured successfully![/green]")
-            
+
         else:
             console.print("\n[cyan]For Ollama, make sure it's running locally:[/cyan]")
             console.print("  ollama serve")
             console.print("\nNo API key needed for Ollama.")
-    
+
     # Step 2: Choose what to test
     console.print("\n[bold]What would you like to test?[/bold]")
     console.print("  1. An ACP agent (URL)")
     console.print("  2. A Python function")
     console.print("  3. I don't have anything yet (create example)")
-    
+
     test_choice = Prompt.ask("\nYour choice", choices=["1", "2", "3"], default="3")
-    
+
     if test_choice == "1":
         # Test an ACP agent
-        agent_url = Prompt.ask("\nEnter your agent URL", 
-                              default="http://localhost:8000/agents/my-agent")
-        
+        agent_url = Prompt.ask(
+            "\nEnter your agent URL", default="http://localhost:8000/agents/my-agent"
+        )
+
         # Create test script
         script = f"""#!/usr/bin/env python3
 \"\"\"Quick test of your ACP agent.\"\"\"
@@ -116,11 +121,11 @@ result2 = evaluate.accuracy(
 )
 print(f"Greeting test score: {{result2.score}}")
 """
-        
+
     elif test_choice == "2":
         # Test a Python function
         func_name = Prompt.ask("\nFunction name", default="my_agent")
-        
+
         script = f"""#!/usr/bin/env python3
 \"\"\"Quick test of your Python function.\"\"\"
 
@@ -143,7 +148,7 @@ result = evaluate.accuracy(
 print(f"Score: {{result.score}}")
 print(f"Passed: {{result.passed}}")
 """
-        
+
     else:
         # Create a complete example
         script = """#!/usr/bin/env python3
@@ -188,23 +193,23 @@ async def main():
 if __name__ == "__main__":
     asyncio.run(main())
 """
-    
+
     # Step 3: Save the script
     filename = Prompt.ask("\nSave test script as", default="test_agent.py")
-    
+
     with open(filename, "w") as f:
         f.write(script)
-    
+
     console.print(f"\n[green]Created {filename}![/green]")
-    
+
     # Make it executable
     Path(filename).chmod(0o755)
-    
+
     # Step 4: Run it?
     if Confirm.ask("\nWould you like to run the test now?", default=True):
         console.print("\n[cyan]Running test...[/cyan]\n")
         subprocess.run([sys.executable, filename])
-    
+
     # Step 5: Next steps
     console.print("\n[bold]Next Steps:[/bold]")
     console.print("1. Edit the test script to match your agent")

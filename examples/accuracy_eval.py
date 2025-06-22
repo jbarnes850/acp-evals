@@ -9,6 +9,7 @@ Run:
 """
 
 import asyncio
+
 from acp_evals import AccuracyEval, EvalResult
 
 
@@ -21,7 +22,7 @@ async def python_qa_agent(prompt: str) -> str:
         "How do you define a function in Python?": "You define a function using the 'def' keyword followed by the function name and parameters.",
         "What is list comprehension?": "List comprehension is a concise way to create lists using a single line of code with syntax: [expression for item in iterable].",
         "What is the difference between a tuple and a list?": "Tuples are immutable and use parentheses (), while lists are mutable and use square brackets [].",
-        "How do you import a module?": "You import a module using the 'import' statement, like 'import math' or 'from math import sqrt'."
+        "How do you import a module?": "You import a module using the 'import' statement, like 'import math' or 'from math import sqrt'.",
     }
     return responses.get(prompt, "I don't know the answer to that question.")
 
@@ -31,10 +32,10 @@ async def main():
     print("\n🎯 Running Accuracy Evaluation Example\n")
     print("This example evaluates a simple Python Q&A agent for accuracy.")
     print("Watch how ACP Evals displays beautiful, informative results!\n")
-    
+
     # Create evaluator (in production, use your agent URL)
     evaluator = AccuracyEval(python_qa_agent)
-    
+
     # Define test cases
     test_cases = [
         ("What is a Python list?", "ordered collection that can hold different types"),
@@ -43,31 +44,31 @@ async def main():
         ("What is the difference between a tuple and a list?", "immutable"),
         ("How do you import a module?", "import statement"),
     ]
-    
+
     # Run evaluations
     results = []
     passed = 0
-    
+
     for prompt, expected in test_cases:
         print(f"\n📝 Testing: {prompt}")
         result = await evaluator.run(prompt, expected)
         results.append(result)
-        
+
         if result.passed:
             print(f"✅ PASSED (score: {result.score:.2f})")
             passed += 1
         else:
             print(f"❌ FAILED (score: {result.score:.2f})")
             print(f"   Expected keywords: {expected}")
-            if result.metadata and 'response' in result.metadata:
+            if result.metadata and "response" in result.metadata:
                 print(f"   Got: {result.metadata['response'][:100]}...")
-        
-        if result.details and 'feedback' in result.details:
+
+        if result.details and "feedback" in result.details:
             print(f"   Feedback: {result.details['feedback']}")
-    
+
     # Summary
     accuracy = passed / len(test_cases)
-    print(f"\n✨ Evaluation Complete!")
+    print("\n✨ Evaluation Complete!")
     print(f"   Accuracy: {accuracy:.1%}")
     print(f"   Total Cases: {len(test_cases)}")
     print(f"   Passed: {passed}")

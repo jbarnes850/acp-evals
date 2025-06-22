@@ -104,42 +104,43 @@ def run(
         acp-evals run reliability my-agent -i "Use search tool" --expected-tools search
     """
     # Get quiet mode from context
-    quiet = ctx.obj.get('quiet', False)
-    verbose = ctx.obj.get('verbose', False)
-    debug = ctx.obj.get('debug', False)
-    
+    quiet = ctx.obj.get("quiet", False)
+    ctx.obj.get("verbose", False)
+    debug = ctx.obj.get("debug", False)
+
     if not quiet:
         console.print(f"\n[bold cyan]Running {evaluator.title()} Evaluation[/bold cyan]")
         console.print(f"Agent: [yellow]{agent}[/yellow]")
-        console.print(f"Input: [dim]{input_text[:100]}{'...' if len(input_text) > 100 else ''}[/dim]\n")
+        console.print(
+            f"Input: [dim]{input_text[:100]}{'...' if len(input_text) > 100 else ''}[/dim]\n"
+        )
 
     try:
         # Create and run appropriate evaluator
         if evaluator == "accuracy":
             if not expected:
-                console.print("[red]Error: Expected output is required for accuracy evaluation[/red]")
+                console.print(
+                    "[red]Error: Expected output is required for accuracy evaluation[/red]"
+                )
                 console.print("Use -e/--expected to provide the expected output")
                 exit(1)
-            
+
             eval_instance = AccuracyEval(agent=agent, rubric=rubric)
             result = asyncio.run(
                 eval_instance.run(
                     input=input_text,
                     expected=expected,
-                    print_results=not quiet  # Use rich display unless in quiet mode
+                    print_results=not quiet,  # Use rich display unless in quiet mode
                 )
             )
 
         elif evaluator == "performance":
-            eval_instance = PerformanceEval(
-                agent=agent,
-                track_tokens=track_tokens
-            )
+            eval_instance = PerformanceEval(agent=agent, track_tokens=track_tokens)
             result = asyncio.run(
                 eval_instance.run(
                     input_text=input_text,
                     expected=expected,
-                    print_results=not quiet  # Use rich display unless in quiet mode
+                    print_results=not quiet,  # Use rich display unless in quiet mode
                 )
             )
 
@@ -152,10 +153,9 @@ def run(
                 eval_instance.run(
                     input=input_text,
                     expected_tools=list(expected_tools) if expected_tools else [],
-                    print_results=not quiet  # Use rich display unless in quiet mode
+                    print_results=not quiet,  # Use rich display unless in quiet mode
                 )
             )
-
 
         # Results are already displayed by the evaluators if not in quiet mode
 
@@ -193,6 +193,7 @@ def run(
             console.print(f"\n[red]Evaluation failed: {e}[/red]")
         if debug:
             import traceback
+
             console.print(f"[dim]{traceback.format_exc()}[/dim]")
         exit(1)
 

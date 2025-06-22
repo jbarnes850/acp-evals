@@ -5,23 +5,21 @@ Provides helpful, context-aware error messages for developers
 working in the BeeAI/ACP ecosystem.
 """
 
-from typing import Optional, Dict, Any
 import re
+from typing import Any, Optional
 
 
 def format_agent_connection_error(
-    url: str, 
-    error: Exception,
-    expected_name: Optional[str] = None
+    url: str, error: Exception, expected_name: str | None = None
 ) -> str:
     """
     Format connection errors with ACP/BeeAI-specific troubleshooting.
-    
+
     Args:
         url: The agent URL that failed
         error: The underlying exception
         expected_name: Expected agent name if known
-        
+
     Returns:
         Formatted error message with troubleshooting steps
     """
@@ -33,7 +31,7 @@ def format_agent_connection_error(
         agent_name = agent_name or expected_name or "your-agent"
     else:
         host, port, agent_name = "localhost", "8000", "your-agent"
-    
+
     # Build troubleshooting message
     message = f"""
 Could not connect to agent at {url}
@@ -43,7 +41,7 @@ Troubleshooting Steps:
 1. Check if your agent is running:
    • For ACP agents:
      curl http://{host}:{port}/agents
-   
+
    • For BeeAI agents:
      bee agent:dev
      bee agent:list
@@ -56,7 +54,7 @@ Troubleshooting Steps:
    • For BeeAI: Check bee.yaml
      name: {agent_name}
      port: {port}
-   
+
    • For ACP: Check your server.agent() decorator
      @server.agent(name="{agent_name}")
 
@@ -74,22 +72,19 @@ Technical details: {str(error)}
     return message.strip()
 
 
-def format_evaluation_error(
-    error: Exception,
-    context: Dict[str, Any]
-) -> str:
+def format_evaluation_error(error: Exception, context: dict[str, Any]) -> str:
     """
     Format evaluation errors with context-aware suggestions.
-    
+
     Args:
         error: The evaluation error
         context: Context about the evaluation (agent type, input, etc.)
-        
+
     Returns:
         Formatted error with suggestions
     """
     error_type = type(error).__name__
-    
+
     if "timeout" in str(error).lower():
         return f"""
 Evaluation Timeout
@@ -111,7 +106,7 @@ The agent took too long to respond. This could mean:
 
 Technical details: {str(error)}
 """
-    
+
     elif "json" in str(error).lower():
         return f"""
 Invalid Agent Response Format
@@ -131,7 +126,7 @@ To fix:
 
 Technical details: {str(error)}
 """
-    
+
     else:
         return f"""
 Evaluation Error: {error_type}
@@ -146,69 +141,46 @@ Debug suggestions:
 """
 
 
-def suggest_agent_improvements(
-    result: Any,
-    agent_type: Optional[str] = None
-) -> str:
+def suggest_agent_improvements(result: Any, agent_type: str | None = None) -> str:
     """
     Provide actionable suggestions based on evaluation results.
-    
+
     Args:
         result: The evaluation result
         agent_type: Type of agent (e.g., "customer_support", "code_assistant")
-        
+
     Returns:
         Formatted suggestions for improvement
     """
     suggestions = []
-    
+
     if result.score < 0.5:
-        suggestions.append(
-            "• Core functionality needs work - ensure agent understands basic tasks"
-        )
-        suggestions.append(
-            "• Consider adding more examples to your agent's prompt"
-        )
-    
+        suggestions.append("• Core functionality needs work - ensure agent understands basic tasks")
+        suggestions.append("• Consider adding more examples to your agent's prompt")
+
     elif result.score < 0.8:
-        suggestions.append(
-            "• Good foundation - focus on edge cases and error handling"
-        )
-        suggestions.append(
-            "• Add validation for unexpected inputs"
-        )
-    
-    if hasattr(result, 'details'):
+        suggestions.append("• Good foundation - focus on edge cases and error handling")
+        suggestions.append("• Add validation for unexpected inputs")
+
+    if hasattr(result, "details"):
         details = result.details
-        
+
         # Check for specific issues
-        if details.get('latency_ms', 0) > 2000:
-            suggestions.append(
-                "• Response time is slow (>2s) - consider caching or optimization"
-            )
-        
-        if "hallucination" in details.get('feedback', '').lower():
-            suggestions.append(
-                "• Agent may be hallucinating - add grounding with tools or context"
-            )
-    
+        if details.get("latency_ms", 0) > 2000:
+            suggestions.append("• Response time is slow (>2s) - consider caching or optimization")
+
+        if "hallucination" in details.get("feedback", "").lower():
+            suggestions.append("• Agent may be hallucinating - add grounding with tools or context")
+
     # Agent-type specific suggestions
     if agent_type == "customer_support":
-        suggestions.append(
-            "• Ensure polite, helpful tone in all responses"
-        )
-        suggestions.append(
-            "• Add fallback to human support for complex issues"
-        )
-    
+        suggestions.append("• Ensure polite, helpful tone in all responses")
+        suggestions.append("• Add fallback to human support for complex issues")
+
     elif agent_type == "code_assistant":
-        suggestions.append(
-            "• Validate generated code syntax"
-        )
-        suggestions.append(
-            "• Include error handling in code examples"
-        )
-    
+        suggestions.append("• Validate generated code syntax")
+        suggestions.append("• Include error handling in code examples")
+
     if suggestions:
         return "\nSuggestions for improvement:\n" + "\n".join(suggestions)
     else:
@@ -216,8 +188,4 @@ def suggest_agent_improvements(
 
 
 # Export public API
-__all__ = [
-    'format_agent_connection_error',
-    'format_evaluation_error',
-    'suggest_agent_improvements'
-]
+__all__ = ["format_agent_connection_error", "format_evaluation_error", "suggest_agent_improvements"]

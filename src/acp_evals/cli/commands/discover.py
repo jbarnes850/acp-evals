@@ -10,8 +10,10 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
 from ...api import AccuracyEval
+
 try:
     from acp_sdk.client import Client
+
     ACP_SDK_AVAILABLE = True
 except ImportError:
     ACP_SDK_AVAILABLE = False
@@ -27,7 +29,7 @@ async def discover_agents(server_url: str) -> list[dict[str, Any]]:
             # Use official ACP SDK
             client = Client(base_url=server_url)
             agents = []
-            
+
             # Use async iterator to get agents
             async for agent in client.agents():
                 agent_dict = {
@@ -39,7 +41,7 @@ async def discover_agents(server_url: str) -> list[dict[str, Any]]:
                     "framework": getattr(agent, "framework", "Unknown"),
                 }
                 agents.append(agent_dict)
-            
+
             return agents
         else:
             # Fallback HTTP implementation
@@ -48,10 +50,10 @@ async def discover_agents(server_url: str) -> list[dict[str, Any]]:
                     if response.status == 200:
                         data = await response.json()
                         agents = []
-                        
+
                         # Handle different response formats
                         agent_data = data if isinstance(data, list) else data.get("agents", [])
-                        
+
                         for agent in agent_data:
                             if isinstance(agent, dict):
                                 agent_dict = {
@@ -63,7 +65,7 @@ async def discover_agents(server_url: str) -> list[dict[str, Any]]:
                                     "framework": agent.get("framework", "Unknown"),
                                 }
                                 agents.append(agent_dict)
-                        
+
                         return agents
                     else:
                         console.print(f"[red]Server returned status {response.status}[/red]")
@@ -201,10 +203,10 @@ def discover(ctx, server: str, test_all: bool, export: str | None, filter: str |
         acp-evals discover --filter "research*" --export agents.json
     """
     # Get flags from context
-    quiet = ctx.obj.get('quiet', False)
-    verbose = ctx.obj.get('verbose', False)
-    debug = ctx.obj.get('debug', False)
-    
+    quiet = ctx.obj.get("quiet", False)
+    ctx.obj.get("verbose", False)
+    ctx.obj.get("debug", False)
+
     if not quiet:
         console.print("\n[bold cyan]ACP Agent Discovery[/bold cyan]")
         console.print(f"Server: [yellow]{server}[/yellow]\n")

@@ -6,19 +6,19 @@ This module provides the foundational abstractions for evaluation results.
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Union, List
+from typing import Any, Union
 
 
 @dataclass
 class TokenUsage:
     """Token usage information for agent execution."""
-    
+
     input_tokens: int
     output_tokens: int
     total_tokens: int
     cost_usd: float = 0.0
     model: str = ""
-    
+
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
@@ -33,18 +33,18 @@ class TokenUsage:
 @dataclass
 class MetricResult:
     """Result from a metric calculation."""
-    
+
     name: str
     value: float
     unit: str
     breakdown: dict[str, Any] | None = None
     metadata: dict[str, Any] | None = None
     timestamp: datetime = field(default_factory=datetime.now)
-    
+
     def __str__(self) -> str:
         """Human-readable representation."""
         return f"{self.name}: {self.value:.2f} {self.unit}"
-    
+
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
@@ -60,13 +60,13 @@ class MetricResult:
 @dataclass
 class BenchmarkTask:
     """A benchmark task for evaluation."""
-    
+
     id: str
     prompt: str
-    expected_output: Union[str, dict]
+    expected_output: str | dict
     category: str = "general"
     metadata: dict = field(default_factory=dict)
-    
+
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
@@ -81,13 +81,13 @@ class BenchmarkTask:
 @dataclass
 class AgentInfo:
     """Information about an agent."""
-    
+
     name: str
     url: str
     role: str
-    capabilities: List[str] = field(default_factory=list)
+    capabilities: list[str] = field(default_factory=list)
     metadata: dict = field(default_factory=dict)
-    
+
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {

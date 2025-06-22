@@ -299,11 +299,11 @@ class TestTemplateQuality:
         content = Path(template_file).read_text()
         # Replace the agent with a test function for testing
         content = content.replace(
-            'AGENT = "{agent_url}"', 
-            '''async def test_agent(prompt: str) -> str:
+            'AGENT = "{agent_url}"',
+            """async def test_agent(prompt: str) -> str:
     return "Test response"
 
-AGENT = test_agent'''
+AGENT = test_agent""",
         )
         Path(template_file).write_text(content)
 

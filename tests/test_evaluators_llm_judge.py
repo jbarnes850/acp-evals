@@ -6,7 +6,7 @@ import pytest
 
 from acp_evals.core.exceptions import InvalidEvaluationInputError
 from acp_evals.evaluators.common import EvalResult
-from acp_evals.evaluators.llm_judge import LLMJudge, JudgeResult
+from acp_evals.evaluators.llm_judge import JudgeResult, LLMJudge
 
 
 class TestLLMJudge:
