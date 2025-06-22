@@ -12,47 +12,67 @@ from pathlib import Path
 
 def run_tests():
     """Run all tests with pytest."""
-    print("🧪 Running ACP Evals Test Suite\n")
+    print("Running ACP Evals Test Suite\n")
 
-    # Get the directory containing this script
-    script_dir = Path(__file__).parent
+    # Get the project root directory
+    project_root = Path(__file__).parent.parent
+    tests_dir = project_root / "tests"
 
     # Run pytest with coverage
     cmd = [
         sys.executable,
         "-m",
         "pytest",
-        str(script_dir / "tests"),
+        str(tests_dir),
         "-v",
         "--color=yes",
         "--tb=short",
         "--cov=acp_evals",
         "--cov-report=term-missing",
-        "--cov-report=html",
     ]
 
     print(f"Running: {' '.join(cmd)}\n")
-    result = subprocess.run(cmd)
+    result = subprocess.run(cmd, cwd=str(project_root))
 
     if result.returncode == 0:
-        print("\n✅ All tests passed!")
-        print("\n📊 Coverage report generated in htmlcov/index.html")
+        print("\nAll tests passed!")
+        print("\nCoverage report displayed above")
     else:
-        print("\n❌ Some tests failed.")
+        print("\nSome tests failed.")
 
     return result.returncode
 
 
-def run_validation():
-    """Run implementation validation."""
+def run_basic_validation():
+    """Run basic validation of the simplified framework."""
     print("\n" + "=" * 60)
-    print("🔍 Running Implementation Validation\n")
+    print("Running Basic Framework Validation\n")
 
-    script_dir = Path(__file__).parent
-    cmd = [sys.executable, str(script_dir / "validate.py")]
-
-    result = subprocess.run(cmd)
-    return result.returncode
+    project_root = Path(__file__).parent.parent
+    
+    try:
+        # Try to import the simplified API
+        import sys
+        sys.path.insert(0, str(project_root / "src"))
+        
+        from acp_evals import AccuracyEval, PerformanceEval, ReliabilityEval
+        print("Core evaluators imported successfully")
+        
+        # Try to create evaluator instances with mock callable
+        def mock_agent():
+            return "Mock response"
+            
+        AccuracyEval(mock_agent)
+        PerformanceEval(mock_agent)
+        ReliabilityEval(mock_agent)
+        print("Evaluator instances created successfully")
+        
+        print("Basic validation PASSED")
+        return 0
+        
+    except Exception as e:
+        print(f"Basic validation FAILED: {e}")
+        return 1
 
 
 def main():
@@ -64,8 +84,8 @@ def main():
     # Run tests
     test_result = run_tests()
 
-    # Run validation
-    validation_result = run_validation()
+    # Run basic validation
+    validation_result = run_basic_validation()
 
     # Summary
     print("\n" + "=" * 60)
@@ -73,13 +93,13 @@ def main():
     print("=" * 60)
 
     if test_result == 0 and validation_result == 0:
-        print("✅ All tests and validation passed!")
+        print("All tests and validation passed!")
         return 0
     else:
         if test_result != 0:
-            print("❌ Unit tests failed")
+            print("Unit tests failed")
         if validation_result != 0:
-            print("❌ Implementation validation failed")
+            print("Basic validation failed")
         return 1
 
 

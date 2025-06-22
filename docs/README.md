@@ -1,46 +1,102 @@
 # ACP Evals Documentation
 
-Welcome to the ACP Evals documentation. This directory contains detailed guides for using and extending the evaluation framework.
+A simplified evaluation framework for AI agents with three core evaluators.
 
-## Documentation Overview
+## Overview
 
-### Getting Started
-- **[Setup Guide](setup.md)** - Installation and configuration
-- **[Architecture Overview](architecture.md)** - System design and components
-- **[Provider Configuration](providers.md)** - Setting up LLM providers
+ACP Evals provides a streamlined API for evaluating AI agent performance across three key dimensions with comprehensive visual feedback:
 
-### Core Features
-- **[Continuous AI Integration](continuous-ai.md)** - CI/CD for AI agents
-- **[Trace Recycling](trace-recycling.md)** - Convert production telemetry to evaluation datasets
-- **[LLM Evaluators Guide](llm-evaluators-guide.md)** - When to use LLM-as-judge vs finetuned classifiers
+- **AccuracyEval** - Evaluates response quality and correctness using LLM-as-judge with detailed input/expected/actual comparison
+- **PerformanceEval** - Measures token usage and response latency with visual performance metrics
+- **ReliabilityEval** - Validates tool usage and execution reliability with detailed tool analysis
 
-### Key Concepts
+All evaluations include professional rich terminal display with complete transparency:
+- Full input/expected/actual output comparison without truncation
+- Detailed score breakdowns with 3-decimal precision
+- Complete LLM judge reasoning and evaluation criteria
+- Performance analysis with user experience context
+- Visual score bars and structured feedback panels
 
-#### Evaluation Types
-1. **Accuracy Evaluation** - LLM-as-judge quality assessment
-2. **Performance Evaluation** - Token usage and latency metrics
-3. **Safety Evaluation** - Adversarial testing and bias detection
-4. **Reliability Evaluation** - Tool usage validation
+## Quick Start
 
-#### Dataset Types
-1. **Gold Standard** - Production-ready multi-step tasks
-2. **Adversarial** - Security and safety test scenarios
-3. **External Benchmarks** - TRAIL, GAIA, SWE-Bench, etc.
-4. **Recycled Traces** - Production telemetry converted to tests
+```python
+from acp_evals import AccuracyEval, PerformanceEval, ReliabilityEval
 
-#### Advanced Features
-- **Continuous Evaluation Pipeline** - Automated testing with regression detection
-- **Multi-Agent Patterns** - Linear, Supervisor, and Swarm architectures
-- **Custom Evaluators** - Groundedness, Retrieval, Document Retrieval
+# Initialize evaluators with agent URL
+accuracy = AccuracyEval(agent="http://localhost:8000")
+performance = PerformanceEval(agent="http://localhost:8000")
+reliability = ReliabilityEval(agent="http://localhost:8000")
 
-## Quick Links
+# Run evaluations
+accuracy_result = await accuracy.run(input="What is 2+2?", expected="4")
+performance_result = await performance.run(input="Process this data")
+reliability_result = await reliability.run(input="Search for Python tutorials")
+```
 
-### For Developers
-- [Examples Directory](../examples/) - Working code examples
-- [API Reference](architecture.md#api-design) - Core API documentation
-- [Contributing Guide](../CONTRIBUTING.md) - How to contribute
+## Core Evaluators
 
-### For Operations
-- [Trace Recycling Setup](trace-recycling.md#configuration-options)
-- [Continuous Evaluation](new-features-summary.md#7-continuous-evaluation-pipeline)
-- [Telemetry Integration](architecture.md#telemetry-layer)
+### AccuracyEval
+Evaluates the correctness and quality of agent responses using LLM-as-judge methodology.
+
+**Key Features:**
+- Response quality assessment
+- Correctness validation
+- Semantic similarity evaluation
+
+### PerformanceEval
+Measures computational efficiency and response times.
+
+**Key Features:**
+- Token usage tracking
+- Response latency measurement
+- Cost estimation
+
+### ReliabilityEval
+Validates tool usage patterns and execution reliability.
+
+**Key Features:**
+- Tool call validation
+- Execution path verification
+- Error handling assessment
+
+## API Pattern
+
+All evaluators follow a consistent async/await pattern:
+
+```python
+async def run(self, input: str, **kwargs) -> EvalResult:
+    """
+    Run evaluation on agent with given input.
+    
+    Args:
+        input: Input to send to the agent
+        **kwargs: Additional evaluator-specific parameters
+        
+    Returns:
+        EvalResult containing score and metadata
+    """
+```
+
+## Installation
+
+```bash
+pip install acp-evals
+```
+
+## Configuration
+
+Set your LLM provider credentials:
+
+```bash
+export OPENAI_API_KEY="your-api-key"
+# or
+export ANTHROPIC_API_KEY="your-api-key"
+```
+
+## Examples
+
+See the [examples/](../examples/) directory for complete working examples.
+
+## Contributing
+
+See [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines on contributing to the project.

@@ -6,7 +6,7 @@ This module provides the foundational abstractions for evaluation results.
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import Any, Union, List
 
 
 @dataclass
@@ -54,4 +54,46 @@ class MetricResult:
             "breakdown": self.breakdown,
             "metadata": self.metadata,
             "timestamp": self.timestamp.isoformat(),
+        }
+
+
+@dataclass
+class BenchmarkTask:
+    """A benchmark task for evaluation."""
+    
+    id: str
+    prompt: str
+    expected_output: Union[str, dict]
+    category: str = "general"
+    metadata: dict = field(default_factory=dict)
+    
+    def to_dict(self) -> dict[str, Any]:
+        """Convert to dictionary for serialization."""
+        return {
+            "id": self.id,
+            "prompt": self.prompt,
+            "expected_output": self.expected_output,
+            "category": self.category,
+            "metadata": self.metadata,
+        }
+
+
+@dataclass
+class AgentInfo:
+    """Information about an agent."""
+    
+    name: str
+    url: str
+    role: str
+    capabilities: List[str] = field(default_factory=list)
+    metadata: dict = field(default_factory=dict)
+    
+    def to_dict(self) -> dict[str, Any]:
+        """Convert to dictionary for serialization."""
+        return {
+            "name": self.name,
+            "url": self.url,
+            "role": self.role,
+            "capabilities": self.capabilities,
+            "metadata": self.metadata,
         }

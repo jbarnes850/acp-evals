@@ -70,15 +70,21 @@ async def main():
     for i, prompt in enumerate(test_prompts):
         print(f"Test {i+1}/{len(test_prompts)}: {prompt}")
         result = await evaluator.run(prompt)
-        latencies.append(result.latency_ms)
+        
+        # Extract latency from details
+        latency_ms = result.details.get('latency', {}).get('mean_ms', 0)
+        latencies.append(latency_ms)
         
         # Show performance bar
-        bar_length = int(result.latency_ms / 50)  # 50ms per character
+        bar_length = int(latency_ms / 50)  # 50ms per character
         bar = "█" * min(bar_length, 20)  # Cap at 20 chars
-        print(f"   Latency: {result.latency_ms:>6.0f}ms {bar}")
+        print(f"   Latency: {latency_ms:>6.0f}ms {bar}")
         
-        if result.tokens_used:
-            print(f"   Tokens:  {result.tokens_used:>6d}")
+        # Check for token info in metadata
+        if result.metadata and 'tokens' in result.metadata:
+            tokens = result.metadata['tokens']
+            if isinstance(tokens, dict) and 'total' in tokens:
+                print(f"   Tokens:  {tokens['total']:>6d}")
     
     # Calculate metrics
     total_time = time.time() - start_time

@@ -258,45 +258,60 @@ class BaseEval:
         start_time = time.time()
 
         if isinstance(self.agent, str):
-            # Agent is a URL - use ACP client
-            client = await self._get_client()
-            agent_name = self.agent.split("/agents/")[-1]
+            if self.agent.startswith(("http://", "https://")):
+                # Agent is a URL - use ACP client
+                client = await self._get_client()
+                agent_name = self.agent.split("/agents/")[-1]
 
-            message = Message(parts=[MessagePart(content=input_text, content_type="text/plain")])
+                message = Message(parts=[MessagePart(content=input_text, content_type="text/plain")])
 
-            try:
-                run = await client.run_sync(agent=agent_name, input=[message], **kwargs)
-            except Exception as e:
-                # Wrap connection errors
-                raise AgentConnectionError(self.agent, e)
+                try:
+                    run = await client.run_sync(agent=agent_name, input=[message], **kwargs)
+                except Exception as e:
+                    # Wrap connection errors
+                    raise AgentConnectionError(self.agent, e)
 
-            # Wait for completion
-            while run.status not in ["completed", "failed", "cancelled"]:
-                await asyncio.sleep(0.1)
-                run = await client.run_status(run_id=run.run_id)
+                # Wait for completion
+                while run.status not in ["completed", "failed", "cancelled"]:
+                    await asyncio.sleep(0.1)
+                    run = await client.run_status(run_id=run.run_id)
 
-            if run.status != "completed":
-                if run.status == "timeout":
-                    raise AgentTimeoutError(self.agent, timeout_seconds=30)
+                if run.status != "completed":
+                    if run.status == "timeout":
+                        raise AgentTimeoutError(self.agent, timeout_seconds=30)
+                    else:
+                        raise AgentConnectionError(
+                            self.agent, Exception(f"Agent run failed with status: {run.status}")
+                        )
+
+                # Extract response text
+                response_text = ""
+                if run.output:
+                    for msg in run.output:
+                        for part in msg.parts:
+                            if part.content:
+                                response_text += part.content + "\n"
+
+                return {
+                    "response": response_text.strip(),
+                    "run_id": str(run.run_id),
+                    "latency_ms": (time.time() - start_time) * 1000,
+                    "status": run.status,
+                }
+            else:
+                # Agent is a string identifier - try to resolve it
+                resolved_agent = self._resolve_agent_string(self.agent)
+                
+                # Call the resolved agent
+                if asyncio.iscoroutinefunction(resolved_agent):
+                    response = await resolved_agent(input_text, **kwargs)
                 else:
-                    raise AgentConnectionError(
-                        self.agent, Exception(f"Agent run failed with status: {run.status}")
-                    )
+                    response = resolved_agent(input_text, **kwargs)
 
-            # Extract response text
-            response_text = ""
-            if run.output:
-                for msg in run.output:
-                    for part in msg.parts:
-                        if part.content:
-                            response_text += part.content + "\n"
-
-            return {
-                "response": response_text.strip(),
-                "run_id": str(run.run_id),
-                "latency_ms": (time.time() - start_time) * 1000,
-                "status": run.status,
-            }
+                return {
+                    "response": response,
+                    "latency_ms": (time.time() - start_time) * 1000,
+                }
 
         elif callable(self.agent):
             # Agent is a callable function
@@ -323,6 +338,82 @@ class BaseEval:
                 "response": response,
                 "latency_ms": (time.time() - start_time) * 1000,
             }
+
+    def _resolve_agent_string(self, agent_str: str):
+        """Resolve a string identifier to an agent function."""
+        import importlib.util
+        import sys
+        from pathlib import Path
+        
+        # Handle different formats:
+        # 1. "file.py:function_name" - import function from file
+        # 2. "module.function" - import from module
+        # 3. "simple_name" - try to find locally
+        
+        if ":" in agent_str:
+            # Format: file.py:function_name
+            file_path, func_name = agent_str.split(":", 1)
+            
+            # Convert relative to absolute path
+            if not file_path.startswith("/"):
+                file_path = str(Path.cwd() / file_path)
+            
+            if not Path(file_path).exists():
+                raise AgentConnectionError(agent_str, f"File not found: {file_path}")
+            
+            # Import the module
+            spec = importlib.util.spec_from_file_location("agent_module", file_path)
+            module = importlib.util.module_from_spec(spec)
+            sys.modules["agent_module"] = module
+            spec.loader.exec_module(module)
+            
+            if not hasattr(module, func_name):
+                raise AgentConnectionError(agent_str, f"Function {func_name} not found in {file_path}")
+            
+            return getattr(module, func_name)
+            
+        elif "." in agent_str:
+            # Format: module.function
+            try:
+                module_name, func_name = agent_str.rsplit(".", 1)
+                module = importlib.import_module(module_name)
+                return getattr(module, func_name)
+            except (ImportError, AttributeError) as e:
+                raise AgentConnectionError(agent_str, f"Failed to import {agent_str}: {e}")
+        
+        else:
+            # Simple name - try to find in current working directory
+            potential_files = [
+                f"{agent_str}.py",
+                f"mock_{agent_str}.py",
+                f"test_{agent_str}.py",
+            ]
+            
+            for file_name in potential_files:
+                file_path = Path.cwd() / file_name
+                if file_path.exists():
+                    # Import and look for function with same name
+                    spec = importlib.util.spec_from_file_location("agent_module", file_path)
+                    module = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(module)
+                    
+                    # Try different function name patterns
+                    potential_func_names = [
+                        agent_str,
+                        f"my_{agent_str}",
+                        f"{agent_str}_agent",
+                        f"simple_{agent_str}",
+                    ]
+                    
+                    for func_name in potential_func_names:
+                        if hasattr(module, func_name):
+                            return getattr(module, func_name)
+            
+            raise AgentConnectionError(
+                agent_str, 
+                f"Could not resolve agent '{agent_str}'. "
+                f"Expected format: 'file.py:function', 'module.function', or existing file with function"
+            )
 
     async def _cleanup(self):
         """Cleanup resources."""

@@ -1,260 +1,170 @@
-# Architecture Guide
+# ACP-Evals Architecture
 
 ## Overview
 
-ACP Evals is designed with a layered architecture that balances simplicity for developers with powerful capabilities for production use. The framework follows the principles established in our [proposal](../../docs/acp-evals-proposal.md), implementing the key insights from multi-agent system research.
+ACP-Evals provides a minimal, focused framework for evaluating AI agents. The architecture prioritizes simplicity and developer experience while maintaining professional-grade evaluation capabilities.
 
 ## Core Design Principles
 
-1. **Token-First Metrics**: Every evaluation tracks token usage as the primary performance driver
-2. **Multi-Agent Native**: Built specifically for evaluating agent coordination and handoffs
-3. **Provider Agnostic**: Support for multiple LLM providers with automatic fallback
-4. **Progressive Disclosure**: Simple API hides complexity, power users can access advanced features
-5. **Production Ready**: Error handling, validation, telemetry, and cost tracking built-in
+1. **Minimal Surface Area**: Three core evaluators with clean abstractions
+2. **Token-First**: All evaluations track token usage and costs
+3. **Provider Agnostic**: Support for OpenAI, Anthropic, and Ollama
+4. **Zero Configuration**: Works out of the box with sensible defaults
 
-## Architecture Layers
+## Architecture Diagram
 
-```bash
-┌─────────────────────────────────────────────────────────────┐
-│                         API Layer                           │
-│  AccuracyEval, PerformanceEval, ReliabilityEval, SafetyEval │
-└─────────────────────────────────────────────────────────────┘
-                              │
-┌─────────────────────────────────────────────────────────────┐
-│                    Evaluation Core                          │
-│        LLMJudge, Evaluators, Metrics, Benchmarks            │
-└─────────────────────────────────────────────────────────────┘
-                              │
-┌─────────────────────────────────────────────────────────────┐
-│                    Provider Layer                           │
-│     OpenAI, Anthropic, Ollama, etc. (Auto-detection)        │
-└─────────────────────────────────────────────────────────────┘
-                              │
-┌─────────────────────────────────────────────────────────────┐
-│                  Infrastructure Layer                       │
-│    Validation, Exceptions, Logging, Telemetry, Config       │
-└─────────────────────────────────────────────────────────────┘
+```
+┌─────────────────────────────────────────────────────┐
+│                   API Layer                         │
+│              src/acp_evals/api.py                   │
+│    AccuracyEval | PerformanceEval | ReliabilityEval │
+└─────────────────────────────────────────────────────┘
+                          │
+┌─────────────────────────────────────────────────────┐
+│                Evaluator Layer                      │
+│          src/acp_evals/evaluators/                  │
+│   accuracy.py | performance.py | reliability.py     │
+│              llm_judge.py | common.py               │
+└─────────────────────────────────────────────────────┘
+                          │
+┌─────────────────────────────────────────────────────┐
+│                  Core Layer                         │
+│            src/acp_evals/core/                      │
+│     base.py | config.py | validation.py             │
+│        exceptions.py | acp_diagnostics.py           │
+└─────────────────────────────────────────────────────┘
+                          │
+┌─────────────────────────────────────────────────────┐
+│                Provider Layer                       │
+│          src/acp_evals/providers/                   │
+│   openai | anthropic | ollama | factory | base      │
+└─────────────────────────────────────────────────────┘
+                          │
+┌─────────────────────────────────────────────────────┐
+│                   CLI Layer                         │
+│            src/acp_evals/cli/                       │
+│     main.py | commands/ | display.py | check.py     │
+└─────────────────────────────────────────────────────┘
 ```
 
 ## Component Details
 
-### Simple API Layer (`simple.py`)
+### API Layer (`api.py`)
 
-The developer-facing API that provides the "zero to evaluation in < 5 lines" experience:
+The single entry point for all evaluation operations:
 
-```python
-# Evaluation classes
-AccuracyEval    # LLM-as-judge quality evaluation
-PerformanceEval # Token usage, latency, costs
-ReliabilityEval # Tool usage, error handling
-SafetyEval      # Composite safety checks
+- **AccuracyEval**: LLM-as-judge evaluation against expected outputs
+- **PerformanceEval**: Latency, throughput, and resource usage metrics
+- **ReliabilityEval**: Tool usage validation and error handling assessment
 
-# Result containers
-EvalResult      # Single evaluation result
-BatchResult     # Multiple evaluation results
+### Evaluator Layer (`evaluators/`)
 
-# Helper function
-evaluate()      # Synchronous wrapper for async evaluation
-```
+Core evaluation implementations:
 
-### Evaluation Core
+- **accuracy.py**: Semantic and factual accuracy evaluation
+- **performance.py**: Performance metric collection and analysis
+- **reliability.py**: Tool call verification and error resilience
+- **llm_judge.py**: Shared LLM judge implementation
+- **common.py**: Shared data structures (EvalResult, BatchResult)
 
-#### Evaluators (`evaluators/`)
-- **LLMJudge**: Single-call evaluation with structured rubrics (based on Anthropic research)
-- **Base**: Abstract evaluator interface for extensibility
+### Core Layer (`core/`)
 
-#### Metrics (`metrics/`)
-- **TokenUsageMetric**: Comprehensive token tracking with cost analysis
-- **LatencyMetric**: Response time and throughput measurement  
-- **ContextEfficiencyMetric**: Context window utilization (critical for multi-agent)
-- **HandoffQualityMetric**: Information preservation across agent boundaries
-- **CostMetric**: Real dollar costs with model-specific pricing
+Foundation classes and utilities:
 
-#### Benchmarks (`benchmarks/`)
-- **ContextScalingBenchmark**: Test performance degradation with distractors
-- **HandoffBenchmark**: Multi-agent coordination testing
-- **PatternComparison**: Compare supervisor vs swarm architectures
-
-#### Patterns (`patterns/`)
-- **LinearPattern**: Sequential single-threaded execution
-- **SupervisorPattern**: Centralized coordination
-- **SwarmPattern**: Distributed agent collaboration
+- **base.py**: Base data models (TokenUsage, MetricResult)
+- **config.py**: Configuration management and defaults
+- **validation.py**: Input validation and sanitization
+- **exceptions.py**: Structured error hierarchy
+- **acp_diagnostics.py**: ACP protocol diagnostics
 
 ### Provider Layer (`providers/`)
 
-Abstraction over LLM providers with automatic configuration:
+LLM provider abstraction:
 
-```python
-ProviderFactory.create("openai")     # Explicit provider
-ProviderFactory.get_default_provider() # Auto-detect from environment
-```
+- **base.py**: Abstract provider interface
+- **factory.py**: Provider auto-detection and instantiation
+- **openai_provider.py**: OpenAI GPT models
+- **anthropic_provider.py**: Anthropic Claude models
+- **ollama_provider.py**: Local Ollama models
 
-Features:
-- Automatic fallback to mock mode
-- Unified error handling
-- Cost calculation per provider
-- Token usage tracking
-- Async-first design
+### CLI Layer (`cli/`)
 
-### Infrastructure Layer
+Command-line interface:
 
-#### Configuration (`config.py`)
-- Environment variable loading
-- Provider auto-detection
-- Default settings management
-
-#### Validation (`validation.py`)
-- Input sanitization
-- Type checking
-- Size limits
-- Security checks
-
-#### Exceptions (`exceptions.py`)
-- Structured error hierarchy
-- Helpful error messages
-- Recovery suggestions
-- Provider-specific errors
-
-#### Logging (`logging_config.py`)
-- Structured logging
-- Cost tracking
-- Performance monitoring
-- Debug support
+- **main.py**: CLI entry point
+- **commands/**: Individual commands (run, test, discover, quickstart)
+- **display.py**: Result formatting and display
+- **check.py**: System diagnostics
 
 ## Data Flow
 
-### Single Evaluation Flow
-
 ```
-User Input → Simple API → Validation → Agent Execution → 
-→ Metric Collection → LLM Judge → Result Formatting → User Output
+Input → API → Validation → Agent Execution → 
+→ Metric Collection → Evaluation → Result
 ```
 
-### Batch Evaluation Flow
+## Key Features
 
-```
-Test Data → Batch Loader → Parallel/Sequential Execution →
-→ Progress Tracking → Result Aggregation → Summary Report
+### Token Tracking
+Every evaluation tracks:
+- Input/output token counts
+- Total token usage
+- Cost estimation per model
+- Model identification
+
+### Provider Auto-Detection
+```python
+# Automatic provider selection based on environment
+eval = AccuracyEval("http://localhost:8000/agent")
+
+# Explicit provider specification
+eval = AccuracyEval(agent_url, judge_model="gpt-4o")
 ```
 
-### Multi-Agent Evaluation Flow
-
-```
-Agent Graph → Pattern Selection → Coordinated Execution →
-→ Handoff Analysis → Context Tracking → Architecture Comparison
-```
+### Unified Result Format
+All evaluators return consistent `EvalResult` objects containing:
+- Pass/fail status
+- Numeric score
+- Detailed feedback
+- Token usage and costs
+- Execution metadata
 
 ## Integration Points
 
-### ACP Protocol
+### Agent Communication
+- HTTP endpoint support for any agent URL
+- ACP protocol message handling
+- Streaming response support
 
-Native support for ACP communication:
-- Message and MessagePart handling
-- Event stream processing
-- Telemetry integration
-- Run management
+### Model Providers
+- Environment-based configuration
+- Automatic fallback handling
+- Cost tracking per provider
 
-### BeeAI Framework
-
-Seamless integration with BeeAI components:
-- Direct agent instance evaluation
-- Workflow compatibility
-- Shared telemetry
-- Platform publishing
-
-### External Tools
-
-Extensible tool support:
-- LangChain tools via adapters
-- Model Context Protocol (MCP)
-- Custom tool definitions
-- Tool usage metrics
-
-## Performance Considerations
-
-### Token Optimization
-- Batch processing to reduce overhead
-- Context window monitoring
-- Efficient prompt construction
-- Result caching (when appropriate)
-
-### Concurrency
-- Async-first design throughout
-- Configurable parallelism
-- Resource pooling
-- Timeout management
-
-### Cost Management
-- Real-time cost tracking
-- Budget alerts
-- Provider comparison
-- Optimization recommendations
-
-## Security
-
-### Input Validation
-- Size limits on all inputs
-- Content sanitization
-- Injection prevention
-- Type enforcement
-
-### API Key Management
-- Environment variable best practices
-- No keys in code or logs
-- Secure error messages
-- Provider isolation
-
-### Data Privacy
-- No automatic data collection
-- Local evaluation options
-- Configurable telemetry
-- GDPR-friendly design
-
-## Extensibility
-
-### Adding New Evaluators
+## Example Usage
 
 ```python
-class CustomEvaluator(Evaluator):
-    async def evaluate(self, task, response, reference=None):
-        # Custom evaluation logic
-        return EvaluationResult(...)
-```
+from acp_evals import AccuracyEval
 
-### Adding New Providers
+# Simple evaluation
+eval = AccuracyEval("http://localhost:8000/agent")
+result = await eval.run("What is 2+2?", "4")
 
-```python
-class NewProvider(LLMProvider):
-    async def complete(self, prompt, **kwargs):
-        # Provider-specific implementation
-        return LLMResponse(...)
-```
-
-### Adding New Metrics
-
-```python
-class CustomMetric(Metric):
-    async def calculate(self, run, events):
-        # Metric calculation logic
-        return MetricResult(...)
+# Advanced configuration
+eval = AccuracyEval(
+    agent_url,
+    rubric="semantic",
+    judge_model="claude-3-5-sonnet-20241022",
+    pass_threshold=0.8
+)
 ```
 
 ## Best Practices
 
-1. **Use Mock Mode for Development**: No API calls, fast iteration
-2. **Start with Simple API**: Only drop to lower levels when needed
-3. **Monitor Token Usage**: Primary driver of cost and performance
-4. **Batch When Possible**: More efficient than individual evaluations
-5. **Choose Appropriate Models**: Balance quality vs cost for evaluation
+1. **Start Simple**: Use default configurations and add complexity as needed
+2. **Monitor Costs**: Check token usage in results to manage API costs
+3. **Choose Appropriate Models**: Balance evaluation quality vs cost
+4. **Validate Inputs**: The framework handles validation, but sanitize user data
+5. **Handle Errors**: All evaluators provide structured error information
 
-## Future Directions
-
-Based on our proposal and ecosystem needs:
-
-1. **Advanced Safety Evaluators**: Violence, hate speech, copyright
-2. **Simulation Capabilities**: Synthetic data generation, adversarial testing
-3. **MLOps Integration**: Experiment tracking, model registry support
-4. **Cross-Framework Evaluation**: Test agents from any framework via ACP
-5. **Real-time Monitoring**: Live evaluation during production
-
-This architecture provides a solid foundation for comprehensive agent evaluation while maintaining the simplicity that makes it accessible to all developers in the ACP/BeeAI ecosystem.
+This architecture provides a clean, focused foundation for agent evaluation with minimal complexity and maximum developer productivity.

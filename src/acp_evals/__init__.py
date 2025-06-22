@@ -32,6 +32,8 @@ from .api import (
 from .core.base import (
     MetricResult,
     TokenUsage,
+    BenchmarkTask,
+    AgentInfo,
 )
 
 # Keep config available
@@ -47,4 +49,6 @@ __all__ = [
     # Core types
     "MetricResult",
     "TokenUsage",
+    "BenchmarkTask", 
+    "AgentInfo",
 ]

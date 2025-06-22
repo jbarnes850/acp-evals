@@ -70,7 +70,7 @@ async def run_openai_agent(messages: List[Message]) -> str:
     
     try:
         response = openai_client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o",
             messages=openai_messages,
             max_tokens=150,
             temperature=0.7
@@ -95,7 +95,7 @@ async def run_anthropic_agent(messages: List[Message]) -> str:
     
     try:
         response = anthropic_client.messages.create(
-            model="claude-3-opus-20240229",
+            model="claude-3-5-sonnet-20241022",
             messages=[{"role": "user", "content": content.strip()}],
             max_tokens=150,
             temperature=0.7

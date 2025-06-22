@@ -76,31 +76,37 @@ Respond with:
         
         try:
             # Use the LLM provider to evaluate
-            result = await self.provider.ainvoke(eval_prompt)
+            response_obj = await self.provider.complete(eval_prompt)
+            result = response_obj.content
             
-            # Parse the response
+            # Parse the response - handle different formats
             lines = result.strip().split('\n')
-            score = 0.0
+            score = None
             feedback = ""
             
             for line in lines:
-                if line.startswith("Score:"):
+                line = line.strip()
+                # Handle different score formats
+                if line.startswith("Score:") or line.startswith("- Score:"):
                     try:
-                        score = float(line.split(":")[-1].strip())
-                    except:
-                        score = 0.5
-                elif line.startswith("Feedback:"):
+                        score_text = line.split(":")[-1].strip()
+                        score = float(score_text)
+                        # Ensure score is within valid range
+                        score = max(0.0, min(1.0, score))
+                    except (ValueError, TypeError):
+                        # If we can't parse the score, this is a critical error
+                        raise ValueError(f"LLM judge returned invalid score format: {line}")
+                # Handle different feedback formats
+                elif line.startswith("Feedback:") or line.startswith("- Feedback:"):
                     feedback = line.split(":", 1)[-1].strip()
             
-            # If we couldn't parse, fall back to simple check
-            if score == 0.0 and not feedback:
-                score = 1.0 if check_against.lower() in response.lower() else 0.0
-                feedback = f"Response {'contains' if score > 0 else 'does not contain'} expected content"
+            # If we couldn't parse score or feedback, this is a critical error
+            if score is None or not feedback:
+                raise ValueError(f"LLM judge failed to provide score and feedback. Raw response: {result}")
                 
         except Exception as e:
-            # Fallback to simple evaluation
-            score = 1.0 if check_against.lower() in response.lower() else 0.0
-            feedback = f"Response {'contains' if score > 0 else 'does not contain'} expected content (fallback evaluation)"
+            # NO FALLBACKS - if LLM evaluation fails, we must fail
+            raise RuntimeError(f"LLM evaluation failed and no fallbacks allowed: {str(e)}")
         
         passed = score >= self.pass_threshold
         
@@ -118,12 +124,61 @@ Respond with:
         response2: str,
         criteria: Optional[str] = None
     ) -> Dict[str, Any]:
-        """Compare two responses."""
-        # Simple similarity check
-        similarity = 1.0 if response1.lower() == response2.lower() else 0.5
+        """Compare two responses using LLM evaluation."""
+        comparison_prompt = f"""
+You are an expert evaluator. Please compare the following two responses to determine which is better.
+
+Prompt: {prompt}
+
+Response 1: {response1}
+
+Response 2: {response2}
+
+Criteria: {criteria or "Overall quality, accuracy, helpfulness, and relevance"}
+
+Please evaluate and respond with:
+- Similarity: [0.0-1.0] (how similar the responses are)
+- Preferred: [1 or 2] (which response is better, or "tie" if equal)
+- Feedback: [Brief explanation of your assessment]
+"""
         
-        return {
-            "similarity": similarity,
-            "feedback": f"Responses are {'identical' if similarity == 1.0 else 'different'}",
-            "preferred": None  # No preference in simple implementation
-        }
+        try:
+            response_obj = await self.provider.complete(comparison_prompt)
+            result = response_obj.content
+            
+            # Parse the response
+            lines = result.strip().split('\n')
+            similarity = 0.5  # Default neutral similarity
+            preferred = None
+            feedback = ""
+            
+            for line in lines:
+                if line.startswith("Similarity:"):
+                    try:
+                        similarity = float(line.split(":")[-1].strip())
+                        similarity = max(0.0, min(1.0, similarity))
+                    except (ValueError, TypeError):
+                        raise ValueError(f"LLM judge returned invalid similarity format: {line}")
+                elif line.startswith("Preferred:"):
+                    pref_text = line.split(":", 1)[-1].strip().lower()
+                    if "1" in pref_text:
+                        preferred = 1
+                    elif "2" in pref_text:
+                        preferred = 2
+                    elif "tie" in pref_text:
+                        preferred = None
+                elif line.startswith("Feedback:"):
+                    feedback = line.split(":", 1)[-1].strip()
+            
+            if not feedback:
+                raise ValueError(f"LLM judge failed to provide comparison feedback. Raw response: {result}")
+            
+            return {
+                "similarity": similarity,
+                "feedback": feedback,
+                "preferred": preferred
+            }
+            
+        except Exception as e:
+            # NO FALLBACKS - if LLM evaluation fails, we must fail
+            raise RuntimeError(f"LLM comparison failed and no fallbacks allowed: {str(e)}")

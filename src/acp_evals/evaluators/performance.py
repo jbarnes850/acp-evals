@@ -72,7 +72,8 @@ class PerformanceEval(BaseEval):
     async def run(
         self,
         input_text: Union[str, List[str]],
-        expected: Optional[str] = None
+        expected: Optional[str] = None,
+        print_results: bool = False
     ) -> EvalResult:
         """
         Run performance evaluation.
@@ -80,6 +81,7 @@ class PerformanceEval(BaseEval):
         Args:
             input_text: Input text or list of inputs for varied testing
             expected: Optional expected output (not used for scoring)
+            print_results: Whether to print results using rich display
             
         Returns:
             EvalResult with performance metrics
@@ -102,6 +104,18 @@ class PerformanceEval(BaseEval):
         
         # Calculate statistics
         result = self._calculate_statistics(all_metrics)
+        
+        if print_results:
+            # Use rich display components for comprehensive performance evaluation details
+            from ..cli.display import display_single_evaluation_result
+            display_single_evaluation_result(
+                evaluation_type="performance",
+                agent_identifier=str(self.agent),
+                input_text=str(input_text),
+                result=result,
+                show_details=True,
+                show_performance=True
+            )
         
         return result
     

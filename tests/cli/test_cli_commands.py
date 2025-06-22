@@ -67,25 +67,14 @@ class TestCLICommands:
         assert result.exit_code == 0
 
         content = Path(temp_file).read_text()
-        assert "ACPEvaluationClient" in content
+        assert "AccuracyEval" in content
         assert "localhost:8000" in content
-        assert "run_with_tracking" in content
+        assert "evaluate_acp_agent" in content
 
-    def test_init_multi_agent_template(self):
-        """Test multi-agent template generation."""
-        temp_file = os.path.join(self.temp_dir, "multi_agent.py")
-
-        result = self.runner.invoke(
-            cli, ["init", "multi-agent", "--name", "TeamAgent", "--output", temp_file]
-        )
-        assert result.exit_code == 0
-
-        content = Path(temp_file).read_text()
-        assert "LinearPattern" in content or "SupervisorPattern" in content
-        assert "researcher" in content.lower()
-        assert "HandoffEval" in content
+    # Multi-agent template removed in simplified framework
 
 
+@pytest.mark.skip(reason="Generate command removed in simplified framework")
 class TestGenerateCommand:
     """Test synthetic data generation with real LLM calls."""
 
@@ -222,6 +211,7 @@ class TestGenerateCommand:
                     assert len(conversation["conversation"]) == 3
 
 
+@pytest.mark.skip(reason="Dataset command removed in simplified framework")
 class TestDatasetCommand:
     """Test dataset management commands."""
 

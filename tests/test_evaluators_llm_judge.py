@@ -5,7 +5,7 @@ Tests for LLMJudge evaluator - focusing on core functionality.
 import pytest
 
 from acp_evals.core.exceptions import InvalidEvaluationInputError
-from acp_evals.evaluators.base import EvaluationResult
+from acp_evals.evaluators.common import EvalResult
 from acp_evals.evaluators.llm_judge import LLMJudge
 
 

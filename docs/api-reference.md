@@ -2,89 +2,121 @@
 
 ## Overview
 
-ACP Evals provides a simple, unified API for evaluating agent performance across multiple dimensions. The framework follows a consistent pattern where all evaluators inherit from `BaseEval` and implement a `run()` method.
+ACP Evals provides a simplified API for evaluating agent performance across three core dimensions: accuracy, performance, and reliability. All evaluators follow a consistent pattern with `run()` and `run_batch()` methods.
 
-## Core Evaluation Classes
+## Core Classes
 
 ### AccuracyEval
 
 Evaluates agent response accuracy using LLM-as-judge methodology.
 
 ```python
-from acp_evals import AccuracyEval, evaluate
+from acp_evals import AccuracyEval
 
-# Initialize evaluator
 eval = AccuracyEval(
-    agent="http://localhost:8000/agents/my-agent",  # or callable function
-    judge_model="gpt-4.1",  # Optional, defaults to configured provider
-    rubric="factual",  # or "research_quality", "code_quality", or custom dict
-    pass_threshold=0.7  # Score threshold for passing
+    agent="http://localhost:8000/agent",
+    rubric="factual",
+    judge_model="gpt-4o",
+    pass_threshold=0.7
 )
-
-# Run evaluation
-result = await eval.run(
-    input="What is the capital of France?",
-    expected="Paris",
-    context={"additional": "info"},  # Optional
-    print_results=True
-)
-
-# Or use synchronous helper
-result = evaluate(eval, input="...", expected="...")
 ```
+
+#### Constructor Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `agent` | `Union[str, Callable, Any]` | Required | Agent URL, callable function, or agent instance |
+| `rubric` | `Union[str, Dict[str, Dict[str, Any]]]` | `"factual"` | Built-in rubric name or custom rubric dictionary |
+| `judge_model` | `Optional[str]` | `None` | Model to use for evaluation |
+| `pass_threshold` | `float` | `0.7` | Minimum score to pass (0.0-1.0) |
+
+#### Built-in Rubrics
+
+- **`"factual"`**: For Q&A and information retrieval
+  - accuracy (50%): Is the information factually correct?
+  - completeness (30%): Does the response cover all key points?
+  - relevance (20%): Is the response relevant to the question?
+
+- **`"research_quality"`**: For research and analysis tasks
+  - depth (30%): Does the response show deep understanding?
+  - sources (20%): Are claims properly sourced?
+  - analysis (30%): Is the analysis thorough and insightful?
+  - clarity (20%): Is the response clear and well-structured?
+
+- **`"code_quality"`**: For code generation
+  - correctness (40%): Is the code correct and bug-free?
+  - efficiency (20%): Is the code efficient?
+  - readability (20%): Is the code readable and well-documented?
+  - best_practices (20%): Does it follow best practices?
+
+#### Methods
+
+##### `async run(input, expected, context=None, print_results=False) -> EvalResult`
+
+Run a single evaluation.
 
 **Parameters:**
-- `agent`: URL string, callable function, or agent instance
-- `judge_model`: Model to use for evaluation (default: from provider config)
-- `rubric`: Built-in rubric name or custom rubric dictionary
-- `pass_threshold`: Minimum score to pass (0.0-1.0)
+- `input` (str): Input to send to agent
+- `expected` (Union[str, Dict[str, Any]]): Expected output or criteria
+- `context` (Optional[Dict[str, Any]]): Additional context for evaluation
+- `print_results` (bool): Whether to print results to console
 
-**Built-in Rubrics:**
-- `factual`: For Q&A and information retrieval
-- `research_quality`: For research and analysis tasks
-- `code_quality`: For code generation
+**Returns:** `EvalResult` object
 
-**Custom Rubric Format:**
-```python
-custom_rubric = {
-    "criterion_1": {"weight": 0.5, "criteria": "Description of criterion"},
-    "criterion_2": {"weight": 0.3, "criteria": "Description of criterion"},
-    "criterion_3": {"weight": 0.2, "criteria": "Description of criterion"},
-}
-```
+##### `async run_batch(test_cases, parallel=True, progress=True, export=None, print_results=True) -> BatchResult`
+
+Run multiple evaluations.
+
+**Parameters:**
+- `test_cases` (Union[List[Dict[str, Any]], str, Path]): List of test cases or path to JSONL file
+- `parallel` (bool): Run tests in parallel
+- `progress` (bool): Show progress bar
+- `export` (Optional[str]): Path to export results
+- `print_results` (bool): Print summary
+
+**Returns:** `BatchResult` object
 
 ### PerformanceEval
 
-Tracks performance metrics including token usage, latency, and costs.
+Evaluates agent performance metrics including latency and resource usage.
 
 ```python
 from acp_evals import PerformanceEval
 
-perf = PerformanceEval(
-    agent=my_agent,
-    model="gpt-4.1"  # For cost calculation
+eval = PerformanceEval(
+    agent="http://localhost:8000/agent",
+    num_iterations=5,
+    track_memory=False,
+    warmup_runs=1
 )
-
-result = await perf.run(
-    input="Analyze this document...",
-    track_tokens=True,
-    track_latency=True,
-    track_memory=False,  # Not implemented yet
-    print_results=True
-)
-
-# Access metrics
-print(f"Tokens used: {result.details['tokens']['total']}")
-print(f"Cost: ${result.details['cost_usd']:.4f}")
-print(f"Latency: {result.details['latency_ms']}ms")
 ```
 
-**Tracked Metrics:**
-- Token usage (input/output/total)
-- Cost calculation based on provider pricing
-- Response latency in milliseconds and seconds
-- Cost per 1k tokens
-- Performance thresholds (10 seconds latency, 10k tokens)
+#### Constructor Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `agent` | `Union[str, Callable, Any]` | Required | Agent URL, callable function, or agent instance |
+| `num_iterations` | `int` | `5` | Number of test iterations |
+| `track_memory` | `bool` | `False` | Whether to track memory usage |
+| `warmup_runs` | `int` | `1` | Number of warmup runs before measurement |
+
+#### Methods
+
+##### `async run(input_text, expected=None) -> EvalResult`
+
+Run performance evaluation.
+
+**Parameters:**
+- `input_text` (Union[str, List[str]]): Input text or list of inputs for varied testing
+- `expected` (Optional[str]): Optional expected output (not used for scoring)
+
+**Returns:** `EvalResult` object with performance metrics
+
+**Metrics Tracked:**
+- Latency statistics (mean, median, std dev, min, max, p95)
+- Memory usage (if enabled)
+- Token metrics (if available from agent)
+- Performance score based on latency thresholds
 
 ### ReliabilityEval
 
@@ -93,24 +125,33 @@ Evaluates agent reliability, tool usage, and error handling.
 ```python
 from acp_evals import ReliabilityEval
 
-reliability = ReliabilityEval(
-    agent=my_agent,
-    tool_definitions=["search", "calculator", "code_exec"]
+eval = ReliabilityEval(
+    agent="http://localhost:8000/agent",
+    tool_definitions=["search", "summarize"]
 )
-
-result = await reliability.run(
-    input="Search for recent AI papers and calculate statistics",
-    expected_tools=["search", "calculator"],
-    test_error_handling=True,
-    test_retry=True,
-    print_results=True
-)
-
-# Tool usage details
-print(f"Tools used: {result.details['tools_used']}")
-print(f"Tool coverage: {result.details['tool_coverage']}")
-print(f"Event statistics: {result.details['event_statistics']}")
 ```
+
+#### Constructor Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `agent` | `Union[str, Callable, Any]` | Required | Agent URL, callable function, or agent instance |
+| `tool_definitions` | `Optional[List[str]]` | `None` | List of available tool names |
+
+#### Methods
+
+##### `async run(input, expected_tools=None, test_error_handling=False, test_retry=False, print_results=False) -> EvalResult`
+
+Run reliability evaluation.
+
+**Parameters:**
+- `input` (str): Input to send to agent
+- `expected_tools` (Optional[List[str]]): Tools expected to be used
+- `test_error_handling` (bool): Test error handling capabilities
+- `test_retry` (bool): Test retry behavior
+- `print_results` (bool): Whether to print results
+
+**Returns:** `EvalResult` object with reliability metrics
 
 **Features:**
 - Tool usage tracking from ACP events
@@ -118,209 +159,46 @@ print(f"Event statistics: {result.details['event_statistics']}")
 - Retry behavior analysis with backoff detection
 - Event stream analysis and statistics
 - Fallback to text analysis when events unavailable
-- Tool coverage metrics
-
-### SafetyEval
-
-Comprehensive safety evaluation using LLM-based analysis across multiple risk dimensions.
-
-```python
-from acp_evals import SafetyEval
-
-safety = SafetyEval(
-    agent=my_agent,
-    thresholds={
-        "violence": 0.2,
-        "sexual": 0.2,
-        "self_harm": 0.2,
-        "hate": 0.2,
-    },
-    safety_config={"model": "gpt-4.1"}  # Optional: specify judge model
-)
-
-result = await safety.run(
-    input="Tell me about conflict resolution",
-    context="Educational context",
-    print_results=True
-)
-
-# Safety scores
-print(f"Overall safety: {result.score}")
-print(f"Violations: {result.details['violations']}")
-print(f"Reasoning: {result.details['reasoning']}")
-```
-
-**Safety Dimensions:**
-- Violence/Harm: Content promoting physical harm or violence
-- Sexual: Inappropriate sexual content
-- Self-harm: Content that could encourage self-harm
-- Hate/Harassment: Hateful, discriminatory, or harassing content
-- Dangerous/Illegal: Instructions for dangerous or illegal activities
-- Misinformation: Deliberately false or misleading information
-
-**Features:**
-- LLM-based safety evaluation for nuanced analysis
-- Configurable safety thresholds per dimension
-- Detailed reasoning for safety decisions
-- JSON-structured safety scoring
-
-### Quality Evaluators
-
-ACP Evals includes specialized quality evaluators for fine-grained assessment:
-
-#### GroundednessEval
-
-Evaluates if agent responses are grounded in provided context.
-
-```python
-from acp_evals import GroundednessEval
-
-groundedness = GroundednessEval(agent=my_agent)
-result = await groundedness.run(
-    input="Summarize the key findings",
-    context="Research paper content...",
-    print_results=True
-)
-```
-
-#### CompletenessEval
-
-Assesses if responses fully address all aspects of the request.
-
-```python
-from acp_evals import CompletenessEval
-
-completeness = CompletenessEval(agent=my_agent)
-result = await completeness.run(
-    input="List all features and their limitations",
-    expected="Comprehensive feature list with limitations",
-    print_results=True
-)
-```
-
-#### TaskAdherenceEval
-
-Checks if agent follows specific task instructions.
-
-```python
-from acp_evals import TaskAdherenceEval
-
-task_eval = TaskAdherenceEval(agent=my_agent)
-result = await task_eval.run(
-    input="Write a 3-paragraph summary with bullet points",
-    task_requirements=[
-        "exactly 3 paragraphs",
-        "includes bullet points",
-        "stays within word limit"
-    ],
-    print_results=True
-)
-```
-
-#### ToolAccuracyEval
-
-Evaluates correct tool usage and parameter passing.
-
-```python
-from acp_evals import ToolAccuracyEval
-
-tool_eval = ToolAccuracyEval(
-    agent=my_agent,
-    tool_definitions=["search", "calculate", "summarize"]
-)
-result = await tool_eval.run(
-    input="Find the latest GDP data and calculate growth rate",
-    expected_tools=["search", "calculate"],
-    print_results=True
-)
-```
-
-#### QualityEval
-
-Composite evaluator combining multiple quality dimensions.
-
-```python
-from acp_evals import QualityEval
-
-quality = QualityEval(
-    agent=my_agent,
-    weights={
-        "groundedness": 0.3,
-        "completeness": 0.3,
-        "task_adherence": 0.2,
-        "tool_accuracy": 0.2
-    }
-)
-result = await quality.run(
-    input="Complex multi-step task...",
-    context="Relevant context...",
-    expected="Expected outcome...",
-    print_results=True
-)
-```
 
 ## Result Objects
 
 ### EvalResult
 
-All evaluators return an `EvalResult` object with consistent structure:
+All evaluators return an `EvalResult` object with the following structure:
 
 ```python
 class EvalResult:
-    name: str           # Evaluation name
-    passed: bool        # Pass/fail status
-    score: float        # Score (0.0-1.0)
-    details: dict       # Evaluator-specific details
-    metadata: dict      # Input, output, run metadata
-    timestamp: datetime # When evaluation was run
-    
-    # Methods
-    def assert_passed(self)      # Raises AssertionError if failed
-    def print_summary(self)      # Pretty print results
+    name: str              # Evaluation name
+    passed: bool           # Pass/fail status
+    score: float          # Score (0.0-1.0)
+    details: Dict[str, Any]   # Evaluator-specific details
+    metadata: Dict[str, Any]  # Input, output, run metadata
+    timestamp: datetime    # When evaluation was run
 ```
+
+#### Methods
+
+- `assert_passed()`: Raises AssertionError if evaluation failed
+- `print_summary()`: Pretty print results to console
 
 ### BatchResult
 
-Batch evaluations return aggregated results:
+Batch evaluations return a `BatchResult` object:
 
 ```python
 class BatchResult:
-    results: list[EvalResult]  # Individual results
+    results: List[EvalResult]  # Individual results
     total: int                 # Total evaluations
-    passed: int                # Number passed
-    failed: int                # Number failed
-    pass_rate: float          # Percentage passed
-    avg_score: float          # Average score
-    
-    # Methods
-    def print_summary(self)              # Print summary table
-    def export(self, path: str)          # Export to JSON
+    passed: int               # Number passed
+    failed: int               # Number failed
+    pass_rate: float         # Percentage passed
+    avg_score: float         # Average score
 ```
 
-## Batch Evaluation
+#### Methods
 
-Run multiple test cases efficiently:
-
-```python
-# From list
-test_cases = [
-    {"input": "What is 2+2?", "expected": "4"},
-    {"input": "Capital of France?", "expected": "Paris"},
-]
-
-# From file (JSONL format)
-# test_cases.jsonl:
-# {"input": "What is 2+2?", "expected": "4"}
-# {"input": "Capital of France?", "expected": "Paris"}
-
-batch_result = await eval.run_batch(
-    test_cases=test_cases,  # or "test_cases.jsonl"
-    parallel=True,          # Run in parallel
-    progress=True,          # Show progress bar
-    export="results.json",  # Save results
-    print_results=True
-)
-```
+- `print_summary()`: Print summary table
+- `export(path: str)`: Export results to JSON file
 
 ## Agent Types
 
@@ -348,138 +226,109 @@ class MyAgent:
 eval = AccuracyEval(agent=MyAgent())
 ```
 
-## Provider Configuration
+## Test Case Format
 
-Configure LLM providers for evaluation:
+Test cases for batch evaluation can be provided as:
 
+### List of Dictionaries
 ```python
-# Via environment variables (recommended)
-# OPENAI_API_KEY=sk-...
-# ANTHROPIC_API_KEY=sk-ant-...
-# EVALUATION_PROVIDER=openai
-
-# Or programmatically
-eval = AccuracyEval(
-    agent=my_agent,
-    judge_config={
-        "provider": "anthropic",
-        "model": "claude-4-sonnet",
-    }
-)
-```
-
-## Multi-Agent Patterns
-
-Evaluate coordination between multiple agents:
-
-```python
-from acp_evals.patterns import SupervisorPattern
-
-# Define agents
-supervisor = {"url": "http://localhost:8000/agents/supervisor", "role": "coordinator"}
-workers = [
-    {"url": "http://localhost:8000/agents/researcher", "role": "research"},
-    {"url": "http://localhost:8000/agents/writer", "role": "writing"},
+test_cases = [
+    {"input": "What is 2+2?", "expected": "4"},
+    {"input": "Capital of France?", "expected": "Paris", "context": {"type": "geography"}},
 ]
+```
 
-# Create pattern
-pattern = SupervisorPattern(supervisor=supervisor, workers=workers)
+### JSONL File
+```jsonl
+{"input": "What is 2+2?", "expected": "4"}
+{"input": "Capital of France?", "expected": "Paris", "context": {"type": "geography"}}
+```
 
-# Execute and evaluate
-result = await pattern.execute(
-    task="Research AI safety and write a summary",
-    context={"max_length": 500}
+### JSON File
+```json
+[
+    {"input": "What is 2+2?", "expected": "4"},
+    {"input": "Capital of France?", "expected": "Paris", "context": {"type": "geography"}}
+]
+```
+
+## Example Usage
+
+### Basic Accuracy Evaluation
+```python
+from acp_evals import AccuracyEval
+
+# Create evaluator
+eval = AccuracyEval("http://localhost:8000/agents/my-agent")
+
+# Run single evaluation
+result = await eval.run(
+    input="What is the capital of France?",
+    expected="Paris",
+    print_results=True
 )
 
-print(f"Delegation efficiency: {result['parallelization_efficiency']}")
-print(f"Supervisor overhead: {result['supervisor_overhead']}s")
+# Check if passed
+result.assert_passed()
 ```
 
-## Advanced Features
-
-### Mock Mode
-
-Run evaluations without making real LLM calls:
-
+### Performance Testing
 ```python
-import os
-os.environ["MOCK_MODE"] = "true"
+from acp_evals import PerformanceEval
 
-# All LLM calls will return mock responses
-eval = AccuracyEval(agent=my_agent)
-result = await eval.run(input="test", expected="test")
-```
-
-### Custom Metrics
-
-Extend evaluators with custom metrics:
-
-```python
-from acp_evals.core.base import Metric, MetricResult
-
-class CustomMetric(Metric):
-    name = "custom_metric"
-    
-    async def calculate(self, run, events):
-        # Your metric logic
-        return MetricResult(
-            name=self.name,
-            value=0.95,
-            unit="score",
-            metadata={"details": "..."}
-        )
-```
-
-### Event Stream Analysis
-
-For ACP agents, access the full event stream:
-
-```python
-from acp_evals.client import ACPEvaluationClient
-
-client = ACPEvaluationClient(
-    base_url="http://localhost:8000",
-    collect_events=True
+# Create evaluator with custom settings
+eval = PerformanceEval(
+    agent="http://localhost:8000/agents/my-agent",
+    num_iterations=10,
+    warmup_runs=2
 )
 
-run, events, metrics = await client.run_with_tracking(
-    agent_name="my-agent",
-    input="Test input"
+# Run performance test
+result = await eval.run("Process this text quickly")
+
+# Access metrics
+print(f"Mean latency: {result.details['latency']['mean_ms']}ms")
+print(f"P95 latency: {result.details['latency']['p95_ms']}ms")
+```
+
+### Reliability Testing with Tools
+```python
+from acp_evals import ReliabilityEval
+
+# Create evaluator with tool definitions
+eval = ReliabilityEval(
+    agent="http://localhost:8000/agents/my-agent",
+    tool_definitions=["search", "calculate", "summarize"]
 )
 
-# Analyze events
-for event in events:
-    print(f"{event['type']}: {event['data']}")
+# Run reliability test
+result = await eval.run(
+    input="Search for recent AI papers and calculate statistics",
+    expected_tools=["search", "calculate"],
+    test_error_handling=True,
+    print_results=True
+)
+
+# Check tool coverage
+print(f"Tool coverage: {result.details['tool_coverage']}")
 ```
 
-## Error Handling
-
-All evaluators provide detailed error information:
-
+### Batch Evaluation
 ```python
-try:
-    result = await eval.run(input="test", expected="test")
-except AgentConnectionError as e:
-    print(f"Failed to connect to agent: {e}")
-except AgentTimeoutError as e:
-    print(f"Agent timed out after {e.timeout_seconds}s")
-except ProviderAPIError as e:
-    print(f"LLM provider error: {e}")
+from acp_evals import AccuracyEval
+
+# Create evaluator
+eval = AccuracyEval("http://localhost:8000/agents/my-agent")
+
+# Run batch evaluation from file
+batch_result = await eval.run_batch(
+    test_cases="test_cases.jsonl",
+    parallel=True,
+    export="results.json",
+    print_results=True
+)
+
+# Access results
+print(f"Pass rate: {batch_result.pass_rate}%")
+print(f"Average score: {batch_result.avg_score}")
 ```
-
-## Best Practices
-
-1. **Use appropriate evaluators**: Choose evaluators that match your use case
-2. **Set realistic thresholds**: Adjust pass thresholds based on your requirements
-3. **Batch similar evaluations**: Use batch mode for efficiency
-4. **Monitor costs**: Track token usage and costs, especially in production
-5. **Handle failures gracefully**: Implement proper error handling
-6. **Use mock mode for testing**: Develop without consuming API credits
-
-## Examples
-
-See the `/examples` directory for complete working examples:
-- `01_minimal_example.py` - Simplest evaluation
-- `02_basic_accuracy_evaluation.py` - Accuracy evaluation patterns
-- `05_multi_agent_patterns.py` - Multi-agent coordination
-- `07_adversarial_testing.py` - Safety and robustness testing

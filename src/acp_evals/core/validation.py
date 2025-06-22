@@ -21,23 +21,30 @@ class InputValidator:
             InvalidEvaluationInputError: If agent is invalid
         """
         if isinstance(agent, str):
-            # Validate URL format
-            try:
-                parsed = urlparse(agent)
-                if not parsed.scheme or not parsed.netloc:
-                    raise InvalidEvaluationInputError(
-                        "agent",
-                        f"Invalid URL format: {agent}. Expected format: http://host:port/agents/name",
-                    )
+            # Allow different string formats
+            if agent.startswith(("http://", "https://")):
+                # Validate URL format
+                try:
+                    parsed = urlparse(agent)
+                    if not parsed.scheme or not parsed.netloc:
+                        raise InvalidEvaluationInputError(
+                            "agent",
+                            f"Invalid URL format: {agent}. Expected format: http://host:port/agents/name",
+                        )
 
-                # Check for /agents/ path
-                if "/agents/" not in agent:
-                    raise InvalidEvaluationInputError(
-                        "agent", f"Agent URL must contain '/agents/' path. Got: {agent}"
-                    )
+                    # Check for /agents/ path for strict ACP URLs
+                    if "/agents/" not in agent:
+                        raise InvalidEvaluationInputError(
+                            "agent", f"Agent URL must contain '/agents/' path. Got: {agent}"
+                        )
 
-            except Exception as e:
-                raise InvalidEvaluationInputError("agent", f"Invalid agent URL: {str(e)}")
+                except Exception as e:
+                    raise InvalidEvaluationInputError("agent", f"Invalid agent URL: {str(e)}")
+            else:
+                # Allow file paths, function references, or other string identifiers
+                # These will be handled by the agent factory
+                if not agent.strip():
+                    raise InvalidEvaluationInputError("agent", "Agent identifier cannot be empty")
 
         elif callable(agent):
             # Callable is valid

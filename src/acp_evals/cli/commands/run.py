@@ -83,7 +83,6 @@ def format_result(result: Any) -> None:
 @click.option("--track-latency", is_flag=True, help="Track response latency (performance)")
 @click.option("--expected-tools", multiple=True, help="Expected tools for reliability eval")
 @click.option("--export", "-o", help="Export result to JSON file")
-@click.option("--mock", is_flag=True, help="Run in mock mode (no LLM calls)")
 @click.pass_context
 def run(
     ctx,
@@ -96,7 +95,6 @@ def run(
     track_latency: bool,
     expected_tools: tuple[str, ...],
     export: str | None,
-    mock: bool,
 ) -> None:
     """Run a single evaluation directly from CLI.
 
@@ -115,14 +113,6 @@ def run(
         console.print(f"Agent: [yellow]{agent}[/yellow]")
         console.print(f"Input: [dim]{input_text[:100]}{'...' if len(input_text) > 100 else ''}[/dim]\n")
 
-    # Set mock mode if requested
-    if mock:
-        if not quiet:
-            console.print("[yellow]Running in mock mode (no LLM calls)[/yellow]\n")
-        import os
-
-        os.environ["MOCK_MODE"] = "true"
-
     try:
         # Create and run appropriate evaluator
         if evaluator == "accuracy":
@@ -136,6 +126,7 @@ def run(
                 eval_instance.run(
                     input=input_text,
                     expected=expected,
+                    print_results=not quiet  # Use rich display unless in quiet mode
                 )
             )
 
@@ -147,7 +138,8 @@ def run(
             result = asyncio.run(
                 eval_instance.run(
                     input_text=input_text,
-                    expected=expected
+                    expected=expected,
+                    print_results=not quiet  # Use rich display unless in quiet mode
                 )
             )
 
@@ -160,13 +152,12 @@ def run(
                 eval_instance.run(
                     input=input_text,
                     expected_tools=list(expected_tools) if expected_tools else [],
+                    print_results=not quiet  # Use rich display unless in quiet mode
                 )
             )
 
 
-        # Display results (unless in quiet mode)
-        if not quiet:
-            format_result(result)
+        # Results are already displayed by the evaluators if not in quiet mode
 
         # Export if requested
         if export:

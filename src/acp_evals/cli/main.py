@@ -32,6 +32,7 @@ def cli(ctx, verbose, debug, quiet):
 
     Quick start:
         acp-evals test <agent-url>           # Quick agent testing
+        acp-evals comprehensive <agent> -i "What is AI?" -e "Artificial Intelligence"
         acp-evals run accuracy <agent> -i "What is AI?" -e "Artificial Intelligence"
         acp-evals discover                   # Find available agents
         acp-evals check                      # Verify configuration
@@ -82,6 +83,10 @@ cli.add_command(discover)
 # Import and register quick-start command
 from .commands.quickstart import quickstart
 cli.add_command(quickstart)
+
+# Import and register comprehensive evaluation command
+from .commands.comprehensive import comprehensive
+cli.add_command(comprehensive)
 
 
 @cli.command()

@@ -197,43 +197,45 @@ async def run_test_suite(
 
 
 def display_results(summary: dict[str, Any]) -> None:
-    """Display test results in a nice table."""
-    # Create results table
-    table = Table(title=f"{summary['suite']} Test Results")
-    table.add_column("Test", style="cyan")
-    table.add_column("Status", style="green")
-    table.add_column("Score", style="yellow")
-    table.add_column("Cost", style="magenta")
-
-    for result in summary["results"]:
-        status = "[green]✓ PASS[/green]" if result["passed"] else "[red]✗ FAIL[/red]"
-        score = f"{result['score']:.2f}" if "score" in result else "N/A"
-        cost = f"${result.get('cost', 0):.4f}" if "cost" in result else "N/A"
-
-        table.add_row(
-            result["name"],
-            status,
-            score,
-            cost,
-        )
-
-    console.print(table)
-
-    # Summary panel
-    summary_text = f"""
-[bold]Summary:[/bold]
-Total Tests: {summary["total"]}
-Passed: [green]{summary["passed"]}[/green]
-Failed: [red]{summary["failed"]}[/red]
-Pass Rate: [{"green" if summary["pass_rate"] >= 80 else "yellow" if summary["pass_rate"] >= 60 else "red"}]{summary["pass_rate"]:.1f}%[/]
-"""
-
-    console.print(
-        Panel(
-            summary_text.strip(),
-            title=f"{summary['suite']} Summary",
-            border_style="blue",
-        )
+    """Display test results using rich display components."""
+    # Import the rich display components
+    from ...cli.display import display_evaluation_report
+    
+    # Convert test results to display format
+    display_data = {
+        "scores": {"overall": summary["pass_rate"] / 100.0},
+        "test_results": [
+            {
+                "name": result["name"],
+                "passed": result["passed"],
+                "score": result.get("score", 0.0),
+                "reason": result.get("error", "") if not result["passed"] else "Test passed"
+            }
+            for result in summary["results"]
+        ],
+        "metrics": {
+            "total_tests": summary["total"],
+            "passed": summary["passed"],
+            "failed": summary["failed"],
+            "pass_rate": f"{summary['pass_rate']:.1f}%",
+            "suite_name": summary["suite"]
+        }
+    }
+    
+    # Calculate cost if available
+    total_cost = sum(result.get("cost", 0) for result in summary["results"])
+    if total_cost > 0:
+        display_data["cost_data"] = {
+            "total": total_cost,
+            "average_per_test": total_cost / summary["total"] if summary["total"] > 0 else 0
+        }
+    
+    # Display using rich components
+    display_evaluation_report(
+        display_data, 
+        show_details=True, 
+        show_suggestions=False, 
+        show_costs=total_cost > 0
     )
 
 
@@ -265,11 +267,6 @@ Pass Rate: [{"green" if summary["pass_rate"] >= 80 else "yellow" if summary["pas
     help="Export results to JSON file",
 )
 @click.option(
-    "--mock",
-    is_flag=True,
-    help="Run in mock mode (no LLM calls)",
-)
-@click.option(
     "--pass-threshold",
     "-t",
     type=float,
@@ -278,7 +275,7 @@ Pass Rate: [{"green" if summary["pass_rate"] >= 80 else "yellow" if summary["pas
 )
 @click.pass_context
 def test(
-    ctx, agent: str, test_suite: str, export_path: str | None, mock: bool, pass_threshold: float
+    ctx, agent: str, test_suite: str, export_path: str | None, pass_threshold: float
 ) -> None:
     """Quick test of an ACP agent with predefined test suites.
 
@@ -299,22 +296,15 @@ def test(
         console.print(f"Test Suite: [yellow]{test_suite}[/yellow]\n")
 
     # Check provider configuration
-    if mock:
+    try:
+        provider = ProviderFactory.get_provider()
         if not quiet:
-            console.print("[yellow]Running in mock mode (no LLM calls)[/yellow]\n")
-        import os
-
-        os.environ["MOCK_MODE"] = "true"
-    else:
-        try:
-            provider = ProviderFactory.get_provider()
-            if not quiet:
-                console.print(f"Using provider: [green]{provider.name}[/green]\n")
-        except Exception as e:
-            if not quiet:
-                console.print(f"[red]Provider configuration error: {e}[/red]")
-                console.print("Run 'acp-evals check' to verify your configuration")
-            return
+            console.print(f"Using provider: [green]{provider.name}[/green]\n")
+    except Exception as e:
+        if not quiet:
+            console.print(f"[red]Provider configuration error: {e}[/red]")
+            console.print("Run 'acp-evals check' to verify your configuration")
+        return
 
     # Select test suite
     if test_suite == "quick":
