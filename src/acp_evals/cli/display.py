@@ -420,13 +420,13 @@ def create_performance_metrics_panel(
             lines.append(f"  Mean: {lat_stats.get('mean_ms', 0):.1f}ms")
             lines.append(f"  P95: {lat_stats.get('p95_ms', 0):.1f}ms")
             lines.append(f"  Std Dev: {lat_stats.get('std_dev_ms', 0):.1f}ms")
-        
+
         # Memory statistics
         if "memory" in detailed_metrics:
             mem_stats = detailed_metrics["memory"]
             lines.append(f"  Memory (Mean): {mem_stats.get('mean_mb', 0):.2f}MB")
             lines.append(f"  Memory (Peak): {mem_stats.get('max_mb', 0):.2f}MB")
-        
+
         # Performance feedback
         if "feedback" in detailed_metrics:
             lines.append(f"  Assessment: {detailed_metrics['feedback']}")
@@ -687,7 +687,7 @@ def display_single_evaluation_result(
                 latency_stats = details["latency"]
                 if isinstance(latency_stats, dict):
                     latency_ms = latency_stats.get("mean_ms", 0)
-            
+
             if latency_ms > 0:
                 if latency_ms < 200:
                     score_data["  Response Time"] = 1.0
@@ -732,7 +732,9 @@ def display_single_evaluation_result(
         if details:
             # Tool usage accuracy
             expected_tools = details.get("expected_tools", [])
-            actual_tools = details.get("tools_used", [])  # Reliability evaluator uses 'tools_used' key
+            actual_tools = details.get(
+                "tools_used", []
+            )  # Reliability evaluator uses 'tools_used' key
             if expected_tools:
                 tool_coverage = len([t for t in expected_tools if t in actual_tools]) / len(
                     expected_tools
@@ -788,7 +790,7 @@ def display_single_evaluation_result(
             latency_stats = details["latency"]
             if isinstance(latency_stats, dict):
                 latency_ms = latency_stats.get("mean_ms", 0)
-        
+
         tokens = getattr(result, "tokens", None)
         cost = getattr(result, "cost", None)
 
@@ -917,7 +919,9 @@ def create_comprehensive_evaluation_summary(
         if details:
             # Tool usage
             expected_tools = details.get("expected_tools", [])
-            actual_tools = details.get("tools_used", [])  # Reliability evaluator uses 'tools_used' key
+            actual_tools = details.get(
+                "tools_used", []
+            )  # Reliability evaluator uses 'tools_used' key
             if expected_tools:
                 tool_coverage = len([t for t in expected_tools if t in actual_tools]) / len(
                     expected_tools

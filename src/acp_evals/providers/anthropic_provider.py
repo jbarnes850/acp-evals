@@ -28,7 +28,7 @@ class AnthropicProvider(LLMProvider):
         "claude-3-sonnet": {"input": 0.003, "output": 0.015},
         "claude-3-haiku": {"input": 0.00025, "output": 0.00125},
     }
-    
+
     # Model mapping to actual API names
     MODEL_MAPPING = {
         "claude-4-opus": "claude-opus-4-20250514",
