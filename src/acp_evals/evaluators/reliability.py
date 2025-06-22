@@ -77,7 +77,7 @@ class ReliabilityEval(BaseEval):
             # For ACP agents, we need to track events to capture tool usage
             events_collected = []
 
-            if isinstance(self.agent, str):
+            if isinstance(self.agent, str) and self.agent.startswith(("http://", "https://")):
                 # ACP agent - collect events during execution
                 client = await self._get_client()
                 if not client:

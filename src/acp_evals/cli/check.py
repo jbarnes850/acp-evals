@@ -122,7 +122,7 @@ def check_providers(ctx, test_connection: bool, show_setup: str | None):
             if provider == "openai":
                 model = os.getenv("OPENAI_MODEL", "gpt-4")
             elif provider == "anthropic":
-                model = os.getenv("ANTHROPIC_MODEL", "claude-3-opus-20240229")
+                model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4")
             elif provider == "ollama":
                 model = os.getenv("OLLAMA_MODEL", "llama2")
 

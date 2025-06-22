@@ -21,12 +21,23 @@ class AnthropicProvider(LLMProvider):
     # Pricing per 1K tokens (as of June 2025)
     PRICING = {
         # June 2025 Models - Claude 4 series
-        "claude-4-opus": {"input": 0.015, "output": 0.075},  # 32K output
-        "claude-4-sonnet": {"input": 0.003, "output": 0.015},  # 64K output, SWE-bench 72.7%
+        "claude-opus-4": {"input": 0.015, "output": 0.075},  # 32K output
+        "claude-sonnet-4": {"input": 0.003, "output": 0.015},  # 64K output, SWE-bench 72.7%
         # Legacy models (still supported)
         "claude-3-opus": {"input": 0.015, "output": 0.075},
         "claude-3-sonnet": {"input": 0.003, "output": 0.015},
         "claude-3-haiku": {"input": 0.00025, "output": 0.00125},
+    }
+    
+    # Model mapping to actual API names
+    MODEL_MAPPING = {
+        "claude-4-opus": "claude-opus-4-20250514",
+        "claude-opus-4": "claude-opus-4-20250514",
+        "claude-4-sonnet": "claude-sonnet-4-20250514",
+        "claude-sonnet-4": "claude-sonnet-4-20250514",
+        "claude-3-opus": "claude-3-opus-20240229",
+        "claude-3-sonnet": "claude-3-sonnet-20240229",
+        "claude-3-haiku": "claude-3-haiku-20240307",
     }
 
     def __init__(self, model: str = "claude-4-sonnet", api_key: str | None = None, **kwargs):
@@ -58,9 +69,12 @@ class AnthropicProvider(LLMProvider):
             # Configure client
             client = self.anthropic.AsyncAnthropic(api_key=self.api_key)
 
+            # Get actual model name from mapping
+            actual_model = self.MODEL_MAPPING.get(self.model, self.model)
+
             # Make request
             response = await client.messages.create(
-                model=self.model,
+                model=actual_model,
                 system="You are an expert evaluator.",
                 messages=[{"role": "user", "content": prompt}],
                 temperature=temperature,
@@ -133,6 +147,8 @@ class AnthropicProvider(LLMProvider):
         valid_models = [
             "claude-4-opus",
             "claude-4-sonnet",
+            "claude-opus-4",
+            "claude-sonnet-4",
             "claude-3-opus",
             "claude-3-sonnet",
             "claude-3-haiku",
