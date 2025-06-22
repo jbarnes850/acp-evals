@@ -1,0 +1,145 @@
+{
+  "providers": {
+    "openai": {
+      "name": "OpenAI",
+      "models": {
+        "gpt-4o": {
+          "input_cost_per_1k_tokens": 0.005,
+          "output_cost_per_1k_tokens": 0.015,
+          "max_tokens": 16384,
+          "context_window": 128000,
+          "description": "Most advanced multimodal model, 2x faster than GPT-4 Turbo"
+        },
+        "gpt-4o-mini": {
+          "input_cost_per_1k_tokens": 0.00015,
+          "output_cost_per_1k_tokens": 0.0006,
+          "max_tokens": 16384,
+          "context_window": 128000,
+          "description": "Affordable and intelligent small model for fast, lightweight tasks"
+        },
+        "gpt-4-turbo": {
+          "input_cost_per_1k_tokens": 0.010,
+          "output_cost_per_1k_tokens": 0.030,
+          "max_tokens": 4096,
+          "context_window": 128000,
+          "description": "Previous generation flagship model"
+        },
+        "gpt-3.5-turbo": {
+          "input_cost_per_1k_tokens": 0.0005,
+          "output_cost_per_1k_tokens": 0.0015,
+          "max_tokens": 4096,
+          "context_window": 16385,
+          "description": "Fast, inexpensive model for simple tasks"
+        }
+      }
+    },
+    "anthropic": {
+      "name": "Anthropic", 
+      "models": {
+        "claude-opus-4-20250514": {
+          "input_cost_per_1k_tokens": 0.015,
+          "output_cost_per_1k_tokens": 0.075,
+          "max_tokens": 32000,
+          "context_window": 200000,
+          "description": "Most capable and intelligent model with superior reasoning"
+        },
+        "claude-sonnet-4-20250514": {
+          "input_cost_per_1k_tokens": 0.003,
+          "output_cost_per_1k_tokens": 0.015,
+          "max_tokens": 64000,
+          "context_window": 200000,
+          "description": "High-performance model with exceptional reasoning capabilities"
+        },
+        "claude-3-7-sonnet-20250219": {
+          "input_cost_per_1k_tokens": 0.003,
+          "output_cost_per_1k_tokens": 0.015,
+          "max_tokens": 64000,
+          "context_window": 200000,
+          "description": "High-performance model with early extended thinking"
+        },
+        "claude-3-5-sonnet-20241022": {
+          "input_cost_per_1k_tokens": 0.003,
+          "output_cost_per_1k_tokens": 0.015,
+          "max_tokens": 8192,
+          "context_window": 200000,
+          "description": "Balanced intelligence and speed"
+        },
+        "claude-3-5-haiku-20241022": {
+          "input_cost_per_1k_tokens": 0.0008,
+          "output_cost_per_1k_tokens": 0.004,
+          "max_tokens": 8192,
+          "context_window": 200000,
+          "description": "Fastest model for quick and accurate responses"
+        }
+      }
+    },
+    "ollama": {
+      "name": "Ollama (Local)",
+      "models": {
+        "qwen3:8b": {
+          "input_cost_per_1k_tokens": 0.0,
+          "output_cost_per_1k_tokens": 0.0,
+          "max_tokens": 8192,
+          "context_window": 32768,
+          "local": true,
+          "description": "Local Qwen 3 model, 8B parameters"
+        },
+        "qwen3:4b": {
+          "input_cost_per_1k_tokens": 0.0,
+          "output_cost_per_1k_tokens": 0.0,
+          "max_tokens": 4096,
+          "context_window": 32768,
+          "local": true,
+          "description": "Local Qwen 3 model, 4B parameters for faster inference"
+        },
+        "devstral:latest": {
+          "input_cost_per_1k_tokens": 0.0,
+          "output_cost_per_1k_tokens": 0.0,
+          "max_tokens": 8192,
+          "context_window": 32768,
+          "local": true,
+          "description": "Development-focused language model"
+        },
+        "gemma3:12b": {
+          "input_cost_per_1k_tokens": 0.0,
+          "output_cost_per_1k_tokens": 0.0,
+          "max_tokens": 8192,
+          "context_window": 32768,
+          "local": true,
+          "description": "Google Gemma 3 model, 12B parameters"
+        }
+      }
+    }
+  },
+  "cost_optimization": {
+    "tiers": {
+      "development": {
+        "max_cost_per_eval": 0.01,
+        "recommended_models": ["gpt-4o-mini", "claude-3-5-haiku-20241022", "qwen3:4b"]
+      },
+      "production": {
+        "max_cost_per_eval": 0.10,
+        "recommended_models": ["gpt-4o", "claude-sonnet-4-20250514", "claude-3-5-sonnet-20241022"]
+      },
+      "research": {
+        "max_cost_per_eval": 1.00,
+        "recommended_models": ["claude-opus-4-20250514", "gpt-4-turbo", "claude-3-7-sonnet-20250219"]
+      }
+    }
+  },
+  "metadata": {
+    "last_updated": "2025-06-22",
+    "version": "2.0.0",
+    "description": "Updated model configurations for simplified acp-evals framework",
+    "pricing_sources": {
+      "openai": "Standard GPT-4o family pricing",
+      "anthropic": "Claude 4 and Claude 3.5 family verified from docs.anthropic.com",
+      "ollama": "Local models detected from user system"
+    },
+    "notes": {
+      "anthropic": "Model names use full snapshot versions for consistency",
+      "openai": "Pricing based on current GPT-4o family rates",
+      "ollama": "Local models have zero API costs"
+    }
+  }
+}
