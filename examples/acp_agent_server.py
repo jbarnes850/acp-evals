@@ -6,10 +6,11 @@ import uuid
 import asyncio
 from datetime import datetime, timezone
 from dotenv import load_dotenv
-import openai
+from openai import OpenAI
+from openai.types.chat import ChatCompletionMessageParam
 from anthropic import Anthropic
 import uvicorn
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional, cast
 import logging
 
 # ACP SDK imports
@@ -30,7 +31,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="Test ACP Agent Server", version="1.0.0")
 
 # Initialize LLM clients
-openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 anthropic_client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 # In-memory storage for runs
@@ -54,8 +55,8 @@ AGENTS = {
 
 async def run_openai_agent(messages: List[Message]) -> str:
     """Run OpenAI agent with messages."""
-    # Convert ACP messages to OpenAI format
-    openai_messages = [
+    # Convert ACP messages to OpenAI format with proper typing
+    openai_messages: List[ChatCompletionMessageParam] = [
         {"role": "system", "content": "You are a helpful assistant. Be concise and direct."}
     ]
     
@@ -69,12 +70,16 @@ async def run_openai_agent(messages: List[Message]) -> str:
     
     try:
         response = openai_client.chat.completions.create(
-            model="gpt-4.1",
+            model="gpt-4",
             messages=openai_messages,
             max_tokens=150,
             temperature=0.7
         )
-        return response.choices[0].message.content.strip()
+        # Handle potential None value
+        message_content = response.choices[0].message.content
+        if message_content is None:
+            return "No response generated"
+        return message_content.strip()
     except Exception as e:
         logger.error(f"OpenAI error: {str(e)}")
         return f"Error: {str(e)}"
@@ -90,7 +95,7 @@ async def run_anthropic_agent(messages: List[Message]) -> str:
     
     try:
         response = anthropic_client.messages.create(
-            model="claude-3-5-sonnet",
+            model="claude-3-opus-20240229",
             messages=[{"role": "user", "content": content.strip()}],
             max_tokens=150,
             temperature=0.7
@@ -147,7 +152,8 @@ async def create_run(request: RunCreateRequest) -> RunCreateResponse:
     # Process run asynchronously
     asyncio.create_task(process_run(run_id, request.agent_name, request.input))
     
-    return RunCreateResponse(agent_name=request.agent_name, run=run)
+    # Return response with proper field names
+    return RunCreateResponse(agent_name=request.agent_name, run_id=run.run_id)
 
 async def process_run(run_id: str, agent_name: str, messages: List[Message]):
     """Process agent run in background."""
@@ -189,8 +195,11 @@ async def get_run(run_id: str) -> RunReadResponse:
         raise HTTPException(status_code=404, detail=f"Run '{run_id}' not found")
     
     run_data = runs_storage[run_id]
-    return RunReadResponse(agent_name=run_data["run"].agent_name, run=run_data["run"])
+    # Return response with proper field names
+    return RunReadResponse(agent_name=run_data["run"].agent_name, run_id=run_data["run"].run_id)
 
 if __name__ == "__main__":
     logger.info("Starting ACP-compliant test agent server on http://localhost:8000")
+    logger.info("Available agents: test-openai, test-anthropic, my-agent")
+    logger.info("Example test: acp-evals run accuracy http://localhost:8000/agents/my-agent -i 'What is 2+2?' -e '4'")
     uvicorn.run(app, host="0.0.0.0", port=8000)
