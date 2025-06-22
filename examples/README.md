@@ -1,127 +1,95 @@
-# ACP-Evals Examples
+# ACP Evals Examples
 
-This directory contains example agents and servers that can be used for testing with acp-evals.
+This directory contains example scripts demonstrating how to use acp-evals.
 
-## ACP Agent Server (OpenAI/Anthropic)
+## Agent Examples
 
-The `acp_agent_server.py` file provides an ACP-compliant server that uses real LLMs (OpenAI GPT-4 or Anthropic Claude).
-
-### Prerequisites
-
-Ensure you have API keys configured in your `.env` file:
-```bash
-OPENAI_API_KEY=your-openai-key
-ANTHROPIC_API_KEY=your-anthropic-key
-```
-
-### Running the Server
+### test_agent.py
+Contains three Python function agents for testing:
+- `smart_agent`: General purpose Q&A agent
+- `calculator_agent`: Mathematical calculations with fast response time  
+- `research_agent`: Simulates tool usage (search, summarize) for research tasks
 
 ```bash
-python examples/acp_agent_server.py
+# Use with CLI
+acp-evals run accuracy examples/test_agent.py:smart_agent -i "What is AI?" -e "Artificial Intelligence"
+acp-evals run performance examples/test_agent.py:calculator_agent -i "Calculate 25% of 80"
+acp-evals run reliability examples/test_agent.py:research_agent -i "Search for news" --expected-tools search
 ```
 
-This starts an ACP server on `http://localhost:8000` with three agents:
-- `test-openai`: Uses OpenAI GPT-4
-- `test-anthropic`: Uses Anthropic Claude
-- `my-agent`: Default agent using OpenAI GPT-4
+### beeai_acp_server.py
+Example BeeAI framework agent with ACP server integration.
 
-### Testing
-
-```bash
-# Test with default agent
-acp-evals run accuracy http://localhost:8000/agents/my-agent \
-  -i "What is 2+2?" \
-  -e "4"
-
-# Test with Anthropic
-acp-evals run accuracy http://localhost:8000/agents/test-anthropic \
-  -i "Explain quantum computing" \
-  -e "Quantum computing uses qubits"
-```
-
-## BeeAI ACP Server Example
-
-The `beeai_acp_server.py` file demonstrates how to create a BeeAI agent that's accessible via the ACP protocol.
-
-### Prerequisites
-
-1. Install BeeAI framework:
+**Prerequisites:**
 ```bash
 pip install beeai-framework
-```
-
-2. Install and run Ollama:
-```bash
-# Install Ollama from https://ollama.com
-# Then pull the model:
 ollama pull granite3.3:8b
 ```
 
-### Running the Server
-
+**Running:**
 ```bash
 python examples/beeai_acp_server.py
 ```
 
-This will start an ACP server on `http://127.0.0.1:8001` with a demo agent available at `http://127.0.0.1:8001/agents/demo_agent`.
-
-### Testing with acp-evals
-
-Once the server is running, you can test it with acp-evals:
-
-```bash
-# Test accuracy evaluation
-acp-evals run accuracy http://127.0.0.1:8001/agents/demo_agent \
-  -i "What is the capital of France?" \
-  -e "Paris"
-
-# Test with tool usage
-acp-evals run accuracy http://127.0.0.1:8001/agents/demo_agent \
-  -i "Calculate 15 + 27" \
-  -e "42"
-
-# Test performance
-acp-evals run performance http://127.0.0.1:8001/agents/demo_agent \
-  -i "Tell me about Python programming"
-
-# Test reliability with expected tools
-acp-evals run reliability http://127.0.0.1:8001/agents/demo_agent \
-  -i "What's the weather in Paris and calculate 10 * 5" \
-  --expected-tools get_weather calculate
-
-# Run comprehensive evaluation
-acp-evals test http://127.0.0.1:8001/agents/demo_agent
-```
-
-### Available Tools
-
-The demo agent includes three tools:
-- `calculate`: Performs mathematical calculations
-- `get_weather`: Returns mock weather data for major cities
-- `search`: Returns mock search results for common queries
-
-### Customization
-
-You can modify the agent by:
-1. Adding more tools
-2. Changing the LLM model
-3. Adjusting the agent's metadata and description
-4. Implementing real APIs instead of mock data
-
-## Simple Mock Server
-
-The `simple_acp_server.py` provides a lightweight ACP server using FastAPI and OpenAI, useful for quick testing.
-
 ## Evaluation Examples
 
-The directory also includes example evaluation scripts:
-- `accuracy_eval.py`: Demonstrates accuracy evaluation
-- `performance_eval.py`: Shows performance testing
-- `reliability_eval.py`: Examples of reliability evaluation
+### accuracy_eval.py
+Demonstrates programmatic accuracy evaluation:
+- Uses LLM-as-judge methodology
+- Shows batch evaluation capabilities
+- Beautiful terminal output with detailed feedback
 
-## Summary
+```bash
+python examples/accuracy_eval.py
+```
 
-Choose the appropriate server based on your needs:
-- **acp_agent_server.py**: Full ACP-compliant server with real LLMs
-- **beeai_acp_server.py**: BeeAI framework integration with tools
-- **simple_acp_server.py**: Lightweight mock server for testing
+### performance_eval.py
+Demonstrates performance evaluation:
+- Measures latency and memory usage
+- Shows statistical analysis across multiple runs
+- Provides UX impact assessment
+
+```bash
+python examples/performance_eval.py
+```
+
+### reliability_eval.py
+Demonstrates reliability evaluation:
+- Tests tool usage detection
+- Evaluates consistency across runs
+- Shows error handling capabilities
+
+```bash
+python examples/reliability_eval.py
+```
+
+## Quick Start
+
+1. **Test Python functions directly:**
+```bash
+acp-evals comprehensive examples/test_agent.py:smart_agent -i "What is machine learning?" -e "Machine learning is a subset of AI" --show-details
+```
+
+2. **Run evaluation examples:**
+```bash
+python examples/accuracy_eval.py
+python examples/performance_eval.py
+python examples/reliability_eval.py
+```
+
+3. **Batch evaluation:**
+```bash
+cat > tests.jsonl << 'EOF'
+{"input": "What is 2+2?", "expected": "4"}
+{"input": "Capital of France?", "expected": "Paris"}
+EOF
+
+acp-evals run accuracy examples/test_agent.py:smart_agent --test-file tests.jsonl
+```
+
+## Notes
+
+- All examples work out of the box with configured LLM providers
+- The test_agent.py functions can be used directly with the CLI
+- Example scripts demonstrate both programmatic API and beautiful terminal output
+- Designed for professional software engineers building production AI systems
