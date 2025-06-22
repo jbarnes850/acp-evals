@@ -110,9 +110,12 @@ async def main():
             if scenario_type == "consistency":
                 if prompt not in consistency_check:
                     consistency_check[prompt] = []
-                consistency_check[prompt].append(result.actual_output)
+                # Store the score for consistency checking
+                consistency_check[prompt].append(result.score)
             
-            print(f"   ✅ Success (latency: {result.latency_ms:.0f}ms)")
+            # Get latency from metadata if available
+            latency = result.metadata.get('latency_ms', 0)
+            print(f"   ✅ Success (score: {result.score:.2f})")
             
         except Exception as e:
             errors.append((prompt, str(e)))
