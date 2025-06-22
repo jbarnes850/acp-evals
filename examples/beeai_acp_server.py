@@ -18,7 +18,7 @@ from typing import Any
 # Check if BeeAI framework is installed
 try:
     from beeai_framework.adapters.acp import ACPServer, ACPServerConfig
-    from beeai_framework.agents.tool_calling.agent import ToolCallingAgent
+    from beeai_framework.agents import ToolCallingAgent
     from beeai_framework.agents.types import AgentMeta
     from beeai_framework.backend import ChatModel
     from beeai_framework.memory import UnconstrainedMemory

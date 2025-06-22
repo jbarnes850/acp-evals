@@ -120,11 +120,11 @@ def check_providers(ctx, test_connection: bool, show_setup: str | None):
         model = "—"
         if configured:
             if provider == "openai":
-                model = os.getenv("OPENAI_MODEL", "gpt-4")
+                model = os.getenv("OPENAI_MODEL", "gpt-4o")
             elif provider == "anthropic":
                 model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4")
             elif provider == "ollama":
-                model = os.getenv("OLLAMA_MODEL", "llama2")
+                model = os.getenv("OLLAMA_MODEL", "qwen3:8b")
 
         # Test connection if requested
         connection_status = ""

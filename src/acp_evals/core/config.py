@@ -44,7 +44,7 @@ def get_provider_config() -> dict:
     provider = config["provider"]
 
     if provider == "openai":
-        config["model"] = os.getenv("OPENAI_MODEL", "gpt-4")
+        config["model"] = os.getenv("OPENAI_MODEL", "gpt-4o")
         config["api_key"] = os.getenv("OPENAI_API_KEY")
         config["api_base"] = os.getenv("OPENAI_API_BASE")
 
@@ -53,7 +53,7 @@ def get_provider_config() -> dict:
         config["api_key"] = os.getenv("ANTHROPIC_API_KEY")
 
     elif provider == "ollama":
-        config["model"] = os.getenv("OLLAMA_MODEL", "llama2")
+        config["model"] = os.getenv("OLLAMA_MODEL", "qwen3:8b")
         config["base_url"] = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 
     return config
